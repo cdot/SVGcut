@@ -1,73 +1,125 @@
-// Copyright 2014 Todd Fleming
-//
-// This file is part of jscut.
-//
-// jscut is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// jscut is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with jscut.  If not, see <http://www.gnu.org/licenses/>.
+// Define transformations for different unit types to internal units.
+const INTERNAL_PER_MM   = 100000; // millimetres
+const INTERNAL_PER_INCH = 25.4 * INTERNAL_PER_MM; // inches
+// Browsers assume a fixed conversion of pixels to mm of
+// 25.4/96 (96 dpi). 
+const INTERNAL_PER_PX = INTERNAL_PER_INCH / 96;
 
-function UnitConverter(units) {
-    "use strict";
-    var self = this;
-    self.unitsObservables = [];
+/**
+ * Instances of this class maintain a set of inputs that show a value
+ * in user-selected units. The class attaches observables that support
+ * the conversion of these values into other units. Unit systems supported
+ * are: mm, inch, px and internal. Internal units are designed to
+ * scale up numbers for more accurate operations with ClipperLib.
+ */
+class UnitConverter {
 
-    units.subscribe(function (newValue) {
-        if (newValue == "inch")
-            for (var i = 0; i < self.unitsObservables.length ; ++i) {
-                var o = self.unitsObservables[i];
-                o(o() / 25.4);
-            }
-        else
-            for (var i = 0; i < self.unitsObservables.length ; ++i) {
-                var o = self.unitsObservables[i];
-                o(o() * 25.4);
-            }
+  // Literate code; support mm = inches * UnitConverter.from.inch.to.mm
+  static from = {
+    mm: {
+      to: {
+        mm: 1,
+        internal: INTERNAL_PER_MM,
+        inch: INTERNAL_PER_MM / INTERNAL_PER_INCH,
+        px: INTERNAL_PER_MM / INTERNAL_PER_PX
+      }
+    },
+    internal: {
+      to: {
+        mm: 1 / INTERNAL_PER_MM,
+        internal: 1,
+        inch: 1 / INTERNAL_PER_INCH,
+        px: 1 / INTERNAL_PER_PX
+      }
+    },
+    inch: {
+      to: {
+        mm: INTERNAL_PER_INCH / INTERNAL_PER_MM,
+        internal: INTERNAL_PER_INCH,
+        inch: 1,
+        px: INTERNAL_PER_INCH / INTERNAL_PER_PX
+      }
+    },
+    px: {
+      to: {
+        mm: INTERNAL_PER_PX / INTERNAL_PER_MM,
+        internal: INTERNAL_PER_PX,
+        inch: INTERNAL_PER_PX / INTERNAL_PER_INCH,
+        px: 1
+      }
+    }
+  };
+
+  /**
+   * Construct to observe an observable that defines the current
+   * units in use in the content where the UnitConverter is
+   * instantiated. Different view models can have different unit
+   * systems.
+   * @param {observable} units
+   */
+  constructor(units) {
+    this.unitsObservables = [];
+    this.units = units;
+    this.currentUnits = units();
+
+    // Subscribe to the observable that defines the units currently
+    // in use.
+    units.subscribe(newValue => {
+      // Unfortunately units() is already the new value. We could add
+      // a beforeChange handler, but that's clumsy and shouldn't
+      // be needed.
+      if (newValue === this.currentUnits)
+        return;
+      let factor = UnitConverter.from[this.currentUnits].to[newValue];
+      if (factor !== 1)
+        for (const o of this.unitsObservables)
+          o(o() * factor);
+      this.currentUnits = newValue;
     });
+  }
 
-    // Convert x from the current unit to inch
-    self.toInch = function (x) {
-        if (units() == "inch")
-            return x;
-        else
-            return x / 25.4;
-    }
+  /**
+   * Convert x from the current units to tunits
+   * @param {number} value to convert
+   * @param {string} name of target units
+   */
+  toUnits(x, tunits) {
+    return x * UnitConverter.from[this.units()].to[tunits];
+  }
 
-    // Convert x from inch to the current unit
-    self.fromInch = function (x) {
-        if (units() == "inch")
-            return x;
-        else
-            return x * 25.4;
-    }
+  /**
+   * Convert x from funits to the current units
+   * @param {number} value to convert
+   * @param {string} name of source funits
+   */
+  fromUnits(x, funits) {
+    return x * UnitConverter.from[funits].to[this.units()];
+  }
 
-    self.add = function (observable) {
-        self.unitsObservables.push(observable);
-        observable.units = function () {
-            return units();
-        }
-        observable.toInch = function () {
-            return self.toInch(observable());
-        }
-        observable.fromInch = function (x) {
-            observable(self.fromInch(x));
-        }
-    }
+  add(observable) {
+    this.unitsObservables.push(observable);
+    observable.units = () => {
+      return this.units();
+    };
+    /**
+     * Convert the value to the named units
+     */
+    observable.toUnits = (units) => {
+      return this.toUnits(Number(observable()), units);
+    };
+  }
 
-    self.addComputed = function (observable) {
-        observable.units = function () {
-            return units();
-        }
-        observable.toInch = function () {
-            return self.toInch(Number(observable()));
-        }
-    }
+  addComputed(observable) {
+    observable.units = () => {
+      return this.units();
+    };
+    /**
+     * Convert the value to the named units
+     */
+    observable.toUnits = (units) => {
+      return this.toUnits(Number(observable()), units);
+    };
+  };
 }
+
+export { UnitConverter }

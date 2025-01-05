@@ -33,21 +33,21 @@ code {
 
 .selectedPath {
     stroke:none;
-    fill:#0080ff;
+    fill: rgba(0, 128, 255, 0.75);
 }
 
 .combinedGeometry {
     stroke: none;
-    fill: #000000;
+    fill: rgba(0, 0, 255, 0.5);
 }
 
 .tabsGeometry {
     stroke: none;
-    fill: #ff0000;
+    fill: rgba(255, 255, 0, 0,5);
 }
 
 .toolPath {
-    stroke: #ffff00;
+    stroke: #ff0000;
     fill: none;
 }
 
@@ -55,6 +55,23 @@ code {
     position: relative;
     overflow: hidden;
     display: inline-block;
+}
+
+.op-table-row {
+  background-color: #f5f5f5;
+}
+
+.op-table-detail {
+  width: 1px;
+  text-align:right;
+}
+
+.op-table-enabled {
+  width: 1px; padding-right: 5px; padding-left: 5px;
+}
+
+.op-table-mid {
+  width: 1px; padding-right: 5px;
 }
 
 .choose-file input[type=file] {
@@ -71,4 +88,8 @@ code {
     background: white;
     cursor: inherit;
     display: block;
+}
+
+.card-title {
+  font-size: 1rem;
 }

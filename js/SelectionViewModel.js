@@ -1,77 +1,91 @@
-// Copyright 2014 Todd Fleming
-//
-// This file is part of jscut.
-//
-// jscut is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// jscut is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with jscut.  If not, see <http://www.gnu.org/licenses/>.
+// import "knockout";
+/* global ko */
 
-function SelectionViewModel(svgViewModel, materialViewModel, selectionGroup) {
-    "use strict";
-    var self = this;
+/* global JSCut */
 
-    self.selMinNumSegments = ko.observable("1");
-    self.selMinSegmentLength = ko.observable("0.01");
-    self.selNumSelected = ko.observable("0");
+import { ViewModel } from "./ViewModel.js";
+import * as SnapPaths from "./SnapPaths.js";
 
-    materialViewModel.unitConverter.add(self.selMinSegmentLength);
+/**
+ * Support for selection in SVG views.
+ */
+class SelectionViewModel extends ViewModel {
 
-    self.clickOnSvg = function (elem) {
-        if (elem.attr("class") == "selectedPath") {
-            elem.remove();
-            self.selNumSelected(self.selNumSelected() - 1);
-            return true;
-        }
+  /**
+   * Note that this model doesn't require a unit converter, as it has
+   * no UI components that require conversion.
+   * @param {SVGGraphicsElement} svgGroup SVG group for containing the selection
+   */
+  constructor(svgGroup) {
+    super();
 
-        var path = jscut.priv.path.getLinearSnapPathFromElement(elem, self.selMinNumSegments(), self.selMinSegmentLength.toInch() * svgViewModel.pxPerInch(), function (msg) {
-            showAlert(msg, "alert-warning");
-        });
+    /**
+     * The SVG group used for selections
+     * @member {SVGGraphicsElement}
+     * @private
+     */
+    this.svgGroup = svgGroup;
 
-        if (path != null) {
-            var newPath = selectionGroup.path(path);
-            newPath.attr("class", "selectedPath");
-            if (elem.attr("fill-rule") == "evenodd")
-                newPath.attr("fill-rule", "evenodd");
-            self.selNumSelected(self.selNumSelected() + 1);
-        }
+    /**
+     * Number of elements selected (==this.svgGroup size)
+     */
+    this.numSelected = ko.observable(0);
+  }
 
-        return true;
+  /**
+   * Handler for a click event on the SVG window.
+   * @param {Element} elem SVG element that was hit by the click
+   * @return {boolean} true if the event has been handled
+   */
+  clickOnSvg(elem) {
+    const clas = elem.attr("class");
+
+    // Filter out JSCut-generated classes
+    if (clas === "combinedGeometry"
+        || clas === "toolPath"
+        || clas === "tabsGeometry")
+      return false;
+
+    // Deselect previously selected path
+    if (clas === "selectedPath") {
+      elem.remove();
+      this.numSelected(this.numSelected() - 1);
+      return true;
     }
 
-    self.getSelection = function () {
-        return selectionGroup.selectAll("path");
+    try {
+      const path = SnapPaths.fromElement(
+        elem,
+        JSCut.models.CurveConversion.curveMinSegs(),
+        JSCut.models.CurveConversion.curveMinSegLen.toUnits("px"));
+      const newPath = this.svgGroup.path(path);
+      newPath.attr("class", "selectedPath");
+      if (elem.attr("fill-rule") === "evenodd")
+        newPath.attr("fill-rule", "evenodd");
+      this.numSelected(this.numSelected() + 1);
+      return true;
+    } catch (e) {
+      JSCut.showAlert(e, "alert-warning");
     }
 
-    self.clearSelection = function () {
-        selectionGroup.selectAll("path").remove();
-        self.selNumSelected(0);
-    }
+    return false;
+  }
 
-    self.toJson = function () {
-        return {
-            'minNumSegments': self.selMinNumSegments(),
-            'minSegmentLength': self.selMinSegmentLength(),
-        };
-    }
+  /**
+   * Get the list of SVG elements that are currently selected.
+   * @return {SVGElement[]} list of SVG elements
+   */
+  getSelection() {
+    return this.svgGroup.selectAll("path");
+  }
 
-    self.fromJson = function (json) {
-        function f(j, o) {
-            if (typeof j !== "undefined")
-                o(j);
-        }
-
-        if (json) {
-            f(json.minNumSegments, self.selMinNumSegments);
-            f(json.minSegmentLength, self.selMinSegmentLength);
-        }
-    }
+  /**
+   * Deselect all SVG elements
+   */
+  clearSelection() {
+    this.svgGroup.selectAll("path").remove();
+    this.numSelected(0);
+  }
 }
+
+export { SelectionViewModel }

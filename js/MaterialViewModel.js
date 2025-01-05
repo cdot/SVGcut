@@ -1,103 +1,114 @@
-// Copyright 2014 Todd Fleming
-//
-// This file is part of jscut.
-//
-// jscut is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// jscut is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with jscut.  If not, see <http://www.gnu.org/licenses/>.
+// import "knockout";
+/* global ko */
 
-function MaterialViewModel() {
-    "use strict";
-    var self = this;
-    self.matUnits = ko.observable("inch");
-    self.unitConverter = new UnitConverter(self.matUnits);
-    self.matThickness = ko.observable("1.0");
-    self.matZOrigin = ko.observable("Top");
-    self.matClearance = ko.observable("0.1");
-    self.materialSvg = ko.observable(null);
+import { ViewModel } from "./ViewModel.js";
 
-    self.unitConverter.add(self.matThickness);
-    self.unitConverter.add(self.matClearance);
+const popovers = [
+  { id:"inputMatClearance" }
+];
 
-    self.matTopZ = ko.computed(function () {
-        if (self.matZOrigin() == "Top")
-            return 0;
-        else
-            return self.matThickness();
+class MaterialViewModel extends ViewModel {
+
+  /**
+   * @param {UnitConverter} unitConverter the UnitConverter to use
+   */
+  constructor(unitConverter) {
+    super(unitConverter);
+
+    this.thickness = ko.observable(unitConverter.fromUnits(10, "mm"));
+    unitConverter.add(this.thickness);
+
+    this.clearance = ko.observable(unitConverter.fromUnits(10, "mm"));
+    unitConverter.add(this.clearance);
+
+    this.zOrigin = ko.observable("Top");
+
+    this.materialSvg = ko.observable(null);
+
+    this.topZ = ko.computed(() => {
+      if (this.zOrigin() == "Top")
+        return 0;
+      else
+        return this.thickness();
     });
-    self.unitConverter.addComputed(self.matTopZ);
+    unitConverter.addComputed(this.topZ);
 
-    self.matBotZ = ko.computed(function () {
-        if (self.matZOrigin() == "Bottom")
-            return 0;
-        else
-            return "-" + self.matThickness();
+    this.botZ = ko.computed(() => {
+      if (this.zOrigin() == "Bottom")
+        return 0;
+      else
+        return "-" + this.thickness();
     });
-    self.unitConverter.addComputed(self.matBotZ);
+    unitConverter.addComputed(this.botZ);
 
-    self.matZSafeMove = ko.computed(function () {
-        if (self.matZOrigin() == "Top")
-            return parseFloat(self.matClearance());
-        else
-            return parseFloat(self.matThickness()) + parseFloat(self.matClearance());
+    this.zSafeMove = ko.computed(() => {
+      if (this.zOrigin() == "Top")
+        return parseFloat(this.clearance());
+      else
+        return parseFloat(this.thickness()) + parseFloat(this.clearance());
     });
-    self.unitConverter.addComputed(self.matZSafeMove);
+    unitConverter.addComputed(this.zSafeMove);
 
     function formatZ(z) {
-        z = parseFloat(z);
-        return z.toFixed(3);
+      z = parseFloat(z);
+      return z.toFixed(3);
     }
 
-    self.matTopZ.subscribe(function (newValue) {
-        if (self.materialSvg())
-            self.materialSvg().select("#matTopZ").node.textContent = formatZ(newValue);
+    // Subscribe to range values to update the SVG picture
+    this.topZ.subscribe(newValue => {
+      if (this.materialSvg()) {
+        this.materialSvg().select("#matTopZ").node.textContent
+        = formatZ(newValue);
+      }
     });
 
-    self.matBotZ.subscribe(function (newValue) {
-        if (self.materialSvg())
-            self.materialSvg().select("#matBotZ").node.textContent = formatZ(newValue);
+    this.botZ.subscribe(newValue => {
+      if (this.materialSvg()) {
+        this.materialSvg().select("#matBotZ").node.textContent
+        = formatZ(newValue);
+      }
     });
 
-    self.matZSafeMove.subscribe(function (newValue) {
-        if (self.materialSvg())
-            self.materialSvg().select("#matZSafeMove").node.textContent = formatZ(newValue);
+    this.zSafeMove.subscribe(newValue => {
+      if (this.materialSvg()) {
+        this.materialSvg().select("#matZSafeMove").node.textContent
+        = formatZ(newValue);
+      }
     });
 
-    self.materialSvg.subscribe(function (newValue) {
-        newValue.select("#matTopZ").node.textContent = formatZ(self.matTopZ());
-        newValue.select("#matBotZ").node.textContent = formatZ(self.matBotZ());
-        newValue.select("#matZSafeMove").node.textContent = formatZ(self.matZSafeMove());
+    this.materialSvg.subscribe(newValue => {
+      newValue.select("#matTopZ").node.textContent = formatZ(this.topZ());
+      newValue.select("#matBotZ").node.textContent = formatZ(this.botZ());
+      newValue.select("#matZSafeMove").node.textContent
+      = formatZ(this.zSafeMove());
     });
+  }
 
-    self.toJson = function () {
-        return {
-            'units': self.matUnits(),
-            'thickness': self.matThickness(),
-            'zOrigin': self.matZOrigin(),
-            'clearance': self.matClearance(),
-        };
-    }
+  // @override
+  initialise() {
+    this.addPopovers(popovers);
 
-    self.fromJson = function (json) {
-        function f(j, o) {
-            if (typeof j !== "undefined")
-                o(j);
-        }
+    ko.applyBindings(this, document.getElementById("MaterialCard"));
+  }
+  
+  // @override
+  get jsonFieldName() { return "operations"; }
 
-        if (json) {
-            f(json.units, self.matUnits);
-            f(json.thickness, self.matThickness);
-            f(json.zOrigin, self.matZOrigin);
-            f(json.clearance, self.matClearance);
-        }
-    }
+  // @override
+  toJson() {
+    return {
+      thickness: this.thickness(),
+      zOrigin: this.zOrigin(),
+      clearance: this.clearance()
+    };
+  };
+
+  // @override
+  fromJson(json) {
+    this.updateObservable(json, 'thickness');
+    this.updateObservable(json, 'zOrigin');
+    this.updateObservable(json, 'clearance');
+  };
 }
+
+export { MaterialViewModel }
