@@ -1,8 +1,8 @@
 # SVG2Gcode
 
-A simple CAM package that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control.
+A simple Computer Aided Manufacturing (CAM) package that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine, for example using [Candle](https://github.com/Denvi/Candle).
 
-SVG2Gcode is a fork of Tim Fleming's jscut, which is largely undocumented and has been unsupported since 2014.
+SVG2Gcode is a fork of [Tim Fleming's jscut](https://jscut.org/), which is largely undocumented and has been unsupported since 2014. Tim is recognised as author of all his code, even where it has been extensively rewritten.
 
 ## Preparing your SVG
 
@@ -20,15 +20,15 @@ Load SVG2Gcode in your browser, and select "Open SVG" from the toolbar to open y
 
 ## Tool
 
-The next thing to have to do is to set up the tool you are using on the "Tool" pane. There is popup help on each of the options.
+The next thing to have to do is to set up the tool you are using on the "Tool" section. Click on the "Tool" button. There is popup help on each of the options.
 
 ## Material
 
-Now specify the material you are working with. There is popup help on each of the options.
+Now open the material pane to specify the material you are working with. There is popup help on each of the options.
 
 ## Operations
 
-Use the mouse to select the paths you want to convert to Gcode. They will turn blue. In the "Operations" pane, click "Create Operation" to tell it what you want to do with the selected paths. There are four operations available:
+Use the mouse to select the paths you want to convert to Gcode (click a path again to deselect it; a double-click will select all paths). They will turn blue. In the "Operations" pane, click "Create Operation" to tell it what you want to do with the selected paths. There are four operations available:
 + Pocket - the default, will carve out the interior of your selected paths
 + Inside - will cut around the inside of the selected paths
 + Outside - will cut around the outside of the selected path
@@ -61,3 +61,20 @@ When we load up SVG2Gcode and generate Gcode for this drawing with the "Machine 
 If we now switch the machine origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
 
 As well as the "SVG page" and "Bounding box" origins, you can also generate Gcode to add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut. This is achieved using G codes - you are recommended to read [The Machining Doctor](https://www.machiningdoctor.com/gcodes/g54/) for more.
+
+# COPYRIGHT
+Copyright 2014 Todd Fleming
+Copyright 2024-2025 Crawford Currie
+
+SVG2Gcode is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SVG2Gcode is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with SVG2Gcode.  If not, see <http://www.gnu.org/licenses/>.

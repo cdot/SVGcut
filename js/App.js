@@ -1,3 +1,5 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 // import "file-saver"
 /* global saveAs */
 
@@ -165,18 +167,41 @@ class App {
       //$(event.target).replaceWith(control);
     });
 
-    document.getElementById("MainSvg")
-    .addEventListener("click", e => {
-      const element = Snap.getElementByPoint(e.pageX, e.pageY);
-      if (element != null) {
-        if (this.models.Selection.clickOnSvg(element)) {
-          if (this.models.Selection.numSelected() > 0) {
+    const mainSvgEl = document.getElementById("MainSvg");
+    mainSvgEl
+    .addEventListener("click", e => setTimeout(() => {
+      if (e.detail > 1)
+        return false; // ignore dblclick first click
+
+      const element = e.target;
+      if (e.target != null) {
+        // Ignore clicks that are not on SVG elements
+        if (this.models.Selection.clickOnSvg(Snap(e.target))) {
+          if (this.models.Selection.isSomethingSelected()) {
             this.tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
             return true;
           }
         }
       }
       return false;
+    }, 200));
+
+    mainSvgEl
+    .addEventListener("dblclick", e => {
+      // Select everything
+
+      if (this.models.Selection.isSomethingSelected())
+        // Deselect current selection
+        this.models.Selection.clearSelection();
+
+      const selectedPaths = this.mainSvg.selectAll('path');
+      if (selectedPaths.length > 0) {
+        selectedPaths.forEach(element =>
+          this.models.Selection.clickOnSvg(element));
+        if (this.models.Selection.isSomethingSelected()) {
+          this.tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
+        }
+      }
     });
 
     document.getElementById('choose-settings-file')
@@ -297,11 +322,12 @@ class App {
     alDiv.setAttribute("id", `AlertNum${alertNum}`);
     alDiv.classList.add("alert");
     alDiv.classList.add(alerttype);
+    alDiv.innerHTML = message;
     const a = document.createElement("a");
-    a.append("×");
+    a.append("× ");
     a.classList.add("close");
     a.dataset.dismiss = "alert";
-    alDiv.prepend(a, message);
+    alDiv.prepend(a);
 
     const alp = document.getElementById('alert_placeholder');
     alp.prepend(alDiv);

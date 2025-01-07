@@ -1,3 +1,5 @@
+/*Copyright Crawford Currie 2025. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 /**
  * Class of rectangles. Designed to be reasonably compatible with
  * both DOMRect and SVGRect.

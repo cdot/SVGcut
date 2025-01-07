@@ -1,3 +1,5 @@
+/*Copyright Crawford Currie 2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 // import "bootstrap"
 /* global bootstrap */
 // import "knockout"

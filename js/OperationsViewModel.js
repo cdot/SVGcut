@@ -1,3 +1,5 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 // import "snapsvg";
 /* global Snap */
 // import "knockout";
@@ -145,7 +147,7 @@ class OperationsViewModel extends ViewModel {
    * @return {boolean} true if something is selected in the SVG
    */
   isSomethingSelected() {
-    return App.models.Selection.numSelected() > 0;
+    return App.models.Selection.isSomethingSelected();
   }
 
   // @override

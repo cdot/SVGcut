@@ -1,3 +1,5 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 //CPP /* global Module */ // from Emscripten
 /* global App */
 

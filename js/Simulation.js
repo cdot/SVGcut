@@ -1,3 +1,5 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 /* global App */
 
 import * as mat4 from "gl-matrix/mat4.js";

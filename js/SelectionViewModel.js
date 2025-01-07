@@ -1,3 +1,5 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+
 // import "knockout";
 /* global ko */
 
@@ -69,6 +71,13 @@ class SelectionViewModel extends ViewModel {
     }
 
     return false;
+  }
+
+  /**
+   * @return {boolean} True if at least one path is selected
+   */
+  isSomethingSelected() {
+    return this.numSelected() > 0;
   }
 
   /**
