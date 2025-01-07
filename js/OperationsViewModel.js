@@ -5,9 +5,10 @@
 // import "bootstrap";
 /* global bootstrap */
 
-/* global JSCut */
+/* global App */
 import { OperationViewModel } from "./OperationViewModel.js";
 import { ViewModel } from "./ViewModel.js";
+import { Rect } from "./Rect.js";
 
 /**
  * ViewModel for the `Operations` card
@@ -22,19 +23,18 @@ class OperationsViewModel extends ViewModel {
 
     this.operations = ko.observableArray();
 
-    // Bounding box for all operation tool paths
-    // All in Clipper coords
-    this.bbMinX = ko.observable(0);
-    this.bbMinY = ko.observable(0);
-    this.bbMaxX = ko.observable(0);
-    this.bbMaxY = ko.observable(0);
+    /**
+     * Bounding box for all operation tool paths in internal units
+     * @member {Rect}
+     */
+    this.boundingBox = ko.observable(new Rect());
 
-    JSCut.models.Tool.stepover.subscribe(() => {
+    App.models.Tool.stepover.subscribe(() => {
       for (const op of this.operations())
         op.removeToolPaths();
     });
 
-    JSCut.models.Tool.diameter.subscribe(() => {
+    App.models.Tool.diameter.subscribe(() => {
       for (const op of this.operations())
         op.recombine();
     });
@@ -60,45 +60,60 @@ class OperationsViewModel extends ViewModel {
       popover.hide();
     });
 
-    ko.applyBindings(this, document.getElementById("OperationsCard"));
+    ko.applyBindings(this, document.getElementById("OperationsView"));
   }
 
   /**
-   * Find Min/Max of tool paths
+   * Get the bounding box for all operations. The bounding box wraps
+   * the entire cut path, not just the tool path, so all removed
+   * material should be encompassed. Units are "internal".
+   * @return {Rect}
+   */
+  getBBox() {
+    return this.boundingBox();
+  }
+
+  /**
+   * Refresh the bounding box by inspecting tool paths.
    * @private
    */
-  findMinMax() {
-    let minX = Number.MAX_VALUE, maxX = Number.MIN_VALUE,
-        minY = Number.MAX_VALUE, maxY = Number.MIN_VALUE;
+  updateBB() {
+    let newBB;
     for (const op of this.operations()) {
       if (op.enabled() && op.toolPaths() != null) {
+        let overlap = 0;
+        // Expand the BB if necessary to account for the radius of the
+        // tool cutting outside the tool path, "Inside" and "Pocket"
+        // should already have accounted for it.
+        if (op.operation() === "Engrave" || op.operation() === "Outside")
+          overlap = op.toolPathWidth() / 2;
         for (const tp of op.toolPaths()) {
-          // toolPaths are CamPaths
-          const toolPath = tp.path;
+          const toolPath = tp.path; // toolPaths are CamPaths
           for (const point of toolPath) {
-              minX = Math.min(minX, point.X);
-              minY = Math.min(minY, point.Y);
-              maxX = Math.max(maxX, point.X);
-              maxY = Math.max(maxY, point.Y);
+            if (!newBB)
+              newBB = new Rect(point.X - overlap, point.Y - overlap,
+                                     2 * overlap, 2 * overlap);
+            else {
+              newBB.enclose(point.X - overlap, point.Y - overlap)
+                   .enclose(point.X + overlap, point.Y + overlap);
+            }
           }
         }
       }
     }
-    this.bbMinX(minX);
-    this.bbMaxX(maxX);
-    this.bbMinY(minY);
-    this.bbMaxY(maxY);
+    if (newBB)
+      this.boundingBox(newBB);
   }
   
   tutorialGenerateToolpath() {
     if (this.operations().length > 0)
-      JSCut.tutorial(4, 'Click "Generate".');
+      App.tutorial(4, 'Click "Generate".');
   };
 
   addOperation() {
     // Get the paths from the current selection
     const rawPaths = [];
-    JSCut.models.Selection.getSelection().forEach(element => {
+    App.models.Selection.getSelection().forEach(element => {
       const ps = element.attr('d');
       rawPaths.push({ // @see OperationViewModel.RawPath
         // @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d
@@ -106,13 +121,13 @@ class OperationsViewModel extends ViewModel {
         nonzero: element.attr("fill-rule") != "evenodd"
       });
     });
-    JSCut.models.Selection.clearSelection();
+    App.models.Selection.clearSelection();
 
     // Construct the operation view model
     const op = new OperationViewModel(this.unitConverter, rawPaths);
     this.operations.push(op);
-    op.enabled.subscribe(() => this.findMinMax());
-    op.toolPaths.subscribe(() => this.findMinMax());
+    op.enabled.subscribe(() => this.updateBB());
+    op.toolPaths.subscribe(() => this.updateBB());
 
     this.tutorialGenerateToolpath();
   };
@@ -130,7 +145,7 @@ class OperationsViewModel extends ViewModel {
    * @return {boolean} true if something is selected in the SVG
    */
   isSomethingSelected() {
-    return JSCut.models.Selection.numSelected() > 0;
+    return App.models.Selection.numSelected() > 0;
   }
 
   // @override
@@ -156,11 +171,11 @@ class OperationsViewModel extends ViewModel {
       const op = new OperationViewModel([], true);
       op.fromJson(opJson);
       this.operations.push(op);
-      op.enabled.subscribe(() => this.findMinMax());
-      op.toolPaths.subscribe(() => this.findMinMax());
+      op.enabled.subscribe(() => this.updateBB());
+      op.toolPaths.subscribe(() => this.updateBB());
     }
 
-    this.findMinMax();
+    this.updateBB();
   }
 }
 

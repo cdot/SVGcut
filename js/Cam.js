@@ -1,5 +1,5 @@
 //CPP /* global Module */ // from Emscripten
-/* global JSCut */
+/* global App */
 
 import * as ClipperPaths from "./ClipperPaths.js";
 
@@ -227,7 +227,7 @@ function vPocket(geometry, cutterAngle, passDepth, maxDepth) {
   Module.ccall(
     'vPocket',
     'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-    [JSCut.models.Misc.debugArg0(), JSCut.models.Misc.debugArg1(), cGeometry[0], cGeometry[1], cGeometry[2], cutterAngle, passDepth, maxDepth, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
+    [App.models.Misc.debugArg0(), App.models.Misc.debugArg1(), cGeometry[0], cGeometry[1], cGeometry[2], cutterAngle, passDepth, maxDepth, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
   const result = convertPathsFromCppToCamPath(memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 
@@ -248,7 +248,7 @@ function separateTabs(cutterPath, tabGeometry) {
 
   if (typeof Module == 'undefined') {
     if (!displayedCppTabError1) {
-      JSCut.showAlert("Failed to load cam-cpp.js; tabs will be missing. This message will not repeat.", "alert-danger");
+      App.showAlert("Failed to load cam-cpp.js; tabs will be missing. This message will not repeat.", "alert-danger");
       displayedCppTabError1 = true;
     }
     return cutterPath;
@@ -279,7 +279,7 @@ function separateTabs(cutterPath, tabGeometry) {
     [cCutterPath[0], cCutterPath[1], cCutterPath[2], cTabGeometry[0], cTabGeometry[1], cTabGeometry[2], errorRef, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
 
   if (Module.HEAPU32[errorRef >> 2] && !displayedCppTabError2) {
-    JSCut.showAlert("Internal error processing tabs; tabs will be missing. This message will not repeat.", "alert-danger", false);
+    App.showAlert("Internal error processing tabs; tabs will be missing. This message will not repeat.", "alert-danger", false);
    displayedCppTabError2 = true;
   }
 
@@ -360,7 +360,7 @@ export function getGcode(namedArgs) {
     tabZ = botZ;
   }
   if (tabGeometry && tabZ <= botZ) {
-    JSCut.showAlert(
+    App.showAlert(
       "Tabs are cut deeper than the max operation depth, and will be ignored.",
       'alert-warning');
     tabGeometry = undefined;
@@ -388,7 +388,6 @@ export function getGcode(namedArgs) {
   function convertPoint(p, useZ) {
     const result = [
       `X${getX(p.X).toFixed(decimal)}`,
-      // CAUTION assumes Y increases downwards
       `Y${getY(p.Y).toFixed(decimal)}`
     ];
     if (useZ)
@@ -485,8 +484,9 @@ export function getGcode(namedArgs) {
               }
             }
             if (!executedRamp) {
-              gcode.push('; plunge');
-              gcode.push(`G1 Z${selectedZ.toFixed(decimal)} ${plungeF}`);
+              gcode.push('M4 ; start spindle');
+              gcode.push(
+                `G1 Z${selectedZ.toFixed(decimal)} ${plungeF} ; plunge`);
             }
           } else if (selectedZ > currentZ) {
             gcode.push(retractForTabGcode);
@@ -506,6 +506,7 @@ export function getGcode(namedArgs) {
         break;
     } // while (finishedZ > botZ)
     gcode.push(retractToSafeZ);
+    gcode.push("M5 ; stop spindle");
   } // pathIndex
 
   return gcode;

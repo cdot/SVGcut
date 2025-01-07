@@ -24,13 +24,6 @@ class ViewModel {
      * @member {UnitConverter?}
      */
     this.unitConverter = unitConverter;
-
-    /**
-     * All view models have units.
-     * SMELL: why? Shouldn't it be the unit converter that has these
-     * units?
-     */
-    this.units = ko.observable("mm");
   }
 
   /**

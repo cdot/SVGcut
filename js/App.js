@@ -9,7 +9,7 @@
 
 import { ToolViewModel } from "./ToolViewModel.js";
 import { OperationsViewModel } from "./OperationsViewModel.js";
-import { GcodeConversionViewModel } from "./GcodeConversionViewModel.js";
+import { GcodeGenerationViewModel } from "./GcodeGenerationViewModel.js";
 //CPP import { TabsViewModel } from "./TabsViewModel.js";
 import { MaterialViewModel } from "./MaterialViewModel.js";
 import { SelectionViewModel } from "./SelectionViewModel.js";
@@ -18,6 +18,7 @@ import { MiscViewModel } from "./MiscViewModel.js";
 import { Simulation } from "./Simulation.js";
 import * as Gcode from "./Gcode.js";
 //CPP import { getScript } from "./getScript.js";
+import { Rect } from "./Rect.js";
 
 /**
  * Singleton.
@@ -25,7 +26,7 @@ import * as Gcode from "./Gcode.js";
  * of the UI together. You will need to understand the basics of
  * knockout to read this code.
  */
-class JSCutApp {
+class App {
 
   constructor(config) {
     /**
@@ -36,9 +37,9 @@ class JSCutApp {
     this.nextAlertNum = 1;
 
     /**
-     * Map from model name (e.g. "GcodeConversion") to the view model
+     * Map from model name (e.g. "Operations") to the view model
      * for the relevant card. Note that all tool models share the Tool
-     * UnitConverter except GcodeConversion which has it's own,
+     * UnitConverter except GcodeGenerationViewModel which has it's own,
      * specific to Gcode units.
      * @member {ViewModel[]}
      */
@@ -70,7 +71,7 @@ class JSCutApp {
     this.options = config;
 
     // global reference to this singleton
-    window.JSCut = this;
+    window.App = this;
 
     /**
      * The loaded SVG(s) drawing surface. This is given a default viewBox
@@ -120,7 +121,7 @@ class JSCutApp {
     this.models.Selection = new SelectionViewModel(this.mainSvg.group());
     this.models.Operations = new OperationsViewModel(unitConverter);
     //CPP this.models.Tabs = new TabsViewModel(unitConverter);
-    this.models.GcodeConversion = new GcodeConversionViewModel();
+    this.models.GcodeGeneration = new GcodeGenerationViewModel();
 
     /*CPP*
      * Paths to try to load CPP module asynchronously
@@ -132,16 +133,6 @@ class JSCutApp {
     this.downloadCpp();
     this.models.Misc.loadedCamCpp(true); // not if downloadCpp is used
     /CPP*/
-
-    /**
-     * The little picture at the top of the Material tab
-     * @member {Element}
-     */
-    this.materialSvg = Snap("#MaterialSvg");
-    Snap.load("Material.svg", f => {
-      this.materialSvg.append(f);
-      this.models.Material.materialSvg(this.materialSvg);
-    });
 
     document.getElementById('choose-svg-file')
     .addEventListener("change", event => {
@@ -229,12 +220,12 @@ class JSCutApp {
       console.debug("Update simulation");
       if (this.simulation) {
         // Set the simulation path from the Gcode
-        const uc = this.models.GcodeConversion.unitConverter;
+        const uc = this.models.GcodeGeneration.unitConverter;
         const topZ = this.models.Material.topZ.toUnits(uc.units());
         const diam = this.models.Tool.diameter.toUnits(uc.units());
         const ang = this.models.Tool.angle();
         const cutterH = uc.fromUnits(1, "mm");
-        const toolPath = Gcode.parse(this.models.GcodeConversion.gcode());
+        const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
         this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
       }
     });
@@ -344,13 +335,20 @@ class JSCutApp {
   }
 
   /**
+   * Get the bounding box of the main SVG.
+   */
+  getMainSvgBBox() {
+    return new Rect(this.mainSvg.getBBox());
+  }
+
+  /**
    * Update the size of the simulation canvas to match
    * the size of the main SVG.
    */
   updateSimulationCanvasSize() {
-    const canvas = document.getElementById("simulationCanvas");
     const mSvgDiv = document.getElementById("MainSvgDiv");
-    const mSvgW = mSvgDiv.getAttribute("width");
+    const mSvgW = mSvgDiv.clientWidth;
+    const canvas = document.getElementById("simulationCanvas");
     canvas.setAttribute("width", mSvgW);
     canvas.setAttribute("height", mSvgW);
   }
@@ -424,4 +422,4 @@ class JSCutApp {
   }
 }
 
-export { JSCutApp };
+export { App };

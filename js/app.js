@@ -1,7 +1,7 @@
 import options from "../config.js";
-import { JSCutApp } from "./JSCut.js";
+import { App } from "./App.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const app = new JSCutApp(options);
+  const app = new App(options);
   app.start();
 });

@@ -1,3 +1,5 @@
+import { Rect } from "./Rect.js";
+
 // Define transformations for different unit types to internal units.
 const INTERNAL_PER_MM   = 100000; // millimetres
 const INTERNAL_PER_INCH = 25.4 * INTERNAL_PER_MM; // inches
@@ -14,7 +16,7 @@ const INTERNAL_PER_PX = INTERNAL_PER_INCH / 96;
  */
 class UnitConverter {
 
-  // Literate code; support mm = inches * UnitConverter.from.inch.to.mm
+  // Literate code; mm = inches * UnitConverter.from.inch.to.mm
   static from = {
     mm: {
       to: {
@@ -89,11 +91,16 @@ class UnitConverter {
 
   /**
    * Convert x from funits to the current units
-   * @param {number} value to convert
+   * @param {number|Rect} x value to convert, if a Rect will convert
+   * the whole thing
    * @param {string} name of source funits
+   * @return {number|Rect} converted input
    */
   fromUnits(x, funits) {
-    return x * UnitConverter.from[funits].to[this.units()];
+    const f = UnitConverter.from[funits].to[this.units()];
+    if (typeof x === "number")
+      return x * f;
+    return new Rect(x.x * f, x.y * f, x.width * f, x.height * f);
   }
 
   add(observable) {

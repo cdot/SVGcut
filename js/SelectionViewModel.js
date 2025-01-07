@@ -1,7 +1,7 @@
 // import "knockout";
 /* global ko */
 
-/* global JSCut */
+/* global App */
 
 import { ViewModel } from "./ViewModel.js";
 import * as SnapPaths from "./SnapPaths.js";
@@ -40,7 +40,7 @@ class SelectionViewModel extends ViewModel {
   clickOnSvg(elem) {
     const clas = elem.attr("class");
 
-    // Filter out JSCut-generated classes
+    // Filter out App-generated classes
     if (clas === "combinedGeometry"
         || clas === "toolPath"
         || clas === "tabsGeometry")
@@ -56,8 +56,8 @@ class SelectionViewModel extends ViewModel {
     try {
       const path = SnapPaths.fromElement(
         elem,
-        JSCut.models.CurveConversion.curveMinSegs(),
-        JSCut.models.CurveConversion.curveMinSegLen.toUnits("px"));
+        App.models.CurveConversion.curveMinSegs(),
+        App.models.CurveConversion.curveMinSegLen.toUnits("px"));
       const newPath = this.svgGroup.path(path);
       newPath.attr("class", "selectedPath");
       if (elem.attr("fill-rule") === "evenodd")
@@ -65,7 +65,7 @@ class SelectionViewModel extends ViewModel {
       this.numSelected(this.numSelected() + 1);
       return true;
     } catch (e) {
-      JSCut.showAlert(e, "alert-warning");
+      App.showAlert(e, "alert-warning");
     }
 
     return false;

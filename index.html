@@ -3,35 +3,34 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <link rel="icon" href="images/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="">
-  <meta name="author" content="">
-  <title>jscut</title>
+
+  <title>SVG2Gcode</title>
+
   <link href="node_modules/bootstrap/dist/css/bootstrap.css" rel="stylesheet">
   <link href="node_modules/bootstrap-slider/dist/css/bootstrap-slider.css"
         rel="stylesheet">
-  <link href="jscut.css" rel="stylesheet">
+  <link href="css/index.css" rel="stylesheet">
   <script type="importmap">
     {
       "imports": {
-        "gl-matrix/": "./node_modules/gl-matrix/esm/"
+        "gl-matrix/": "./node_modules/gl-matrix/esm/",
+        "knockout": "./node_modules/knockout/build/output/knockout-latest.debug.js"
       }
     }
   </script>
 </head>
 <body>
-  <!-- Save Settings Modal - model is Misc -->
-  <div class="modal fade" id="save-settings-modal" role="dialog"
-       aria-labelledby="myModalLabel" aria-hidden="true">
+  <!-- Save Settings Modal - model is MiscViewModel -->
+  <div class="modal fade" id="SaveSettingsModal" role="dialog"
+       aria-labelledby="ssModalTitle" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
+          <h5 class="modal-title" id="ssModalTitle">Save Settings</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-hidden="true">×</button>
-          <h4 class="modal-title" id="myModalLabel">
-            Save Settings
-          </h4>
+                  aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <input data-bind="value: saveSettingsFilename">
@@ -40,9 +39,6 @@
           time it starts.</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-bs-dismiss="modal">
-            Close
-          </button>
           <button type="button" class="btn btn-primary"
                   data-bind="click: saveSettingsInLocalStorage">
             In Browser
@@ -57,16 +53,14 @@
   </div>
 
   <!-- Load settings from Local Storage Modal, model is MiscViewModel -->
-  <div class="modal fade" id="load-local-storage-settings-modal"
-       role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal fade" id="LoadSettingsFromLocalModal"
+       role="dialog" aria-labelledby="lslModalTitle" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
+          <h4 class="modal-title" id="lslModalTitle">Load Settings</h4>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-hidden="true"></button>
-          <h4 class="modal-title" id="myModalLabel">
-            Load Settings
-          </h4>
+                  aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <p data-bind="text: checkLocalStorageForSettings()"></p>
@@ -77,11 +71,8 @@
           </p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-bs-dismiss="modal">
-            Close
-          </button>
           <button type="button" class="btn btn-primary"
-                  onclick="JSCut.hideModal('load-local-storage-settings-modal');JSCut.showModal('delete-local-storage-settings-modal')">
+                  onclick="App.hideModal('LoadSettingsFromLocalModal');App.showModal('DeleteSettingsFromLocalModal')">
             Delete
           </button>
           <button type="button" class="btn btn-primary"
@@ -94,16 +85,14 @@
   </div>
 
   <!-- Delete settings from Local Storage Modal, model is MiscViewModel -->
-  <div class="modal fade" id="delete-local-storage-settings-modal"
-       role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal fade" id="DeleteSettingsFromLocalModal"
+       role="dialog" aria-labelledby="dsModalLabel" aria-hidden="true">
     <div class="modal-dialog alert-danger">
       <div class="modal-content">
         <div class="modal-header">
+          <h5 class="modal-title" id="dsModalLabel">Delete Settings</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-hidden="true">×</button>
-          <h4 class="modal-title" id="myModalLabel">
-            Delete Settings
-          </h4>
+                  aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <p>Delete "<b>
@@ -111,8 +100,6 @@
             </b>"?</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default"
-                  data-bs-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary"
                   data-bind="click: deleteSettingsFromLocalStorage">
             Delete</button>
@@ -121,29 +108,42 @@
     </div>
   </div>
 
-  <!-- Save GCODE Modal, view model GcodeConversionViewModel -->
-  <div class="modal fade" id="save-gcode-modal" role="dialog"
-       aria-labelledby="myModalLabel" aria-hidden="true">
+  <!-- Save GCODE Modal, view model GcodeGenerationViewModel -->
+  <div class="modal fade" id="SaveGcodeModal" role="dialog"
+       aria-labelledby="sgcModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
+          <h5 class="modal-title" id="sgcModalLabel">Save GCODE</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-hidden="true">×</button>
-          <h4 class="modal-title" id="myModalLabel">
-            Save GCODE
-          </h4>
+                  aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <label>Save as</label>
           <input data-bind="value: gcodeFilename">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default"
-                  data-bs-dismiss="modal">Close</button>
           <button type="button" class="btn btn-primary"
                   data-bind="click: saveGcodeInLocalFile">
             Save
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View GCODE Modal, view model GcodeGenerationViewModel -->
+  <div class="modal fade" id="ViewGcodeModal" tabindex="-1" role="dialog"
+       aria-hidden="true" arial-labelledby="gcodeModalTitle">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="gcodeModalTitle">GCODE</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div style="white-space: pre; font-family: monospace; overflow: scroll; max-height: 80vh;" data-bind="text: gcode"></div>
         </div>
       </div>
     </div>
@@ -155,21 +155,421 @@
     <div class="row">
       <!-- left -->
       <div class="col-sm-3 left-column">
-        <!-- Tool parameters, view model ToolViewModel -->
-        <div class="card" id="ToolCard">
+
+        <!-- Operations View -->
+        <div class="card" id="OperationsView">
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseToolCard" class="nav-link">
+                 href="#OperationsViewPane" class="nav-link">Operations</a>
+            </h3>
+          </div>
+          <div id="OperationsViewPane" class="collapse show">
+            <div class="card-body">
+              <div style="display: inline-block">
+                <button id="createOperationButton" class="btn btn-primary"
+                        data-bind="click: addOperation, enable: isSomethingSelected()">
+                  Create Operation
+                </button>
+              </div>
+            </div>
+            <div style="display:table">
+              <div data-bind="foreach: {data: operations, afterRender: addSubview}">
+                <!-- template for operations table row -->
+                <div style="display:table-row" class="op-table-row">
+                  <div style="display:table-cell" class="op-table-detail">
+                    <label id="opShowDetail"
+                           data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'">
+                    </label>
+                  </div>
+                  <div style="display: table-cell" class="op-table-enabled">
+                    <input id="opEnabled" type="checkbox"
+                           data-bind="checked: enabled" />
+                  </div>
+                  <div style="display: table-cell" class="op-table-mid">
+                    <select id="opOperation" data-bind="value: operation">
+                      <option>Pocket</option>
+                      <option>Inside</option>
+                      <option>Outside</option>
+                      <option>Engrave</option>
+                      <!--CPP <option>V Pocket</option> /CPP-->
+                    </select>
+                  </div>
+                  <div
+                    style="display: table-cell" class="op-table-mid">
+                    <input id="opCutDepth"
+                           class="number" type="number" step="any"
+                           data-bind="visible: operation()!='V Pocket', value: cutDepth">
+                  </div>
+                  <div style="display: table-cell" class="op-table-mid">
+                    <label  class="control-label"
+                            data-bind="visible: operation()!='V Pocket'">
+                      <span data-bind="text: App.models.Tool.units"></span>
+                    </label>
+                  </div>
+                  <div style="display: table-cell">
+                    <a id="opGenerate" href="#"
+                       data-bind="click: generateToolPath">
+                      Generate
+                    </a>
+                  </div>
+                </div>
+                <!--CPP
+                <div style="display:table-row" class="alert alert-danger"
+                     data-bind="visible: enabled() && operation()=='V Pocket' && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
+                </div>
+                <div style="display:table-row" class="alert alert-danger"
+                     data-bind="visible: enabled() && operation()=='V Pocket' && App.models.Misc.camCppError().length != 0">
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell"
+                       data-bind="html: App.models.Misc.camCppError()"></div>
+                </div>
+                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && operation()=='V Pocket' && toolModel.angle() == 180">
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell"></div>
+                  <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
+                </div>
+                /CPP-->
+                <div style="display:table-row" data-bind="visible: showDetail">
+                  <div style="display: table-cell; width: 20px"></div>
+                  <div style="display: table-cell">
+                    <table class="table">
+                      <tr>
+                        <td>
+                          <label class="control-label">
+                            Name
+                          </label>
+                        </td>
+                        <td><input id="opName" data-bind="value: name">
+                        </td>
+                      </tr>
+                      <tr data-bind="visible: operation()!='V Pocket'">
+                        <td>
+                          <label class="control-label">
+                            Ramp Plunge
+                          </label>
+                        </td>
+                        <td>
+                          <input id="opRamp" type="checkbox"
+                                 data-bind="checked: ramp" />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <label class="control-label">
+                            Combine
+                          </label>
+                        </td>
+                        <td>
+                          <select id="opCombine" data-bind="value: combineOp">
+                            <option>Union</option>
+                            <option>Intersect</option>
+                            <option>Diff</option>
+                            <option>Xor</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr data-bind="visible: operation()!='V Pocket'">
+                        <td>
+                          <label class="control-label">
+                            Direction
+                          </label>
+                        </td>
+                        <td>
+                          <select id="opDirection"
+                                  data-bind="value: direction">
+                            <option>Conventional</option>
+                            <option>Climb</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr data-bind="visible: operation()!='Engrave'">
+                        <td><label class="control-label">Margin</label></td>
+                        <td><input id="opMargin" type="number" step="any"
+                                   data-bind="value: margin"></td>
+                      </tr>
+                      <tr data-bind="visible: operation()=='Inside' || operation()=='Outside'">
+                        <td><label class="control-label">Width</label></td>
+                        <td><input id="opWidth" type="number" step="any"
+                                   data-bind="value: width"></td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">
+                          <a href="#"
+                             data-bind="click: removeOperation">
+                            Delete Operation
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs View -->
+        <!--CPP
+        <div class="card" id="TabsView">
+          <div class="card-header-heading">
+            <h3 class="card-title">
+              <a data-bs-toggle="collapse" data-parent="#accordion"
+                 href="#TabsViewPane">Tabs</a>
+            </h3>
+          </div>
+          <div id="TabsViewPane" class="collapse show">
+            <div class="card-body">
+              <div class="alert alert-danger"
+                   data-bind="visible: tabs().length != 0 && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
+                <div>Waiting for cam-cpp.js to load.</div>
+              </div>
+              <div class="alert alert-danger"
+                   data-bind="visible: tabs().length != 0 && App.models.Misc.camCppError().length != 0">
+                <div data-bind="html: App.models.Misc.camCppError()"></div>
+              </div>
+              <table class="table">
+                <tr>
+                  <td><label for="tabsUnits" class="control-label">Units</label>
+                  <td><select id="tabsUnits" data-bind="value: units">
+                      <option>inch</option>
+                      <option>mm>/option>
+                  </select></td>
+                </tr>
+                <tr>
+                  <td><label for="tabsMaxCutDepth" class="control-label">
+                      Max Cut Depth</label></td>
+                  <td><input id="tabsMaxCutDepth" type="number" step="any"
+                             data-bind="value: maxCutDepth"></td>
+                </tr>
+              </table>
+              <div style="display: inline-block">
+                <button id="createTabsButton" class="btn btn-default"
+                        data-bind="click: addTab, enable: App.models.isSomethingSelected()">
+                  Create Tabs</button>
+              </div>
+            </div>
+            <div style="display:table">
+              <div data-bind="foreach: { data: tabs, afterRender: addSubview }">
+                <div style="display:table-row">
+                  <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px">
+                    <input id="tabEnabled" type="checkbox"
+                           data-bind="checked: enabled" />
+                  </div>
+                  <div style="display: table-cell; width: 1px; padding-right: 5px">
+                    <input id="tabMargin" class="number" type="number"
+                           step="any" data-bind="value: margin">
+                  </div>
+                  <div style="display: table-cell; width: 1px; padding-right: 5px">
+                    <a href="#" data-bind="click: $root.removeTab">
+                      Delete</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        /CPP-->
+<!-- Gcode Generation view -->
+        <div class="card" id="GcodeGenerationView">
+          <div class="card-header">
+            <h3 class="card-title">
+              <a data-bs-toggle="collapse" data-parent="#accordion"
+                 href="#GcodeGenerationViewPane" class="nav-link">
+                Gcode Generation</a>
+            </h3>
+          </div>
+          <div id="GcodeGenerationViewPane" class="collapse show">
+            <div class="card-body">
+              <div class="form-horizontal">
+                <table class="table">
+                  <tr>
+                    <td colspan="2">
+                      <label for="gcodeUnits" class="control-label">
+                        Units
+                      </label>
+                    </td>
+                    <td>
+                      <select id="gcodeUnits" data-bind="value: units">
+                        <option>mm</option>
+                        <option>inch</option>
+                      </select>
+                  </td></tr>
+                  <tr>
+                    <td>
+                      <label for="gcodeOrigin" class="control-label">
+                        Origin
+                      </label>
+                    </td>
+                    <td colspan = 2>
+                      <select id="gcodeOrigin" data-bind="value: origin">
+                        <option>SVG page</option>
+                        <option>Bounding box</option>
+                      </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><label for="gcodeExtraOffsetX" class="control-label">
+                        Origin Offset</label></td>
+                    <td>
+                      <input type="number" step="any"
+                             id="gcodeExtraOffsetX"
+                             data-bind="value: extraOffsetX">
+                    </td>
+                    <td>
+                      <input type="number" step="any"
+                             id="gcodeExtraOffsetY"
+                             data-bind="value: extraOffsetY">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><label>Area</label></td>
+                    <td id="gcodeWidth" data-bind="text: bbWidth"></td>
+                    <td id="gcodeHeight" data-bind="text: bbHeight"></td>
+                  </tr>
+                  <tr>
+                    <td colspan="2">
+                      <label for="gcodeReturn00" class="control-label">
+                        Finish at work origin</label>
+                    <td>
+                      <input id="gcodeReturn00" type="checkbox"
+                             data-bind="checked: returnTo00" />
+                    </td>
+                  </tr>
+                </table>
+                <button class="btn btn-primary"
+                        data-bind="enable: haveGcode(), click: viewGcode">
+                  View Gcode
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="alert_placeholder"></div>
+      </div>
+
+      <!-- middle -->
+      <div id="MainSvgDiv" class="col-sm-6">
+        <!-- top bar (SMELL: should be bound to MiscViewModel?) -->
+        <nav class="navbar navbar-expand-sm" role="navigation">
+          <div class="container-fluid">
+            <ul class="navbar-nav">
+              <li class="nav-item">
+                <a href="#" class="nav-link choose-file">
+                  Open SVG<input type="file" id="choose-svg-file" multiple>
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle"
+                   data-bs-toggle="dropdown">
+                  Open Settings<strong class="caret"></strong>
+                </a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-item">
+                    <a href="#" class="nav-link"
+                       onclick="App.showModal('LoadSettingsFromLocalModal')">
+                      In Browser
+                    </a>
+                  </li>
+                  <li class="dropdown-item">
+                    <a href="#" class="nav-link choose-file">Local
+                      <input type="file" id="choose-settings-file">
+                    </a>
+                  </li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#"
+                   onclick="App.showModal('SaveSettingsModal')">
+                  Save Settings
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#SaveGcodeModal"
+                   data-bs-toggle="modal">
+                  Save GCODE
+                </a>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        <!-- svg views -->
+        <div>
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" href="#svgPanel"
+                 data-bs-toggle="tab">Toolpaths</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#simulatePanel" data-bs-toggle="tab">
+                Simulate</a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <!-- toolpaths tab -->
+            <div class="tab-pane active" id="svgPanel">
+              <svg id="MainSvg" viewBox="0 0 500 500"
+                   preserveAspectRatio="xMinYMin meet" />
+            </div>
+            <!-- simulate tab -->
+            <div class="tab-pane" id="simulatePanel">
+              <canvas id="simulationCanvas" style="border: none;" width="10"
+                      height="10"></canvas>
+              <p>
+                <b>Simulation time:</b>
+                <input id="timeControl" class="form-range" type="range"
+                       max="1000" value="1000" />
+              </p>
+              <!--CPP
+              <p>
+                <div data-bind="visible: App.models.Misc.debug">
+                  <p>
+                    <label class="control-label">debugArg0:&nbsp;</label>
+                    <input type="number" step="any"
+                           data-bind="value: App.models.Misc.debugArg0">
+                  </p>
+                  <p>
+                    <label class="control-label">debugArg1:&nbsp;</label>
+                    <input type="number" step="any"
+                           data-bind="value: App.models.Misc.debugArg1">
+                  </p>
+                </div>
+              </p>
+              /CPP-->
+              <ul>
+                <li>Use mouse to rotate view</li>
+                <li>Use slider control to set simulation time</li>
+                <li>Simulation remains blank until you generate toolpaths</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right -->
+      <div class="col-sm-3 right-column">
+
+        <!-- Tool View -->
+        <div class="card" id="ToolView">
+          <div class="card-header">
+            <h3 class="card-title">
+              <a data-bs-toggle="collapse" data-parent="#accordion"
+                 href="#ToolViewPane" class="nav-link">
                 Tool (shared for all operations)</a>
             </h3>
           </div>
-          <div id="collapseToolCard" class="collapse show">
+          <div id="ToolViewPane" class="collapse">
             <div class="card-body">
               <table class="table">
                 <tr>
-                  <td><label for="toolUnits" class="control-label">
-                      Units</label></td>
+                  <td>
+                    <label for="toolUnits" class="control-label">
+                      Units
+                    </label>
+                  </td>
                   <td colspan="2">
                     <select id="toolUnits" data-bind="value: units">
                       <option>inch</option>
@@ -232,332 +632,16 @@
             </div>
           </div>
         </div>
-        <!-- Operations card, view model OperationsViewModel -->
-        <div class="card" id="OperationsCard">
+
+        <!-- Material View -->
+        <div class="card" id="MaterialView">
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseOperationsCard" class="nav-link">Operations</a>
+                 href="#MaterialViewPane" class="nav-link">Material</a>
             </h3>
           </div>
-          <div id="collapseOperationsCard" class="collapse show">
-            <div class="card-body">
-              <div style="display: inline-block">
-                <button id="createOperationButton" class="btn btn-primary"
-                        data-bind="click: addOperation, enable: isSomethingSelected()">
-                  Create Operation
-                </button>
-              </div>
-            </div>
-            <div style="display:table">
-              <div data-bind="foreach: {data: operations, afterRender: addSubview}">
-                <!-- template for operations table row -->
-                <div style="display:table-row" class="op-table-row">
-                  <div style="display:table-cell" class="op-table-detail">
-                    <label id="opShowDetail"
-                           data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'">
-                    </label>
-                  </div>
-                  <div style="display: table-cell" class="op-table-enabled">
-                    <input id="opEnabled" type="checkbox"
-                           data-bind="checked: enabled" />
-                  </div>
-                  <div style="display: table-cell" class="op-table-mid">
-                    <select id="opOperation" data-bind="value: operation">
-                      <option>Pocket</option>
-                      <option>Inside</option>
-                      <option>Outside</option>
-                      <option>Engrave</option>
-                      <!--CPP <option>V Pocket</option> /CPP-->
-                    </select>
-                  </div>
-                  <div
-                    style="display: table-cell" class="op-table-mid">
-                    <input id="opCutDepth" class="number" type="number" step="any" data-bind="visible: operation()!='V Pocket', value: cutDepth">
-                  </div>
-                  <div style="display: table-cell" class="op-table-mid">
-                    <label data-bind="visible: operation()!='V Pocket'" class="control-label">
-                      <span data-bind="text: JSCut.models.Tool.units"></span>
-                    </label>
-                  </div>
-                  <div style="display: table-cell">
-                    <a id="opGenerate" href="#"
-                       data-bind="click: generateToolPath">
-                      Generate
-                    </a>
-                  </div>
-                </div>
-                <!--CPP
-                <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Pocket' && !JSCut.models.Misc.loadedCamCpp() && JSCut.models.Misc.camCppError().length == 0">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
-                </div>
-                <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Pocket' && JSCut.models.Misc.camCppError().length != 0">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"
-                       data-bind="html: JSCut.models.Misc.camCppError()"></div>
-                </div>
-                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && operation()=='V Pocket' && toolModel.angle() == 180">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
-                </div>
-                /CPP-->
-                <div style="display:table-row" data-bind="visible: showDetail">
-                  <div style="display: table-cell; width: 20px"></div>
-                  <div style="display: table-cell">
-                    <table class="table">
-                      <tr>
-                        <td><label class="control-label">Name</label></td>
-                        <td><input id="opName" data-bind="value: name">
-                        </td>
-                      </tr>
-                      <tr data-bind="visible: operation()!='V Pocket'">
-                        <td>
-                          <label class="control-label">Ramp Plunge</label>
-                        </td>
-                        <td>
-                          <input id="opRamp" type="checkbox"
-                                 data-bind="checked: ramp" />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td><label class="control-label">Combine</label></td>
-                        <td>
-                          <select id="opCombine" data-bind="value: combineOp">
-                            <option>Union</option>
-                            <option>Intersect</option>
-                            <option>Diff</option>
-                            <option>Xor</option>
-                          </select>
-                        </td>
-                      </tr>
-                      <tr data-bind="visible: operation()!='V Pocket'">
-                        <td>
-                          <label class="control-label">
-                            Direction
-                          </label>
-                        </td>
-                        <td>
-                          <select id="opDirection"
-                                  data-bind="value: direction">
-                            <option>Conventional</option>
-                            <option>Climb</option>
-                          </select>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>
-                          <label class="control-label">
-                            Units
-                          </label>
-                        </td>
-                        <td>
-                          <select data-bind="value: units">
-                            <option>inch</option>
-                            <option>mm</option>
-                          </select>
-                        </td>
-                      </tr>
-                      <tr data-bind="visible: operation()!='Engrave'">
-                        <td><label class="control-label">Margin</label></td>
-                        <td><input id="opMargin" type="number" step="any"
-                                   data-bind="value: margin"></td>
-                      </tr>
-                      <tr data-bind="visible: operation()=='Inside' || operation()=='Outside'">
-                        <td><label class="control-label">Width</label></td>
-                        <td><input id="opWidth" type="number" step="any"
-                                   data-bind="value: width"></td>
-                      </tr>
-                      <tr>
-                        <td colspan="2">
-                          <a href="#"
-                             data-bind="click: removeOperation">
-                            Delete Operation
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Tabs card, view model TabsViewModel -->
-        <!--CPP
-        <div class="card" id="TabsCard">
-          <div class="card-header-heading">
-            <h3 class="card-title">
-              <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseTabsCard">Tabs</a>
-            </h3>
-          </div>
-          <div id="collapseTabsCard" class="collapse show">
-            <div class="card-body">
-              <div class="alert alert-danger"
-                   data-bind="visible: tabs().length != 0 && !JSCut.models.Misc.loadedCamCpp() && JSCut.models.Misc.camCppError().length == 0">
-                <div>Waiting for cam-cpp.js to load.</div>
-              </div>
-              <div class="alert alert-danger"
-                   data-bind="visible: tabs().length != 0 && JSCut.models.Misc.camCppError().length != 0">
-                <div data-bind="html: JSCut.models.Misc.camCppError()"></div>
-              </div>
-              <table class="table">
-                <tr>
-                  <td><label for="tabsUnits" class="control-label">Units</label>
-                  <td><select id="tabsUnits" data-bind="value: units">
-                      <option>inch</option>
-                      <option>mm>/option>
-                  </select></td>
-                </tr>
-                <tr>
-                  <td><label for="tabsMaxCutDepth" class="control-label">
-                      Max Cut Depth</label></td>
-                  <td><input id="tabsMaxCutDepth" type="number" step="any"
-                             data-bind="value: maxCutDepth"></td>
-                </tr>
-              </table>
-              <div style="display: inline-block">
-                <button id="createTabsButton" class="btn btn-default"
-                        data-bind="click: addTab, enable: JSCut.models.isSomethingSelected()">
-                  Create Tabs</button>
-              </div>
-            </div>
-            <div style="display:table">
-              <div data-bind="foreach: { data: tabs, afterRender: addSubview }">
-                <div style="display:table-row">
-                  <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px">
-                    <input id="tabEnabled" type="checkbox"
-                           data-bind="checked: enabled" />
-                  </div>
-                  <div style="display: table-cell; width: 1px; padding-right: 5px">
-                    <input id="tabMargin" class="number" type="number"
-                           step="any" data-bind="value: margin">
-                  </div>
-                  <div style="display: table-cell; width: 1px; padding-right: 5px">
-                    <a href="#" data-bind="click: $root.removeTab">
-                      Delete</a></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        /CPP-->
-      </div>
-      <!-- middle -->
-      <div id="MainSvgDiv" class="col-sm-6">
-        <!-- top bar (SMELL: should be bound to MiscViewModel?) -->
-        <nav class="navbar navbar-expand-sm" role="navigation">
-          <div class="container-fluid">
-            <ul class="navbar-nav">
-              <li class="nav-item">
-                <a href="#" class="nav-link choose-file">
-                  Open SVG<input type="file" id="choose-svg-file" multiple>
-                </a>
-              </li>
-              <li class="nav-item dropdown">
-                <a href="#" class="nav-link dropdown-toggle"
-                   data-bs-toggle="dropdown">
-                  Open Settings<strong class="caret"></strong>
-                </a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-item">
-                    <a href="#" class="nav-link"
-                       onclick="JSCut.showModal('load-local-storage-settings-modal')">
-                      In Browser
-                    </a>
-                  </li>
-                  <li class="dropdown-item">
-                    <a href="#" class="nav-link choose-file">Local
-                      <input type="file" id="choose-settings-file">
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#"
-                   onclick="JSCut.showModal('save-settings-modal')">
-                  Save Settings
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#save-gcode-modal"
-                   data-bs-toggle="modal">
-                  Save GCODE
-                </a>
-              </li>
-            </ul>
-          </div>
-        </nav>
-        <!-- svg views -->
-        <div>
-          <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item">
-              <a class="nav-link active" href="#svgPanel"
-                 data-bs-toggle="tab">Toolpaths</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#simulatePanel" data-bs-toggle="tab">
-                Simulate</a>
-            </li>
-          </ul>
-          <div class="tab-content">
-            <!-- toolpaths tab -->
-            <div class="tab-pane active" id="svgPanel">
-              <svg id="MainSvg" viewBox="0 0 500 500"
-                   preserveAspectRatio="xMinYMin meet" />
-            </div>
-            <!-- simulate tab -->
-            <div class="tab-pane" id="simulatePanel">
-              <canvas id="simulationCanvas" style="border: none;" width="10"
-                      height="10"></canvas>
-              <p>
-                <b>Simulation time:</b>
-                <input id="timeControl" class="form-range" type="range"
-                       max="1000" value="1000" />
-              </p>
-              <!--CPP
-              <p>
-                <div data-bind="visible: JSCut.models.Misc.debug">
-                  <p>
-                    <label class="control-label">debugArg0:&nbsp;</label>
-                    <input type="number" step="any"
-                           data-bind="value: JSCut.models.Misc.debugArg0">
-                  </p>
-                  <p>
-                    <label class="control-label">debugArg1:&nbsp;</label>
-                    <input type="number" step="any"
-                           data-bind="value: JSCut.models.Misc.debugArg1">
-                  </p>
-                </div>
-              </p>
-              /CPP-->
-              <ul>
-                <li>Use mouse to rotate view</li>
-                <li>Use slider control to set simulation time</li>
-                <li>Simulation remains blank until you generate toolpaths</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- right -->
-      <div class="col-sm-3 right-column">
-        <div id="alert_placeholder"></div>
-        <!-- Material, model MaterialViewModel -->
-        <div class="card" id="MaterialCard">
-          <div class="card-header">
-            <h3 class="card-title">
-              <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseMaterialCard" class="nav-link">Material</a>
-            </h3>
-          </div>
-          <div id="collapseMaterialCard" class="collapse show">
+          <div id="MaterialViewPane" class="collapse">
             <div class="card-body">
               <div class="form-horizontal">
                 <div class="mb-3">
@@ -570,14 +654,16 @@
               </div>
               <table class="table">
                 <tr>
-                  <td><label for="inputMatThickness">Thickness</label></td>
+                  <td><label for="inputMatThickness" class="control-label">
+                      Thickness</label></td>
                   <td><input type="number" step="any" id="inputMatThickness"
                              data-bind="value: thickness"
                              placeholder="Thickness">
-                    <span data-bind="text: JSCut.models.Tool.units"></span>
+                    <span data-bind="text: App.models.Tool.units"></span>
                 </td></tr>
                 <tr>
-                  <td><label for="selectMatZOrigin">Z Origin</label></td>
+                  <td><label for="selectMatZOrigin" class="control-label">
+                      Z Origin</label></td>
                   <td>
                     <select id="selectMatZOrigin" data-bind="value: zOrigin">
                       <option>Top</option>
@@ -585,31 +671,33 @@
                     </select>
                 </td></tr>
                 <tr>
-                  <td><label for="inputMatClearance">Clearance</label></td>
+                  <td><label for="inputMatClearance" class="control-label">
+                      Clearance</label></td>
                   <td><input type="number" step="any" id="inputMatClearance"
                              data-bind="value: clearance"
                              placeholder="Clearance">
-                    <span data-bind="text: JSCut.models.Tool.units"></span>
+                    <span data-bind="text: App.models.Tool.units"></span>
                 </td></tr>
               </table>
             </div>
           </div>
         </div>
-        <!-- Curve To Line Conversion, view model CurveConversionViewModel  -->
-        <div class="card" id="CurveConversionCard">
+
+        <!-- Curve Conversion view  -->
+        <div class="card" id="CurveConversionView">
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseCurveConversionCard" class="nav-link">
+                 href="#CurveConversionViewPane" class="nav-link">
                 Curve To Line Conversion</a>
             </h3>
           </div>
-          <div id="collapseCurveConversionCard" class="collapse show">
+          <div id="CurveConversionViewPane" class="collapse">
             <div class="card-body">
               <div class="form-horizontal">
                 <table class="table">
                   <tr>
-                    <td><label for="inputMinNumSegments">
+                    <td><label for="inputMinNumSegments" class="control-label">
                         Minimum Segments</label></td>
                     <td colspan="2">
                       <input type="number" id="inputMinNumSegments"
@@ -617,8 +705,10 @@
                              placeholder="Segments">
                   </td></tr>
                   <tr>
-                    <td><label for="inputMinSegmentLength">
-                        Minimum Segment Length</label>
+                    <td>
+                      <label for="inputMinSegmentLength" class="control-label">
+                        Minimum Segment Length
+                      </label>
                     </td>
                     <td>
                       <input type="number" step="any"
@@ -626,79 +716,7 @@
                              data-bind="value: curveMinSegLen"
                              placeholder="Length">
                     </td><td>
-                      <span data-bind="text: JSCut.models.Tool.units"></span>
-                  </td></tr>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Gcode Generation, view model GcodeConversionViewModel -->
-        <div class="card" id="GcodeConversionCard">
-          <div class="card-header">
-            <h3 class="card-title">
-              <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#collapseGcodeConversionCard" class="nav-link">
-                Gcode Generation</a>
-            </h3>
-          </div>
-          <div id="collapseGcodeConversionCard" class="collapse show">
-            <div class="card-body">
-              <div class="form-horizontal">
-                <table class="table">
-                  <tr>
-                    <td colspan="2">
-                      <label for="gcodeUnits" class="control-label">
-                        Gcode Units
-                      </label>
-                    </td>
-                    <td>
-                      <select id="gcodeUnits" data-bind="value: units">
-                        <option>mm</option>
-                        <option>inch</option>
-                      </select>
-                  </td></tr>
-                  <tr id="gcodeCoords">
-                    <td>
-                      <label for="gcodeOrigin" class="control-label">
-                        Origin
-                      </label>
-                    </td>
-                    <td colspan="2">
-                      <select id="gcodeOrigin" data-bind="value: origin">
-                        <option>Bottom left</option>
-                        <option>Top left</option>
-                      </select>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colspan="2">
-                      <label for="gcodeReturn00">Return to 0,0 at end</label>
-                    <td>
-                      <input id="gcodeReturn00" type="checkbox"
-                             data-bind="checked: returnTo00" />
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><label for="gcodeOffsetX">Offset</label></td>
-                    <td>
-                      <input type="number" step="any" id="gcodeOffsetX"
-                             data-bind="value: offsetX">
-                    </td>
-                    <td>
-                      <input type="number" step="any" id="gcodeOffsetY"
-                             data-bind="value: offsetY">
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><label class="control-label">Min</label></td>
-                    <td><span id="gcodeMinX" data-bind="text: bbMinX" /></td>
-                    <td><span id="gcodeMinY" data-bind="text: bbMinY" /></td>
-                  </tr>
-                  <tr>
-                    <td><label class="control-label">Max</label></td>
-                    <td><span id="gcodeMaxX" data-bind="text: bbMaxX" />
-                    <td><span id="gcodeMaxY" data-bind="text: bbMaxY" />
+                      <span data-bind="text: App.models.Tool.units"></span>
                   </td></tr>
                 </table>
               </div>
@@ -733,34 +751,25 @@
       they pass over tabs</div>
     /CPP-->
     <!-- Gcode Generation -->
-    <div name="gcodeZeroLowerLeft">
-      Changes the X and Y Offset values so that 0,0 is at the
-      lower-left corner of all tool paths. <b>CAUTION</b> this sets
-      the origin relative to the rendered toolpaths, and <b>not</b>
-      the area of the input SVG.</div>
-    <div name="gcodeZeroCenter">
-      Changes the X and Y Offset values so that 0,0 is at the center
-      of all tool paths. <b>CAUTION</b> this sets the origin relative
-      to the rendered toolpaths, and <b>not</b> the area of the input SVG.
+    <div name="gcodeUnits">
+      The units used by the machine the Gcode is targeted for. The Gcode
+      will try to switch the machine into these units using G20/G21, so
+      you should only need to change this unless the machine doesn't support
+      these codes (or you are more comfortable thinking in inches!)
     </div>
-    <div name="gcodeFlipY">
-      Flip the Y axis. By default the Y axis origin is at the top, and
-      gcode coordinates are generated as negative numbers. This will
-      reverse this so that Y values increase. <b>CAUTION</b> this will
-      flip the SVG image around the vertical axis.
+    <div name="gcodeOrigin">
+      Set the machine origin to be at either the bottom left corner of the
+      SVG page, or the bottom left corner of the bounding box around
+      all the chosen operations.
     </div>
+    <div name="gcodeExtraOffsetX">
+      Extra X offset of the work origin from the machine origin</div>
+    <div name="gcodeExtraOffsetY">
+      Extra Y offset of the work origin from the machine origin</div>
+    <div name="gcodeWidth">Width of the work.</div>
+    <div name="gcodeHeight">Height of the work</div>
     <div name="gcodeReturn00">Move the tool to 0,0 after the last
       operation.</div>
-    <div name="gcodeOffsetX">Amount to add to gcode X coordinates</div>
-    <div name="gcodeOffsetY">Amount to add to gcode Y coordinates</div>
-    <div name="gcodeMinX">Minimum X coordinate in gcode. If this is out
-      of range of your machine then adjust X Offset.</div>
-    <div name="gcodeMaxX">Maximum X coordinate in gcode. If this is out
-      of range of your machine then adjust X Offset.</div>
-    <div name="gcodeMinY">Minimum Y coordinate in gcode. If this is out
-      of range of your machine then adjust Y Offset.</div>
-    <div name="gcodeMaxY">Maximum Y coordinate in gcode. If this is out
-      of range of your machine then adjust Y Offset.</div>
     <!-- material -->
     <div name="inputMatThickness">How thick is the material</div>
     <div name="inputMatClearance">How high the tool moves over the material.
@@ -771,10 +780,11 @@
         here</p></div>
     <div name="opEnabled">Whether this operation is enabled</div>
     <div name="opGenerate">Generate toolpath for operation</div>
-    <div name="opName">right</div>
-    <div name="opRamp">right</div>
-    <div name="opCombine">right</div>
-    <div name="opDirection">right</div>
+    <div name="opName">Name used in gcode comments</div>
+    <div name="opRamp">Ramp the cutter in gradually instead of plunging straight down</div>
+    <div name="opCombine">How to combine multiple paths into this operation</div>
+    <div name="opDirection">What direction the cutter should travel.
+      See README for an explanation.</div>
     <div name="opCutDepth">How deep this operation should cut in total</div>
     <div name="opVMaxDepth">Maximum depth this operation should cut.
       <p class="bg-danger">not implemented yet; this is ignored.</p></div>
@@ -799,6 +809,6 @@
   <script src="node_modules/bootstrap-slider/dist/bootstrap-slider.js"></script>
   <script src="node_modules/clipper-lib/clipper.js"></script>
   <script src="node_modules/file-saver/dist/FileSaver.js"></script>
-  <script type="module" src="js/jscut.js"></script>
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

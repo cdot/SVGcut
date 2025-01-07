@@ -1,4 +1,4 @@
-/* global JSCut */
+/* global App */
 
 import * as mat4 from "gl-matrix/mat4.js";
 

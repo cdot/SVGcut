@@ -4,18 +4,18 @@
 //import "knockout";
 /* global ko */
 
-/* global JSCut */
+/* global App */
 import { ViewModel } from "./ViewModel.js";
 
 class MiscViewModel extends ViewModel {
 
   constructor() {
     super();
-    this.debug = ko.observable(JSCut.options.debug);
+    this.debug = ko.observable(App.options.debug);
     this.saveSettingsFilename = ko.observable("settings.jscut");
     this.loadLocalStorageFilename = ko.observable("settings.jscut");
     this.localStorageSettings = ko.observableArray([]);
-    // SMELL: the following should be part of GcodeConversion, but are
+    // SMELL: the following should be part of GcodeGeneration, but are
     // only relevant to calls out to CPP
     //CPP this.loadedCamCpp = ko.observable(false);
     //CPP this.camCppError = ko.observable("");
@@ -27,15 +27,15 @@ class MiscViewModel extends ViewModel {
   initialise() {
     ko.applyBindings(
       this,
-      document.getElementById("save-settings-modal"));
+      document.getElementById("SaveSettingsModal"));
 
     ko.applyBindings(
       this,
-      document.getElementById("load-local-storage-settings-modal"));
+      document.getElementById("LoadSettingsFromLocalModal"));
 
     ko.applyBindings(
       this,
-      document.getElementById("delete-local-storage-settings-modal"));
+      document.getElementById("DeleteSettingsFromLocalModal"));
   }
 
   /**
@@ -53,27 +53,27 @@ class MiscViewModel extends ViewModel {
   saveSettingsInLocalStorage() {
     let settings = JSON.parse(localStorage.getItem("settings")) ?? {};
     const fn = this.saveSettingsFilename();
-    settings[fn] = JSCut.toJson();
+    settings[fn] = App.toJson();
     localStorage.setItem("settings", JSON.stringify(settings));
-    this.hideModal('save-settings-modal');
+    this.hideModal('SaveSettingsModal');
     alert(`Settings saved in browser as '${fn}'`);
   }
 
   saveSettingsInLocalFile() {
-    const json = JSON.stringify(JSCut.toJson());
+    const json = JSON.stringify(App.toJson());
     const blob = new Blob([json], {type: 'text/json'});
     const fn = this.saveSettingsFilename();
     saveAs(blob, fn);
-    this.hideModal('save-settings-modal');
+    this.hideModal('SaveSettingsModal');
     alert(`Settings saved in file '${fn}'`);
   }
 
   loadSettingsFromLocalStorage() {
     const settings = JSON.parse(localStorage.getItem("settings"));
     const json = settings[this.models.Misc.loadLocalStorageFilename()];
-    JSCut.fromJson(json);
-    JSCut.updateSvgSize();
-    this.hideModal('load-local-storage-settings-modal');
+    App.fromJson(json);
+    App.updateSvgSize();
+    this.hideModal('LoadSettingsFromLocalModal');
   }
 
   deleteSettingsFromLocalStorage() {
@@ -81,7 +81,7 @@ class MiscViewModel extends ViewModel {
     const name = this.loadLocalStorageFilename();
     delete settings[name];
     localStorage.setItem("settings", JSON.stringify(settings));
-    this.hideModal('delete-local-storage-settings-modal');
+    this.hideModal('DeleteSettingsFromLocalModal');
     alert(
       `Deleted "${name}" from browser local storage`, "alert-info");
   }

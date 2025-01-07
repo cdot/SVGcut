@@ -47,7 +47,7 @@ class CurveConversionViewModel extends ViewModel {
   initialise() {
     super.addPopovers(popovers);
 
-    ko.applyBindings(this, document.getElementById("CurveConversionCard"));
+    ko.applyBindings(this, document.getElementById("CurveConversionView"));
   }
 
   // @override

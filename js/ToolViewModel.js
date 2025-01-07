@@ -1,7 +1,7 @@
 // import "knockout";
 /* global ko */
 
-/* global JSCut */
+/* global App */
 
 import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
@@ -22,31 +22,64 @@ class ToolViewModel extends ViewModel {
   constructor() {
     super();
 
+    /**
+     * Units in use e.g. "mm". The Tool model has the units used by
+     * everything other than the Gcode converter.
+     * @member {string}
+     */
+    this.units = ko.observable("mm");
+
+    /**
+     * Unit converter in the tool model. Shared by everything else.
+     * SMELL: this really should be in a "settings" model.
+     */
     this.unitConverter = new UnitConverter(this.units);
 
-    // Fraction of the tool diameter
+    /**
+     * Fraction of the tool diameter.
+     * @member {number}
+     */
     this.stepover = ko.observable(0.4);
 
-    // Tool diameter
-    this.diameter = ko.observable(3 /*mm*/);
+    /**
+     * Tool diameter
+     * @member {number}
+     */
+    this.diameter = ko.observable(this.unitConverter.fromUnits(3, "mm"));
     this.unitConverter.add(this.diameter);
 
-    // Depth of each tool pass
-    this.passDepth = ko.observable(3 /*mm*/);
+    /**
+     * Depth of each tool pass
+     * @member {number}
+     */
+    this.passDepth = ko.observable(this.unitConverter.fromUnits(3, "mm"));
     this.unitConverter.add(this.passDepth);
 
-    // Rapid movement rate
-    this.rapidRate = ko.observable(2500 /*mm/min*/);
+    /**
+     * Rapid movement rate
+     * @member {number}
+     */
+    this.rapidRate = ko.observable(this.unitConverter.fromUnits(2500, "mm"));
     this.unitConverter.add(this.rapidRate);
 
-    // Tool plunge rate
-    this.plungeRate = ko.observable(100/*mm/min*/);
+    /**
+     * Tool plunge rate
+     * @member {number}
+     */
+   this.plungeRate = ko.observable(this.unitConverter.fromUnits(100, "mm"));
     this.unitConverter.add(this.plungeRate);
 
-    // Tool cut rate
-    this.cutRate = ko.observable(1000 /*mm/min*/);
+    /**
+     * Tool cut rate
+     * @member {number}
+     */
+    this.cutRate = ko.observable(this.unitConverter.fromUnits(1000, "mm"));
     this.unitConverter.add(this.cutRate);
 
+    /**
+     * Tool v-bit angle
+     * @member {number}
+     */
     this.angle = ko.observable(180 /*degrees*/);
     this.angle.subscribe(newValue => {
       if (newValue <= 0 || newValue > 180)
@@ -57,7 +90,7 @@ class ToolViewModel extends ViewModel {
   // @override
   initialise() {
     this.addPopovers(popovers);
-    ko.applyBindings(this, document.getElementById("ToolCard"));
+    ko.applyBindings(this, document.getElementById("ToolView"));
   }
 
   /**
@@ -67,20 +100,20 @@ class ToolViewModel extends ViewModel {
    */
   getCamArgs() {
     const result = {
-      diameter: this.diameter.toUnits("jscut"),
-      passDepth: this.passDepth.toUnits("jscut"),
+      diameter: this.diameter.toUnits("internal"),
+      passDepth: this.passDepth.toUnits("internal"),
       stepover: Number(this.stepover())
     };
     if (result.diameter <= 0) {
-      JSCut.showAlert("Tool diameter must be greater than 0", "alert-danger");
+      App.showAlert("Tool diameter must be greater than 0", "alert-danger");
       return null;
     }
     if (result.stepover <= 0) {
-      JSCut.showAlert("Tool stepover must be geater than 0", "alert-danger");
+      App.showAlert("Tool stepover must be geater than 0", "alert-danger");
       return null;
     }
     if (result.stepover > 1) {
-      JSCut.showAlert(
+      App.showAlert(
         "Tool stepover must be less than or equal to 1", "alert-danger");
       return null;
     }

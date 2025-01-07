@@ -2,7 +2,7 @@
 
 // import "knockout";
 /* global ko */
-/* global JSCut */
+/* global App */
 
 import { ViewModel } from "./ViewModel.js";
 
@@ -146,7 +146,7 @@ class OperationViewModel extends ViewModel {
 
     /**
      * Svg path generated to show the tool path. Will be held in
-     * JSCut.toolPathsSvgGroup
+     * App.toolPathsSvgGroup
      * @member {SVGElement}
      * @private
      */
@@ -158,7 +158,7 @@ class OperationViewModel extends ViewModel {
      */
     this.cutDepth = ko.observable(0);
     unitConverter.add(this.cutDepth);
-    this.cutDepth(JSCut.models.Tool.passDepth());
+    this.cutDepth(App.models.Tool.passDepth());
 
     /**
      * Amount of material to leave uncut
@@ -189,7 +189,7 @@ class OperationViewModel extends ViewModel {
       { id: "opRamp" },
       { id: "opCombine" },
       { id: "opDirection" },
-      { id: "opVMaxDepth" },
+ //CPP     { id: "opVMaxDepth" },
       { id: "opMargin" },
       { id: "opWidth" }
     ], nodes);
@@ -205,7 +205,7 @@ class OperationViewModel extends ViewModel {
   removeOperation() {
     this.removeCombinedGeometrySvg();
     this.removeToolPaths();
-    JSCut.models.Operations.removeOperation(this);
+    App.models.Operations.removeOperation(this);
   }
 
   /**
@@ -226,6 +226,18 @@ class OperationViewModel extends ViewModel {
       this.toolPathSvg = null;
       this.toolPaths([]);
     }
+  }
+
+  /**
+   * Get the width of the path created by the tool as it cuts
+   * @return {number} in internal units
+   */
+  toolPathWidth() {
+    const td = App.models.Tool.diameter.toUnits("internal");
+    const width = this.width.toUnits("internal");
+    if (width < td)
+      return td;
+    return width;
   }
 
   /**
@@ -272,7 +284,7 @@ class OperationViewModel extends ViewModel {
     let previewGeometry = this.combinedGeometry;
 
     if (previewGeometry.length != 0) {
-      let off = this.margin.toUnits("jscut");
+      let off = this.margin.toUnits("internal");
       if (this.operation() == "Pocket"
           //CPP || this.operation() == "V Pocket"
           || this.operation() == "Inside")
@@ -282,18 +294,13 @@ class OperationViewModel extends ViewModel {
       }
 
       if (this.operation() == "Inside" || this.operation() == "Outside") {
-        const toolCamArgs = JSCut.models.Tool.getCamArgs();
-        if (toolCamArgs != null) {
-          let width = this.width.toUnits("jscut");
-          if (width < toolCamArgs.diameter)
-            width = toolCamArgs.diameter;
-          if (this.operation() == "Inside")
-            previewGeometry = ClipperPaths.diff(
-              previewGeometry, ClipperPaths.offset(previewGeometry, -width));
-          else
-            previewGeometry = ClipperPaths.diff(
-              ClipperPaths.offset(previewGeometry, width), previewGeometry);
-        }
+        const width = this.toolPathWidth();
+        if (this.operation() == "Inside")
+          previewGeometry = ClipperPaths.diff(
+            previewGeometry, ClipperPaths.offset(previewGeometry, -width));
+        else
+          previewGeometry = ClipperPaths.diff(
+            ClipperPaths.offset(previewGeometry, width), previewGeometry);
       }
     }
 
@@ -301,22 +308,24 @@ class OperationViewModel extends ViewModel {
       const path = SnapPaths.fromInternal(previewGeometry);
       if (path != null) {
         // Add the new geometry to the global SVG group
-        this.combinedGeometrySvg = JSCut.cgSvgGroup
+        this.combinedGeometrySvg = App.cgSvgGroup
         .path(path)
         .attr("class", "combinedGeometry");
       }
     }
 
-    if (JSCut.options.profile)
+    if (App.options.profile)
       console.debug(`recombine took ${Date.now() - startTime}`);
 
     this.enabled(true);
   }
 
+  /**
+   * Generate the tool path(s) for this operation. The tool paths
+   * are type CamPath and are written to `this.toolPaths`.
+   */
   generateToolPath() {
-    const toolCamArgs = JSCut.models.Tool.getCamArgs();
-    if (toolCamArgs == null)
-      return;
+    const toolCamArgs = App.models.Tool.getCamArgs();
 
     const startTime = Date.now();
     console.debug("generateToolPath...");
@@ -326,7 +335,7 @@ class OperationViewModel extends ViewModel {
 
     let geometry = this.combinedGeometry;
 
-    let off = this.margin.toUnits("jscut");
+    let off = this.margin.toUnits("internal");
     if (this.operation() == "Pocket"
         //CPP || this.operation() == "V Pocket"
         || this.operation() == "Inside")
@@ -343,13 +352,13 @@ class OperationViewModel extends ViewModel {
       break;
     /* CPP
     case "V Pocket":
-      paths = Cam.vPocket(geometry, JSCut.models.Tool.angle(),
-        toolCamArgs.passDepthClipper, this.cutDepth.toUnits("jscut"),
+      paths = Cam.vPocket(geometry, App.models.Tool.angle(),
+        toolCamArgs.passDepthClipper, this.cutDepth.toUnits("internal"),
         toolCamArgs.stepover, this.direction() == "Climb"));
       break;
     */
     case "Inside": case "Outside":
-      let width = this.width.toUnits("jscut");
+      let width = this.width.toUnits("internal");
       if (width < toolCamArgs.diameter)
         width = toolCamArgs.diameter;
       paths = Cam.outline(geometry, toolCamArgs.diameter,
@@ -366,12 +375,12 @@ class OperationViewModel extends ViewModel {
     const path = SnapPaths.fromInternal(
       ClipperPaths.fromCamPaths(this.toolPaths()));
     if (path != null && path.length > 0) {
-      this.toolPathSvg = JSCut.toolPathsSvgGroup
+      this.toolPathSvg = App.toolPathsSvgGroup
       .path(path)
       .attr("class", "toolPath");
     }
 
-    if (JSCut.options.profile)
+    if (App.options.profile)
       console.debug(`generateToolPath took ${Date.now() - startTime}`);
 
     this.enabled(true);

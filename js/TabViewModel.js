@@ -3,7 +3,7 @@
 //import "knockout";
 /* global ko */
 
-/* global JSCut */
+/* global App */
 
 import * as ClipperPaths from "./ClipperPaths.js";
 import * as SnapPaths from "./SnapPaths.js";
@@ -24,7 +24,7 @@ export class TabViewModel extends ViewModel {
     this.combinedGeometry = [];
     this.combinedGeometrySvg = null;
 
-    JSCut.models.Tabs.unitConverter.addComputed(this.margin);
+    App.models.Tabs.unitConverter.addComputed(this.margin);
     this.enabled.subscribe(
       () => document.dispatchEvent(new Event("toolPathsChanged")));
 
@@ -71,7 +71,7 @@ export class TabViewModel extends ViewModel {
               : ClipperLib.PolyFillType.pftEvenOdd;
         all.push(ClipperPaths.simplifyAndClean(geometry, fillRule));
       } catch (e) {
-        JSCut.showAlert(e, "alert-warning");
+        App.showAlert(e, "alert-warning");
       }
     }
 
@@ -92,7 +92,7 @@ export class TabViewModel extends ViewModel {
     if (this.combinedGeometry.length != 0) {
       const path = SnapPaths.fromInternal(this.combinedGeometry);
       if (path != null)
-        this.combinedGeometrySvg = JSCut.group.Tabs.path(path)
+        this.combinedGeometrySvg = App.group.Tabs.path(path)
       .attr("class", "tabsGeometry");
     }
 

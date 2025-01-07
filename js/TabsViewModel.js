@@ -4,7 +4,7 @@
 //import "snapsvg";
 /* global Snap */
 
-/* global JSCut */
+/* global App */
 
 import { ViewModel } from "./ViewModel.js";
 import { TabViewModel } from "./TabViewModel.js";
@@ -33,19 +33,19 @@ class TabsViewModel extends ViewModel {
   // @override
   initialise() {
     this.addPopovers([{ id: "tabsMaxCutDepth" } ]);
-    ko.applyBindings(this, document.getElementById("TabsCard"));
+    ko.applyBindings(this, document.getElementById("TabsView"));
   }
 
   addTab() {
     const rawPaths = [];
 
-    JSCut.models.Selection.getSelection().forEach(element => {
+    App.models.Selection.getSelection().forEach(element => {
       rawPaths.push({
         'path': Snap.parsePathString(element.attr('d')),
         'nonzero': element.attr("fill-rule") != "evenodd"
       });
     });
-    JSCut.models.Selection.clearSelection();
+    App.models.Selection.clearSelection();
 
     const tab = new TabViewModel(rawPaths, false);
     this.tabs.push(tab);

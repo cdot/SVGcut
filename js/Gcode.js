@@ -1,4 +1,4 @@
-/* global JSCut */
+/* global App */
 
 /**
  * Gcode utilities
