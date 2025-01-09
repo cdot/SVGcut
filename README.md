@@ -64,21 +64,24 @@ You can choose for the machine origin to correspond to the bottom left of the SV
 
 <img src="/images/coords.svg" style="width:50%;height: auto"></img>
 
-When we load up SVG2Gcode and generate Gcode for this drawing with the "Machine Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
+When we load up SVG2Gcode and generate Gcode for this drawing with Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
 
-If we now switch the machine origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
+If we now switch Origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
 
-As well as the "SVG page" and "Bounding box" origins, you can also generate Gcode to add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut. This is achieved using G codes - you are recommended to read [The Machining Doctor](https://www.machiningdoctor.com/gcodes/g54/) for more.
+As well as the "SVG page" and "Bounding box" origins, you can also add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut.
 
 Now you can click "Generate" on the Operations you created above to generate the actual tool paths, and the Gcode for those paths.
 
 ## Previewing the Gcode
 ### Simulator
-Once you have generated the Gcode you can preview it in the "Simulate" pane. This really is Gcode simulator; it reloads the generated Gcode, and displays the paths the tool will follow.
+Once you have generated the Gcode you can preview it in the "Simulate" pane. This really is a Gcode simulator; it reloads the generated Gcode, and displays the paths the tool will follow.
 
 ### Code preview
 You can also use the "View Gcode" button in the "Gcode Generation" pane to open
 a text view on the Gcode.
+
+## Saving the Gcode
+Once you are happy with the Gcode save it to a file. You can call it what you want, though if you use the extension `.nc` it will be easier to find in Candle.
 
 # Relationship to jscut
 SVG2Gcode is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVG2Gcode has fixes for some of these, and more.
