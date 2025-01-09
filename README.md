@@ -62,7 +62,7 @@ The application handles most of the details of converting between these coordina
 
 You can choose for the machine origin to correspond to the bottom left of the SVG page, or to the bottom left of the bounding box around your selected operations. For example, let's say we want to carve the Sanskrit word "Love". We have drawn it on a 80x60mm page. The top left corner of the bounding box of the drawing is at (10,15)mm while the bottom right corner is at (70,45)mm, as shown by the green lettering.
 
-<img src="../images/coords.svg" style="width:80%;height: auto"></img>
+<img src="/images/coords.svg" style="width:80%;height: auto"></img>
 
 When we load up SVG2Gcode and generate Gcode for this drawing with the "Machine Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
 
