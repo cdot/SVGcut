@@ -7,7 +7,7 @@
 
 /* global App */
 
-import * as ClipperPaths from "./ClipperPaths.js";
+import * as InternalPaths from "./InternalPaths.js";
 import * as SnapPaths from "./SnapPaths.js";
 import { ViewModel } from "./ViewModel.js";
 
@@ -67,11 +67,11 @@ export class TabViewModel extends ViewModel {
     const all = [];
     for (const rp of this.rawPaths) {
       try {
-        const geometry = SnapPaths.tointernal(rp.path);
+        const geometry = SnapPaths.toInternal(rp.path);
         const fillRule = rp.nonzero
               ? ClipperLib.PolyFillType.pftNonZero
               : ClipperLib.PolyFillType.pftEvenOdd;
-        all.push(ClipperPaths.simplifyAndClean(geometry, fillRule));
+        all.push(InternalPaths.simplifyAndClean(geometry, fillRule));
       } catch (e) {
         App.showAlert(e, "alert-warning");
       }
@@ -82,13 +82,13 @@ export class TabViewModel extends ViewModel {
     else {
       this.combinedGeometry = all[0];
       for (let i = 1; i < all.length; ++i)
-        this.combinedGeometry = ClipperPaths.clip(
+        this.combinedGeometry = InternalPaths.clip(
           this.combinedGeometry, all[i], ClipperLib.ClipType.ctUnion);
     }
 
     const off = this.margin.toUnits("internal");
     if (off != 0)
-      this.combinedGeometry = ClipperPaths.offset(
+      this.combinedGeometry = InternalPaths.offset(
         this.combinedGeometry, off);
 
     if (this.combinedGeometry.length != 0) {

@@ -8,11 +8,22 @@ const CLEAN_POLY_DIST = 1;
 const ARC_TOLERANCE = 2.5;
 
 /**
+ * Functions for manipulating paths in internal coordinates.
+ * @namespace InternalPaths
+ */
+
+/**
+ * A 2D point in internal units
  * @typedef {object} InternalPoint
  * @property {number} X X coord in internal units (100K to the inch)
  * @property {number} Y Y coord in internal units
- *
+ * @memberof InternalPaths
+ */
+
+/**
+ * A simple array of 2D points in internal units.
  * @typedef {InternalPoint[]} InternalPath
+ * @memberof InternalPaths
  */
 
 /**
@@ -20,6 +31,7 @@ const ARC_TOLERANCE = 2.5;
  * @param {InternalPath} geometry
  * @param {ClipperLib.PolyFillType} fillRule
  * @return {InternalPath} cleaned up geometry
+ * @memberof InternalPaths
  */
 export function simplifyAndClean(geometry, fillRule) {
   geometry = ClipperLib.Clipper.CleanPolygons(geometry, CLEAN_POLY_DIST);
@@ -33,6 +45,7 @@ export function simplifyAndClean(geometry, fillRule) {
  * @param {InternalPath[]} clipPaths clip paths
  * @param {ClipperLib.ClipType} clipType
  * @return {InternalPath[]} new geometry.
+ * @memberof InternalPaths
  */
 export function clip(clippable, clipPaths, clipType) {
   const clipper = new ClipperLib.Clipper();
@@ -49,6 +62,7 @@ export function clip(clippable, clipPaths, clipType) {
  * @param {InternalPath[]} paths1 first set of paths
  * @param {InternalPath[]} paths2 second set of paths
  * @return {InternalPath[]} new geometry.
+ * @memberof InternalPaths
  */
 export function diff(paths1, paths2) {
   return clip(paths1, paths2, ClipperLib.ClipType.ctDifference);
@@ -61,6 +75,7 @@ export function diff(paths1, paths2) {
  * @param {ClipperLib.JoinType} joinType optional path join type
  * @param {ClipperLib.EndType} endType optional path end type
  * @return {InternalPath[]} new geometry.
+ * @memberof InternalPaths
  */
 export function offset(
   paths, amount,
@@ -82,9 +97,10 @@ export function offset(
 };
 
 /**
- * Convert array of CamPath to array of Clipper path
+ * Convert array of CamPath to Internal paths
  * @param {CamPath[]} paths CamPaths
  * @return {InternalPath[]} converted paths
+ * @memberof InternalPaths
  */
 export function fromCamPaths(paths) {
   return paths.map(p => p.path);
@@ -95,6 +111,7 @@ export function fromCamPaths(paths) {
  * @param {InternalPath[]} paths paths to convert
  * @param {[]} memoryBlocks
  * return {[]} [double** cPaths, int cNumPaths, int* cPathSizes]
+ * @memberof InternalPaths
  *
 export function toCpp(paths, memoryBlocks) {
   const doubleSize = 8;
@@ -182,6 +199,7 @@ export function fromCpp(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
  * @param {InternalPoint} p2 line endpoint
  * @return {boolean} true if the line cross the bounds path, or the bounds
  * path is null.
+ * @memberof InternalPaths
  */
 export function crosses(bounds, p1, p2) {
   if (bounds == null)
@@ -211,6 +229,7 @@ export function crosses(bounds, p1, p2) {
  * @param {InternalPath} bounds
  * @param {InternalPath[]} paths
  * @return {InternalPath[]} merged paths
+ * @memberof InternalPaths
  */
 export function mergePaths(bounds, paths) {
   if (paths.length == 0)

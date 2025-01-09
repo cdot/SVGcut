@@ -23,11 +23,15 @@ class OperationsViewModel extends ViewModel {
   constructor(unitConverter) {
     super(unitConverter);
 
+    /**
+     * List of operations
+     * @member {observableArray.OperationViewModel}
+     */
     this.operations = ko.observableArray();
 
     /**
      * Bounding box for all operation tool paths in internal units
-     * @member {Rect}
+     * @member {observable.<Rect>}
      */
     this.boundingBox = ko.observable(new Rect());
 
@@ -106,19 +110,15 @@ class OperationsViewModel extends ViewModel {
     if (newBB)
       this.boundingBox(newBB);
   }
-  
-  tutorialGenerateToolpath() {
-    if (this.operations().length > 0)
-      App.tutorial(4, 'Click "Generate".');
-  };
 
   addOperation() {
     // Get the paths from the current selection
     const rawPaths = [];
     App.models.Selection.getSelection().forEach(element => {
+      // see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d
       const ps = element.attr('d');
+      // SMELL: this should be a CamPath, shouldn't it?
       rawPaths.push({ // @see OperationViewModel.RawPath
-        // @see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d
         path: Snap.parsePathString(ps),
         nonzero: element.attr("fill-rule") != "evenodd"
       });
@@ -128,10 +128,12 @@ class OperationsViewModel extends ViewModel {
     // Construct the operation view model
     const op = new OperationViewModel(this.unitConverter, rawPaths);
     this.operations.push(op);
+    // Give it a random name
+    op.name(`Op${this.operations.length + 1}`);
     op.enabled.subscribe(() => this.updateBB());
     op.toolPaths.subscribe(() => this.updateBB());
 
-    this.tutorialGenerateToolpath();
+    App.tutorial(4);
   };
 
   /**
@@ -151,11 +153,11 @@ class OperationsViewModel extends ViewModel {
   }
 
   // @override
-  get jsonFieldName() { return "operations"; }
+  jsonFieldName() { return "operations"; }
 
   // @override
   toJson() {
-    return { 
+    return {
       operations: this.operations().map(op => op.toJson())
     };
   }

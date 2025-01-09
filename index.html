@@ -22,6 +22,7 @@
   </script>
 </head>
 <body>
+
   <!-- Save Settings Modal - model is MiscViewModel -->
   <div class="modal fade" id="SaveSettingsModal" role="dialog"
        aria-labelledby="ssModalTitle" aria-hidden="true">
@@ -33,14 +34,16 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <input data-bind="value: saveSettingsFilename">
-          <p>Have any default settings? Name them "preload.jscut"
-          and click "In Browser". jscut will automatically load this each
-          time it starts.</p>
+          <input data-bind="value: settingsFilename">
+          <p>
+            To save new default settings, name them "svg2gcode_defaults"
+            and click "In Browser". This will be automatically loaded
+            on startup.
+          </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  data-bind="click: saveSettingsInLocalStorage">
+                  data-bind="click: saveSettingsInBrowser">
             In Browser
           </button>
           <button type="button" class="btn btn-primary"
@@ -52,8 +55,9 @@
     </div>
   </div>
 
-  <!-- Load settings from Local Storage Modal, model is MiscViewModel -->
-  <div class="modal fade" id="LoadSettingsFromLocalModal"
+  <!-- Load settings from the browser Local Storage Modal.
+       Model is MiscViewModel -->
+  <div class="modal fade" id="LoadSettingsFromBrowserModal"
        role="dialog" aria-labelledby="lslModalTitle" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -63,20 +67,20 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p data-bind="text: checkLocalStorageForSettings()"></p>
+          <p data-bind="text: checkBrowserForSettings()"></p>
           <p>Select settings:
             <select id="selectSettings"
-                    data-bind="options: localStorageSettings, value: loadLocalStorageFilename">
+                    data-bind="options: browserSettings, value: settingsKey">
             </select>
           </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  onclick="App.hideModal('LoadSettingsFromLocalModal');App.showModal('DeleteSettingsFromLocalModal')">
+                  data-bind="click: gotoBrowserDelete">
             Delete
           </button>
           <button type="button" class="btn btn-primary"
-                  data-bind="loadSettingsFromLocalStorage()">
+                  data-bind="click: loadSettingsFromBrowser">
             Load
           </button>
         </div>
@@ -84,8 +88,8 @@
     </div>
   </div>
 
-  <!-- Delete settings from Local Storage Modal, model is MiscViewModel -->
-  <div class="modal fade" id="DeleteSettingsFromLocalModal"
+  <!-- Delete settings from Browser Modal, model is MiscViewModel -->
+  <div class="modal fade" id="DeleteSettingsFromBrowserModal"
        role="dialog" aria-labelledby="dsModalLabel" aria-hidden="true">
     <div class="modal-dialog alert-danger">
       <div class="modal-content">
@@ -95,13 +99,11 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <p>Delete "<b>
-              <span data-bind="text: loadLocalStorageFilename"></span>
-            </b>"?</p>
+          Delete "<b><span data-bind="text: settingsKey"></span></b>"?
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  data-bind="click: deleteSettingsFromLocalStorage">
+                  data-bind="click: deleteSettingsFromBrowser">
             Delete</button>
         </div>
       </div>
@@ -204,14 +206,14 @@
                   <div style="display: table-cell" class="op-table-mid">
                     <label  class="control-label"
                             data-bind="visible: operation()!='V Pocket'">
-                      <span data-bind="text: App.models.Tool.units"></span>
+                      <span data-bind="text: App.models.Misc.units"></span>
                     </label>
                   </div>
                   <div style="display: table-cell">
-                    <a id="opGenerate" href="#"
+                    <button id="opGenerate" class="btn btn-secondary btn-sm"
                        data-bind="click: generateToolPath">
                       Generate
-                    </a>
+                    </button>
                   </div>
                 </div>
                 <!--CPP
@@ -299,10 +301,10 @@
                       </tr>
                       <tr>
                         <td colspan="2">
-                          <a href="#"
+                          <button href="#" class="btn btn-secondary btn-sm"
                              data-bind="click: removeOperation">
                             Delete Operation
-                          </a>
+                          </button>
                         </td>
                       </tr>
                     </table>
@@ -365,8 +367,11 @@
                            step="any" data-bind="value: margin">
                   </div>
                   <div style="display: table-cell; width: 1px; padding-right: 5px">
-                    <a href="#" data-bind="click: $root.removeTab">
-                      Delete</a></div>
+                    <button class="btn btn-secondary btn-sm"
+                            data-bind="click: $root.removeTab">
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -440,7 +445,7 @@
                     </td>
                   </tr>
                 </table>
-                <button class="btn btn-primary"
+                <button class="btn btn-secondary btn-sm"
                         data-bind="enable: haveGcode(), click: viewGcode">
                   View Gcode
                 </button>
@@ -456,7 +461,7 @@
         <!-- top bar (SMELL: should be bound to MiscViewModel?) -->
         <nav class="navbar navbar-expand-sm" role="navigation">
           <div class="container-fluid">
-            <ul class="navbar-nav">
+            <ul class="navbar-nav">             
               <li class="nav-item">
                 <a href="#" class="nav-link choose-file">
                   Open SVG<input type="file" id="choose-svg-file" multiple>
@@ -465,7 +470,7 @@
               <li class="nav-item dropdown">
                 <a href="#" class="nav-link dropdown-toggle"
                    data-bs-toggle="dropdown">
-                  Open Settings<strong class="caret"></strong>
+                  Load Settings<strong class="caret"></strong>
                 </a>
                 <ul class="dropdown-menu">
                   <li class="dropdown-item">
@@ -475,7 +480,8 @@
                     </a>
                   </li>
                   <li class="dropdown-item">
-                    <a href="#" class="nav-link choose-file">Local
+                    <a href="#" class="nav-link choose-file">
+                      Local File
                       <input type="file" id="choose-settings-file">
                     </a>
                   </li>
@@ -494,6 +500,15 @@
                 </a>
               </li>
             </ul>
+            <div style="float:right">
+              <label for="pickUnits" class="control-label">
+                Units
+              </label>
+              <select id="pickUnits" data-bind="value: units">
+                <option>mm</option>
+                <option>inch</option>
+              </select>
+            </div>
           </div>
         </nav>
         <!-- svg views -->
@@ -501,11 +516,14 @@
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
               <a class="nav-link active" href="#svgPanel"
-                 data-bs-toggle="tab">Toolpaths</a>
+                 data-bs-toggle="tab">
+                Toolpaths
+              </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="#simulatePanel" data-bs-toggle="tab">
-                Simulate</a>
+                Simulate
+              </a>
             </li>
           </ul>
           <div class="tab-content">
@@ -558,75 +576,74 @@
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
                  href="#ToolViewPane" class="nav-link">
-                Tool (shared for all operations)</a>
+                Tool Settings</a>
             </h3>
           </div>
           <div id="ToolViewPane" class="collapse">
             <div class="card-body">
               <table class="table">
                 <tr>
-                  <td>
-                    <label for="toolUnits" class="control-label">
-                      Units
-                    </label>
-                  </td>
-                  <td colspan="2">
-                    <select id="toolUnits" data-bind="value: units">
-                      <option>inch</option>
-                      <option>mm</option>
-                    </select>
-                  </td>
-                </tr>
-                <tr>
                   <td><label for="toolDiameter" class="control-label">
-                      Diameter</label></td>
-                  <td><span data-bind="text: units"></span></td>
-                  <td><input id="toolDiameter" type="number" step="any"
-                             data-bind="value: diameter"></td>
+                      Diameter</label>
+                  </td>
+                  <td>
+                    <input id="toolDiameter" type="number" step="any"
+                             data-bind="value: diameter">
+                    <span data-bind="text: App.models.Misc.units"></span>
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolAngle" class="control-label">
                       Angle</label></td>
-                  <td>degrees
                   <td>
                     <input id="toolAngle" type="number" step="any"
-                           data-bind="value: angle"></td>
+                           data-bind="value: angle"> &deg;
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolPassDepth" class="control-label">
                       Pass Depth</label></td>
-                  <td><span data-bind="text: units"></span></td>
-                  <td><input id="toolPassDepth" type="number" step="any"
-                             data-bind="value: passDepth">
+                  <td>
+                    <input id="toolPassDepth" type="number" step="any"
+                           data-bind="value: passDepth">
+                    <span data-bind="text: App.models.Misc.units"></span>
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolStepOver" class="control-label">
                       Step Over</label>
                   </td>
-                  <td>[0..1]</td>
-                  <td><input id="toolStepOver" type="number" step="any"
-                             data-bind="value: stepover">
+                  <td>
+                    <input id="toolStepOver" type="number" step="any"
+                           min="0" max="1"
+                           data-bind="value: stepover"> [0..1]
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolRapidRate" class="control-label">
                       Rapid</label></td>
-                  <td><span data-bind="text: units"></span>/min</td>
                   <td><input id="toolRapidRate" type="number" step="any"
-                             data-bind="value: rapidRate"></td>
+                             data-bind="value: rapidRate">
+                    <span data-bind="text: App.models.Misc.units"></span>/min
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolPlungeRate" class="control-label">
                       Plunge</label></td>
-                  <td><span data-bind="text: units"></span>/min</td>
-                  <td><input id="toolPlungeRate" type="number" step="any"
-                             data-bind="value: plungeRate"></td>
+                  <td>
+                    <input id="toolPlungeRate" type="number" step="any"
+                           data-bind="value: plungeRate">
+                    <span data-bind="text: App.models.Misc.units"></span>/min
+                  </td>
                 </tr>
                 <tr>
                   <td><label for="toolCutRate" class="control-label">
                       Cut</label></td>
-                  <td><span data-bind="text: units"></span>/min</td>
-                  <td><input id="toolCutRate" type="number" step="any"
-                             data-bind="value: cutRate"></td>
+                  <td>
+                    <input id="toolCutRate" type="number" step="any"
+                             data-bind="value: cutRate">
+                    <span data-bind="text: App.models.Misc.units"></span>/min
+                  </td>
                 </tr>
               </table>
             </div>
@@ -638,7 +655,9 @@
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#MaterialViewPane" class="nav-link">Material</a>
+                 href="#MaterialViewPane" class="nav-link">
+                Material
+              </a>
             </h3>
           </div>
           <div id="MaterialViewPane" class="collapse">
@@ -659,7 +678,7 @@
                   <td><input type="number" step="any" id="inputMatThickness"
                              data-bind="value: thickness"
                              placeholder="Thickness">
-                    <span data-bind="text: App.models.Tool.units"></span>
+                    <span data-bind="text: App.models.Misc.units"></span>
                 </td></tr>
                 <tr>
                   <td><label for="selectMatZOrigin" class="control-label">
@@ -676,7 +695,7 @@
                   <td><input type="number" step="any" id="inputMatClearance"
                              data-bind="value: clearance"
                              placeholder="Clearance">
-                    <span data-bind="text: App.models.Tool.units"></span>
+                    <span data-bind="text: App.models.Misc.units"></span>
                 </td></tr>
               </table>
             </div>
@@ -689,7 +708,8 @@
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
                  href="#CurveConversionViewPane" class="nav-link">
-                Curve To Line Conversion</a>
+                Curve To Line Conversion
+              </a>
             </h3>
           </div>
           <div id="CurveConversionViewPane" class="collapse">
@@ -701,7 +721,7 @@
                         Minimum Segments</label></td>
                     <td colspan="2">
                       <input type="number" id="inputMinNumSegments"
-                             data-bind="value: curveMinSegs"
+                             data-bind="value: minSegs"
                              placeholder="Segments">
                   </td></tr>
                   <tr>
@@ -713,10 +733,10 @@
                     <td>
                       <input type="number" step="any"
                              id="inputMinSegmentLength"
-                             data-bind="value: curveMinSegLen"
+                             data-bind="value: minSegLen"
                              placeholder="Length">
                     </td><td>
-                      <span data-bind="text: App.models.Tool.units"></span>
+                      <span data-bind="text: App.models.Misc.units"></span>
                   </td></tr>
                 </table>
               </div>
@@ -726,12 +746,20 @@
       </div>
     </div>
   </div>
+
+  <div id="tutorialSteps" style="display:none">
+    <div name="Step1">Open one or more SVG files.</div>
+    <div name="Step2">Click 1 or more paths</div>
+    <div name="Step3">Click "Create Operation" after you have finished selecting paths.</div>
+    <div name="Step4">Click "Generate" to generate Gcode for the operation.</div>
+    <div name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</div>
+  </div>
   <div id="popovers" style="display:none">
     <!-- tool -->
     <div name="toolUnits">Display units, does not affect Gcode generation.</div>
-    <div name="toolDiameter">Diameter of tool. V Pocket ignores this. Simulate GCODE also ignores Diameter if Angle &lt; 180.</div>
+    <div name="toolDiameter">Diameter of tool. The simulator ignores this if Angle &lt; 180. <!--CPP V Pocket also ignores this.--></div>
     <div name="toolAngle">Angle of V cutter. 180 for normal (flat bottom)
-      tools. V Pocket is the only operation which uses this.</div>
+      tools. <!--CPP V Pocket is the only operation which uses this.--></div>
     <div name="toolPassDepth">Maximum depth the tool should plunge each pass.
       Use a smaller pass depth for harder materials and better quality.</div>
     <div name="toolStepOver">
@@ -754,7 +782,7 @@
     <div name="gcodeUnits">
       The units used by the machine the Gcode is targeted for. The Gcode
       will try to switch the machine into these units using G20/G21, so
-      you should only need to change this unless the machine doesn't support
+      you should only need to change this if the machine doesn't support
       these codes (or you are more comfortable thinking in inches!)
     </div>
     <div name="gcodeOrigin">
@@ -778,8 +806,8 @@
     <div name="createOperationButton"><p class='bg-danger'>
         Select 1 or more objects in the "Toolpaths" tab before clicking
         here</p></div>
-    <div name="opEnabled">Whether this operation is enabled</div>
-    <div name="opGenerate">Generate toolpath for operation</div>
+    <div name="opEnabled">Enable/disable this operation. Only enabled operation are shown.</div>
+    <div name="opGenerate">Generate toolpaths and Gcode for this operation</div>
     <div name="opName">Name used in gcode comments</div>
     <div name="opRamp">Ramp the cutter in gradually instead of plunging straight down</div>
     <div name="opCombine">How to combine multiple paths into this operation</div>

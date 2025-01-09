@@ -22,12 +22,6 @@ class TabsViewModel extends ViewModel {
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth.subscribe(() =>
       document.dispatchEvent(new Event("toolPathsChanged")));
-
-    this.units.subscribe(newValue => {
-      const factor = (newValue == "inch") ? 1 / 25.4 : 25.4;
-      for (const tab of this.tabs())
-        tab.margin(tab.margin() * factor);
-    });
   }
 
   // @override
@@ -61,7 +55,7 @@ class TabsViewModel extends ViewModel {
   };
 
   // @override
-  get jsonFieldName() { return "tabs"; }
+  jsonFieldName() { return "tabs"; }
 
   // @override
   toJson() {

@@ -6,5 +6,8 @@
     "readme": "DEVELOPING.md",
     "recurse": true
   },
-  "plugins": ["plugins/markdown"]
+  "plugins": ["plugins/markdown"],
+  "markdown": {
+    "tags": ["namespace", "typedef"]
+  }
 }

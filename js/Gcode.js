@@ -2,8 +2,11 @@
 
 /* global App */
 
+import * as Cam from "./Cam.js";
+
 /**
  * Gcode utilities
+ * @namespace Gcode
  */
 
 /**
@@ -26,6 +29,7 @@
  * @param {Gcode} gcode the gcode to parse
  * @param {boolean} verbose true to enable verbose logging
  * @return {CNCPoint[]} path in machine units (no scaling is performed).
+ * @memberof Gcode
  */
 export function parse(gcode, verbose = false) {
   let startTime;
@@ -173,7 +177,220 @@ export function parse(gcode, verbose = false) {
     console.debug(
       `Gcode.parse: ${path.length} commands in ${Date.now() - startTime}`);
   }
-  
+
   return path;
 }
 
+/**
+ * Generate gcode for a set of paths. Assumes that the current Z
+ * position is safe.
+ * @param {object} args
+ * @param {CamPath[]} args.paths Paths to convert. These paths are
+ * in internal units, and will be transformed to Gcode units using the
+ * `Scale` parameters.
+ * @param {number} args.xScale Factor to convert internal units to
+ * gcode units
+ * @param {number} args.yScale Factor to convert internal units to
+ * gcode units
+ * @param {number} args.zScale Factor to convert internal units to
+ * gcode units
+ * @param {boolean} args.ramp Ramp these paths?
+ * @param {number} args.offsetX Origin offset X (Gcode units)
+ * @param {number} args.offsetY Origin ffset Y (Gcode units)
+ * @param {number} args.decimal Number of decimal places to keep
+ * in gcode
+ * @param {number} args.topZ Top of area to cut (Gcode units)
+ * @param {number} args.botZ Bottom of area to cut (Gcode units)
+ * @param {number} args.safeZ Z position to safely move over
+ * uncut areas (Gcode units)
+ * @param {number} args.passDepth Cut depth for each pass (Gcode
+ * units)
+ * @param {number} args.plungeFeed Feedrate to plunge cutter
+ * (Gcode units)
+ * @param {number} args.retractFeed Feedrate to retract cutter
+ * (Gcode units)
+ * @param {number} args.cutFeed Feedrate for horizontal cuts
+ * (Gcode units)
+ * @param {number} args.rapidFeed Feedrate for rapid moves (Gcode
+ * units)
+ *
+ * @param {boolean} args.useZ Use Z coordinates in paths?
+ * (optional, defaults to false)
+ * @param {number} args.tabGeometry Tab geometry (optional), will be
+ * defined in internal units and require scaling.
+ * @param {number} args.tabZ Z position over tabs (required if
+ * tabGeometry is not empty) (Gcode units)
+ * @return {string[]} array of Gcode lines
+ * @memberof Cam
+ */
+export function generate(args) {
+  const dec = args.decimal ?? 2;
+  const plungeF = `F${args.plungeFeed}`;
+  const cutF = `F${args.cutFeed}`;
+  const rapidF = `F${args.rapidFeed}`;
+
+  // Tab depth must be > the botZ depth of the Operation. If it isn't,
+  // then ignore the tab geometry
+  let tabGeometry = args.tabGeometry;
+  let tabZ = args.tabZ;
+  if (!tabGeometry || tabGeometry.length === 0) {
+    tabZ = args.botZ;
+  }
+  if (tabGeometry && tabZ <= args.botZ) {
+    App.showAlert(
+      "Tabs are cut deeper than the max operation depth, and will be ignored.",
+      'alert-warning');
+    tabGeometry = undefined;
+  }
+
+  const gcode = [];
+
+  const retractToSafeZ =
+        `G0 Z${args.safeZ.toFixed(dec)} ${rapidF} ; Retract`;
+
+  const retractForTabGcode =
+      `G0 Z${tabZ.toFixed(dec)} ${rapidF} ; Retract for tab`;
+
+  /// Get distance between two points
+  function dist(x1, y1, x2, y2) {
+    return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  }
+
+  // Scale and offset a internal X coordinate to gcode units
+  function getX(x) {
+    return x * args.xScale + args.offsetX;
+  }
+
+  // Scale and offset an internal Y coordinate to gcode units
+  function getY(y) {
+    return y * args.yScale + args.offsetY;
+  }
+
+  // Generate Gcode for a point, scaling internal to gcode units
+  function pt2Gcode(p, useZ) {
+    const result = [
+      `X${getX(p.X).toFixed(dec)}`,
+      `Y${getY(p.Y).toFixed(dec)}`
+    ];
+    if (useZ)
+      result.push(`Z${(p.Z * args.zScale + args.topZ).toFixed(dec)}`);
+    return result.join(" ");
+  }
+
+  let pathIndex = 0;
+  for (const path of args.paths) {
+    // paths are CamPath
+    const origPath = path.path;
+    if (origPath.length == 0)
+      continue;
+
+    const separatedPaths = tabGeometry
+          ? Cam.separateTabs(origPath, tabGeometry) // CPP
+          : [ origPath ];
+
+    gcode.push(`; Path ${pathIndex++}`);
+
+    let currentZ = args.safeZ;
+    let finishedZ = args.topZ;
+
+    while (finishedZ > args.botZ) {
+      const nextZ = Math.max(finishedZ - args.passDepth, args.botZ);
+
+      if (currentZ < args.safeZ && (!path.safeToClose || tabGeometry)) {
+        gcode.push(retractToSafeZ);
+        currentZ = args.safeZ;
+      }
+
+      currentZ = tabGeometry ? Math.max(finishedZ, tabZ) : finishedZ;
+
+      gcode.push(
+        "; Rapid to initial position",
+        `G0 ${pt2Gcode(origPath[0], false)} Z${currentZ.toFixed(dec)} ${rapidF}`);
+
+      let selectedPaths;
+      if (nextZ >= tabZ || args.useZ)
+        selectedPaths = [origPath];
+      else
+        selectedPaths = separatedPaths;
+
+      for (let selectedIndex = 0;
+           selectedIndex < selectedPaths.length; ++selectedIndex) {
+        const selectedPath = selectedPaths[selectedIndex];
+        if (selectedPath.length == 0)
+          continue;
+
+        if (!args.useZ) {
+          let selectedZ;
+          if (selectedIndex & 1)
+            selectedZ = tabZ;
+          else
+            selectedZ = nextZ;
+
+          if (selectedZ < currentZ) {
+            let executedRamp = false;
+            if (args.ramp) {
+              const minPlungeTime = (currentZ - selectedZ)
+                    / args.plungeFeed;
+              const idealDist = args.cutFeed * minPlungeTime;
+              let end;
+              let totalDist = 0;
+              for (end = 1; end < selectedPath.length; ++end) {
+                if (totalDist > idealDist)
+                  break;
+                totalDist += 2 * dist(getX(selectedPath[end - 1]),
+                                      getY(selectedPath[end - 1]),
+                                      getX(selectedPath[end]),
+                                      getY(selectedPath[end]));
+              }
+              if (totalDist > 0) {
+                gcode.push('; ramp');
+                executedRamp = true;
+                const rampPath = selectedPath.slice(0, end)
+                      .concat(selectedPath.slice(0, end - 1).reverse());
+                let distTravelled = 0;
+                for (let i = 1; i < rampPath.length; ++i) {
+                  distTravelled += dist(getX(rampPath[i - 1]),
+                                        getY(rampPath[i - 1]),
+                                        getX(rampPath[i]),
+                                        getY(rampPath[i]));
+                  const newZ = currentZ + distTravelled
+                        / totalDist * (selectedZ - currentZ);
+                  const gp = pt2Gcode(rampPath[i], false);
+                  let gc = `G1 ${gp} Z${newZ.toFixed(dec)}`;
+                  if (i == 1) {
+                    const feed = Math.min(totalDist / minPlungeTime,
+                                          args.cutFeed);
+                    gc += ` F${feed.toFixed(dec)}`;
+                  }
+                  gcode.push(gc);
+                }
+              }
+            }
+            if (!executedRamp) {
+              gcode.push('M4 ; start spindle');
+              gcode.push(
+                `G1 Z${selectedZ.toFixed(dec)} ${plungeF} ; plunge`);
+            }
+          } else if (selectedZ > currentZ) {
+            gcode.push(retractForTabGcode);
+          }
+          currentZ = selectedZ;
+        } // !args.useZ
+
+        gcode.push('; cut');
+
+        for (let i = 1; i < selectedPath.length; ++i) {
+          const gp = pt2Gcode(selectedPath[i], args.useZ);
+          gcode.push(`G1 ${gp}${i == 1 ? ` ${cutF}` : ""}`);
+        }
+      } // selectedIndex
+      finishedZ = nextZ;
+      if (args.useZ)
+        break;
+    } // while (finishedZ > args.botZ)
+    gcode.push(retractToSafeZ);
+    gcode.push("M5 ; stop spindle");
+  } // pathIndex
+
+  return gcode;
+}

@@ -9,7 +9,7 @@
  * Base class of all view models. There is a view model for each main panel
  * in the UI.
  * Some view models (OperationsViewModel, TabsViewModel) support dynamic
- * tables of sub-views. These are 
+ * tables of sub-views.
  *
  */
 class ViewModel {
@@ -108,7 +108,7 @@ class ViewModel {
   /**
    * Get the field name to use for this model when serializing
    */
-  get jsonFieldName() {
+  jsonFieldName() {
     throw new Error("Pure virtual");
   }
 
@@ -119,7 +119,7 @@ class ViewModel {
    * @param {object} json the JSON structure to populate.
    */
   putJson(json) {
-    return json[this.jsonFieldName] = this.toJson();
+    return json[this.jsonFieldName()] = this.toJson();
   }
 
   /**
@@ -161,15 +161,15 @@ class ViewModel {
    * @param {object} json the parent structure being recreated from.
    */
   getJson(json) {
-    if (json[this.jsonFieldName])
-      this.fromJson(json[this.jsonFieldName]);
+    if (json[this.jsonFieldName()])
+      this.fromJson(json[this.jsonFieldName()]);
   }
-  
+
   /**
    * Reconstruct from a structure.
    * @return {object} the structure being recreated from.
    */
-  fromJson() {    
+  fromJson() {
   }
 }
 

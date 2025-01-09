@@ -1,26 +1,27 @@
-# SVG2Gcode
+# <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVG2Gcode
 
-A simple Computer Aided Manufacturing (CAM) package that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine, for example using [Candle](https://github.com/Denvi/Candle).
+A simple Computer Aided Manufacturing (CAM) application that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine using an application such as [Candle](https://github.com/Denvi/Candle). It is primarily aimed at hobbyist milling machines (routers).
 
-SVG2Gcode is a fork of [Tim Fleming's jscut](https://jscut.org/), which is largely undocumented and has been unsupported since 2014. Tim is recognised as author of all his code, even where it has been extensively rewritten.
+No need to install anything, you can [run it in your browser](https://cdot.github.io/SVG2Gcode/index.html).
+
+SVG2Gcode is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a SainSmart Genmitsu 3018-PRO Router. If you want to contribute to development, see [DEVELOPING](DEVELOPING.md).
 
 ## Preparing your SVG
 
-To prepare your SVG, make sure draw it at the size that you want your final work to be. If you are using Inkscape, then set your units to whatever physical measure you feel most comfortable with (usually millimetres or inches) and simply draw at that scale. It is easiest, though not essential, to set your page size to the area that your CNC machine can handle.
-+ SVG2Gcode can only handle closed paths.
-++ You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
-++ Simple unclosed paths (such as lines or arcs) can't be machined, so don't use them.
-+ Colour is ignored, so beware of creating paths the same colour as their background!
-+ Stroke width is also ignored as well, so you are recommended to set a very small stroke width.
+To prepare your SVG, make sure draw it at the size that you want your final work to be. If you are using Inkscape, then set your units to whatever physical measure you feel most comfortable with (usually millimetres or inches) and simply draw at that scale. It is easiest, though not essential, to set your page size to the area that your CNC machine can handle. There are some limitations:
+- SVG2Gcode can only handle closed paths.
+    - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
+    - Simple unclosed paths (such as lines or arcs) aren't supported, so don't use them.
+- Colour is ignored, so beware of creating paths the same colour as their background.
+- Stroke width is also ignored, so you are recommended to set a very small stroke width.
 
-If you have a drawing that makes heavy use of complex features (such as text,
-or shapes, or meshes) you might consider taking a copy and preparing it for machining, rather than converting your original to paths and losing all the nice features.
+*Tip* If you have a drawing that makes heavy use of complex features (such as text, or shapes, or meshes) you might consider taking a copy and preparing it for machining, rather than converting your original to paths and losing all the nice features.
 
-Load SVG2Gcode in your browser, and select "Open SVG" from the toolbar to open your SVG file.
+Load SVG2Gcode in your browser, and select "Open SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
 
 ## Tool
 
-The next thing to have to do is to set up the tool you are using on the "Tool" section. Click on the "Tool" button. There is popup help on each of the options.
+The next step is to set the parameters of the tool you are using. Click on the "Tool Settings" button. There is popup help on each of the options.
 
 ## Material
 
@@ -31,30 +32,37 @@ Now open the material pane to specify the material you are working with. There i
 Use the mouse to select the paths you want to convert to Gcode (click a path again to deselect it; a double-click will select all paths). They will turn blue. In the "Operations" pane, click "Create Operation" to tell it what you want to do with the selected paths. There are four operations available:
 + Pocket - the default, will carve out the interior of your selected paths
 + Inside - will cut around the inside of the selected paths
-+ Outside - will cut around the outside of the selected path
++ Outside - will cut around the outside of the selected paths
 + Engrave - the tool will follow the selected paths
-When you change the operation, you will see the path that the tool will take overlaid on your SVG. You can see which paths an operation applies to by selecting/deselecting the operation while watching the SVG window.
 
-### Plunge versus Ramp
-See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
+The Toolpaths display will change to what has been selected for the operation.
 
-### Conventional versus Climb
-See <a href="https://www.harveyperformance.com/in-the-loupe/conventional-vs-climb-milling/">here</a> for an excellent explanation.
+Now you have to generate the actual tool paths. First set the depth to which you want the operation to cut (it won't necessarily cut to this depth immediately, it may do several passes in steps of the "Pass Depth" you set in the Tool pane). There are other options that can be set in the drop-down that opens when you click ▶.
++ Name - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
++ Ramp Plunge - Ramping refers to simultaneous radial and axial motion of a cutting tool, making an angular tool path. This method is used to approach a part when there is a need to create closed forms such as pockets, cavities, engravings, and holes. When ramping, the need to plunge with an end mill or drill create a starting point is eliminated. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
++ Combine - specifies the boolean operation to apply to the selected paths.
++ Direction
+    + Conventional, the cutter rotates against the direction of the feed.
+    + Climb, the cutter rotates with the feed. See <a href="https://www.harveyperformance.com/in-the-loupe/conventional-vs-climb-milling/">here</a> for an excellent explanation.
+When you change the operation, you will see the path that the tool will take overlaid on your SVG. You can see which paths an operation applies to by selecting/deselecting the operation using the tick box while watching the SVG window.
 
-## Gcode Conversion
+## Curve Conversion
+Bezier curves in paths are supported by converting them to a sequence of straight line segments. This pane give you some options for controlling this conversion.
+
+## Gcode Generation
 
 You are now ready to generate Gcode. In the Gcode pane, select the units that your machine operates in. If your machine supports the G21 code, you can just the units you are most comfortable in.
 
-When you draw in an SVG editor such as Inkscape, you work in a coordinate system where 0, 0 is at the top left of the page, and Y increases downwards. Hobbyist CNC machine coordinates, however, usually work from an origin at the bottom left, with Y increasing away from the operator, and SVG2Gcode assumes this.
+When you draw in an SVG editor such as Inkscape, you work in a coordinate system where 0, 0 is at the top left of the page, and Y increases downwards. However hobbyist CNC machine coordinates usually work from an origin at the bottom left, with Y increasing away from the operator, and this is the convention that SVG2Gcode follows.
 
-The application handles most of the details of converting between these coordinate systems. However it helps if you have to have a clear idea of how the different systems relate.
+The application handles most of the details of converting between these coordinate systems. However it helps if you have a clear idea of how the different systems relate.
 
 + SVG Coordinates - 0,0 is at the top left of the page. Y increases downwards.
 + The Machine Origin - 0,0 is the bottom left corner of the work area. All CNC machines have a coordinate origin, normally determined automatically by running each axis against the end stops.
 
 You can choose for the machine origin to correspond to the bottom left of the SVG page, or to the bottom left of the bounding box around your selected operations. For example, let's say we want to carve the Sanskrit word "Love". We have drawn it on a 80x60mm page. The top left corner of the bounding box of the drawing is at (10,15)mm while the bottom right corner is at (70,45)mm, as shown by the green lettering.
 
-![Coordinates](coords.svg "Coordinates")
+<img src="../images/coords.svg" style="width:80%;height: auto"></img>
 
 When we load up SVG2Gcode and generate Gcode for this drawing with the "Machine Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
 
@@ -62,9 +70,36 @@ If we now switch the machine origin to "Bounding Box", then the lower left corne
 
 As well as the "SVG page" and "Bounding box" origins, you can also generate Gcode to add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut. This is achieved using G codes - you are recommended to read [The Machining Doctor](https://www.machiningdoctor.com/gcodes/g54/) for more.
 
-# COPYRIGHT
-Copyright 2014 Todd Fleming
-Copyright 2024-2025 Crawford Currie
+Now you can click "Generate" on the Operations you created above to generate the actual tool paths, and the Gcode for those paths.
+
+## Previewing the Gcode
+### Simulator
+Once you have generated the Gcode you can preview it in the "Simulate" pane. This really is Gcode simulator; it reloads the generated Gcode, and displays the paths the tool will follow.
+
+### Code preview
+You can also use the "View Gcode" button in the "Gcode Generation" pane to open
+a text view on the Gcode.
+
+# Relationship to jscut
+SVG2Gcode is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVG2Gcode has fixes for some of these, and more.
++ Extensive in-code documentation and literate programming techniques
++ Uses G0 rather than G1 for travel
++ Added "select all" on a double-click
++ Extensive newbie and in-code documentation
++ Easier to work with XY origins
++ Gcode text preview
+
+Some features of jscut have been disabled/removed. This may be because they are  deemed too esoteric, or the (undocumented) code was too complex to reverse engineer, for limited end-user value.
+- Tabs
+- Save to Chilipeppr
+- Google Drive, Dropbox
+- gist
+
+# LICENSE & COPYRIGHT
+Tim Fleming is recognised as author of all his code, even where it has been extensively rewritten. Because jscut is GPL, so is SVG2Gcode.
+
++ Copyright 2014 Todd Fleming
++ Copyright 2024-2025 Crawford Currie
 
 SVG2Gcode is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

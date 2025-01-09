@@ -23,28 +23,19 @@ class CurveConversionViewModel extends ViewModel {
 
     /**
      * Minimum number of segments in a curve
-     * @member {number}
+     * @member {observable.<number>}
      */
-    this.curveMinSegs = ko.observable(1);
+    this.minSegs = ko.observable(1);
 
     /**
      * Minimum number of segments in a curve
-     * @member {number}
+     * @member {observable.<number>}
      */
-    this.curveMinSegLen = ko.observable(unitConverter.fromUnits(0.25, "mm"));
+    this.minSegLen = ko.observable(unitConverter.fromUnits(0.25, "mm"));
 
-    unitConverter.add(this.curveMinSegLen);
+    unitConverter.add(this.minSegLen);
   }
 
-  getCurveConversion() {
-    return this.svgGroup.selectAll("path");
-  }
-
-  clearCurveConversion() {
-    this.svgGroup.selectAll("path").remove();
-    this.numSelected(0);
-  }
- 
   // @override
   initialise() {
     super.addPopovers(popovers);
@@ -53,20 +44,20 @@ class CurveConversionViewModel extends ViewModel {
   }
 
   // @override
-  get jsonFieldName() { return "curveToLineConversion"; }
+  jsonFieldName() { return "curveToLine"; }
 
   // @override
   toJson() {
     return {
-      curveMinSegs: this.curveMinSegs(),
-      curveMinSegLen: this.curveMinSegLen()
+      minSegs: this.minSegs(),
+      minSegLen: this.minSegLen()
     };
   }
 
   // @override
   fromJson(json) {
-    this.updateObservable(json, 'curveMinSegs');
-    this.updateObservable(json, 'curveMinSegLen');
+    this.updateObservable(json, 'minSegs');
+    this.updateObservable(json, 'minSegLen');
   }
 }
 

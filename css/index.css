@@ -93,3 +93,12 @@ code {
 .card-title {
   font-size: 1rem;
 }
+
+.ecks {
+  text-decoration: none;
+}
+
+.ecks:hover {
+  cursor: pointer;
+  font-weight: bold;
+}

@@ -3,20 +3,36 @@
 //import "snapsvg";
 /* global Snap */
 
+/** @import { InternalPath } from "@/InternalPaths" */
+
 import { UnitConverter } from "./UnitConverter.js";
 
 /**
  * Functions for handling Snap paths.
- * Snap paths are used for generating the SVG displayed in the middle
+ * Snap paths are used for generating the ToolPath SVG displayed in the middle
  * of the UI. They are used for visual feedback only, and play no part in
- * Gcode generation.
+ * Gcode generation (or the Gcode simulation).
+ *
+ * *Types used*: InternalPath from `InternalPaths.js`
+ * @namespace SnapPaths
+ *
  * @see {@link http://snapsvg.io/docs/#Paper.path|Snap}
- * @typedef {(string|number)[]} a tuple representing an SVG drawing
- * operation. The first letter is the operation (e.g. L or M) followed
- * by 2 or more numbers.
- * @typedef {Segment[][]} SnapPath an array of Segments.
  */
-      
+
+/**
+ * An arbitrary-length  tuple representing
+ * an SVG drawing operation. [0] is the operation (e.g. 'L' or 'M') followed
+ * by 2 or more numbers.
+ * @typedef {string[]} SnapSegment
+ * @memberof SnapPaths
+ */
+
+/**
+ * An array of SnapSegment.
+ * @typedef {SnapSegment[]} SnapPath
+ * @memberof SnapPaths
+ */
+
 /**
  * Linearize a cubic bezier to a snap path.
  * @param {number} p1x start point X
@@ -39,7 +55,7 @@ function linearizeCubicBezier(
   function bez(p0, p1, p2, p3, t) {
     return (1 - t) * (1 - t) * (1 - t) * p0 + 3 * (1 - t) * (1 - t) * t * p1 + 3 * (1 - t) * t * t * p2 + t * t * t * p3;
   }
-  
+
   if (p1x == c1x && p1y == c1y && p2x == c2x && p2y == c2y)
     return [ 'L', p2x, p2y ];
 
@@ -98,15 +114,17 @@ function linearize(path, curveMinSegs, curveMinSegLen) {
       throw new Error(`Subpath has an unknown prefix: ${subpath[0]}`);
   }
   return result;
-};
+}
 
 /**
  * Get a linear Snap path from an SVG Element.
  * @see {@link http://snapsvg.io/docs/#Paper.path|Snap}
- * @param {Element} element the element (only path or rect currently supported)
+ * @param {SVGElement} element the element (only path or rect currently
+ * supported)
  * @param {number} curveMinSegs minimum number of segments in a curve
  * @param {number} curveMinSegLen minimum segment length in a curve
  * @throws {Error} if there's a problem
+ * @memberof SnapPaths
  */
 export function fromElement(element, curveMinSegs, curveMinSegLen) {
   let path = null;
@@ -137,13 +155,15 @@ export function fromElement(element, curveMinSegs, curveMinSegLen) {
   path = Snap.parsePathString(path);
   path = linearize(path, curveMinSegs, curveMinSegLen);
   return path;
-};
+}
 
 /**
  * Convert a single Snap path to Internal format.
  * May return multiple paths. Only supports linear paths.
  * @param {SnapPath} path the path to convert
+ * @return {InternalPath[][]}
  * @throws {Error} if there's a problem.
+ * @memberof SnapPaths
  */
 export function toInternal(path) {
   function pt2ToInternal(x, y) {
@@ -170,13 +190,14 @@ export function toInternal(path) {
       throw new Error("Subpath has a non-linear prefix: " + subpath[0]);
   }
   return result;
-};
+}
 
 /**
  * Convert a set of Internal paths to Snap paths.
  * @see {@link http://snapsvg.io/docs/#Paper.path|Snap}
- * @param {InternalPath} paths
- * @return {SnapPath}
+ * @param {InternalPath[]} paths
+ * @return {SnapPath[]}
+ * @memberof SnapPaths
  */
 export function fromInternal(paths) {
   const result = [];
@@ -200,4 +221,4 @@ export function fromInternal(paths) {
       result.push(l);
   }
   return result;
-};
+}

@@ -107,7 +107,7 @@ class Simulation {
 
     /**
      * gl programs
-     * @member {object.<string,WebGLProgram}
+     * @member {object.<string,WebGLProgram>}
      * @private
      */
     this.programs = {
@@ -313,7 +313,7 @@ class Simulation {
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER, bufferContent, this.gl.STATIC_DRAW);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-  }               
+  }
 
   /**
    * @private
@@ -797,7 +797,7 @@ class Simulation {
   createPathFramebuffer() {
     this.pathFramebuffer = this.gl.createFramebuffer();
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.pathFramebuffer);
-    
+
     this.pathRgbaTexture = this.gl.createTexture();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.pathRgbaTexture);

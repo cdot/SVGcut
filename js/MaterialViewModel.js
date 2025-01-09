@@ -12,6 +12,10 @@ const popovers = [
   { id:"inputMatClearance" }
 ];
 
+function formatZ(z) {
+  return parseFloat(z).toFixed(3);
+}
+
 class MaterialViewModel extends ViewModel {
 
   /**
@@ -20,14 +24,30 @@ class MaterialViewModel extends ViewModel {
   constructor(unitConverter) {
     super(unitConverter);
 
+    /**
+     * Path thickness
+     * @member {observable.<number>}
+     */
     this.thickness = ko.observable(unitConverter.fromUnits(10, "mm"));
     unitConverter.add(this.thickness);
 
+    /**
+     * Tool clearance level
+     * @member {observable.<number>}
+     */
     this.clearance = ko.observable(unitConverter.fromUnits(10, "mm"));
     unitConverter.add(this.clearance);
 
+    /**
+     * Z origin, Top or Bottom of the material
+     * @member {observable.<string>}
+     */
     this.zOrigin = ko.observable("Top");
 
+    /**
+     * Z level for Z origin, computed
+     * @member {observable.<number>}
+     */
     this.topZ = ko.computed(() => {
       if (this.zOrigin() == "Top")
         return 0;
@@ -35,48 +55,6 @@ class MaterialViewModel extends ViewModel {
         return this.thickness();
     });
     unitConverter.addComputed(this.topZ);
-
-    this.botZ = ko.computed(() => {
-      if (this.zOrigin() == "Bottom")
-        return 0;
-      else
-        return "-" + this.thickness();
-    });
-    unitConverter.addComputed(this.botZ);
-
-    this.zSafeMove = ko.computed(() => {
-      if (this.zOrigin() == "Top")
-        return parseFloat(this.clearance());
-      else
-        return parseFloat(this.thickness()) + parseFloat(this.clearance());
-    });
-    unitConverter.addComputed(this.zSafeMove);
-
-    function formatZ(z) {
-      z = parseFloat(z);
-      return z.toFixed(3);
-    }
-
-    /**
-     * The little picture at the top of the card
-     * @member {Snap.Element}
-     */
-    this.materialSvg = ko.observable(null);
-
-    const materialSvg = Snap("#MaterialSvg");
-    Snap.load("images/Material.svg", f => {
-      // f is a Snap.Fragment
-      materialSvg.append(f);
-      this.materialSvg(materialSvg);
-    });
-
-    this.materialSvg.subscribe(newValue => {
-      newValue.select("#matTopZ").node.textContent = formatZ(this.topZ());
-      newValue.select("#matBotZ").node.textContent = formatZ(this.botZ());
-      newValue.select("#matZSafeMove").node.textContent
-      = formatZ(this.zSafeMove());
-    });
-
     // Subscribe to range values to update the SVG picture
     this.topZ.subscribe(newValue => {
       if (this.materialSvg()) {
@@ -85,6 +63,17 @@ class MaterialViewModel extends ViewModel {
       }
     });
 
+    /**
+     * Z level for bottom of material, computed
+     * @member {observable.<number>}
+     */
+    this.botZ = ko.computed(() => {
+      if (this.zOrigin() == "Bottom")
+        return 0;
+      else
+        return "-" + this.thickness();
+    });
+    unitConverter.addComputed(this.botZ);
     this.botZ.subscribe(newValue => {
       if (this.materialSvg()) {
         this.materialSvg().select("#matBotZ").node.textContent
@@ -92,6 +81,17 @@ class MaterialViewModel extends ViewModel {
       }
     });
 
+    /**
+     * Safe level, computed
+     * @member {observable.<number>}
+     */
+    this.zSafeMove = ko.computed(() => {
+      if (this.zOrigin() == "Top")
+        return parseFloat(this.clearance());
+      else
+        return parseFloat(this.thickness()) + parseFloat(this.clearance());
+    });
+    unitConverter.addComputed(this.zSafeMove);
     this.zSafeMove.subscribe(newValue => {
       if (this.materialSvg()) {
         this.materialSvg().select("#matZSafeMove").node.textContent
@@ -99,6 +99,24 @@ class MaterialViewModel extends ViewModel {
       }
     });
 
+    /**
+     * The little picture at the top of the card
+     * @member {observable.<SnapElement>}
+     */
+    this.materialSvg = ko.observable(null);
+    this.materialSvg.subscribe(newValue => {
+      newValue.select("#matTopZ").node.textContent = formatZ(this.topZ());
+      newValue.select("#matBotZ").node.textContent = formatZ(this.botZ());
+      newValue.select("#matZSafeMove").node.textContent
+      = formatZ(this.zSafeMove());
+    });
+
+    const materialSvg = Snap("#MaterialSvg");
+    Snap.load("images/Material.svg", f => {
+      // f is a Snap.Fragment
+      materialSvg.append(f);
+      this.materialSvg(materialSvg);
+    });
   }
 
   // @override
@@ -107,9 +125,9 @@ class MaterialViewModel extends ViewModel {
 
     ko.applyBindings(this, document.getElementById("MaterialView"));
   }
-  
+
   // @override
-  get jsonFieldName() { return "operations"; }
+  jsonFieldName() { return "operations"; }
 
   // @override
   toJson() {

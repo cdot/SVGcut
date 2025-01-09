@@ -7,16 +7,57 @@
 /* global ko */
 
 /* global App */
+
+/**
+ * @typedef {('mm'|'inch')} Unit
+ */
+
+import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
+
+// Name of a key in browser LocalStorage that can store many sets of settings
+const LOCAL_STORAGE_AREA = "svg2gcode";
+// Name of a default key within the LOCAL_STORAGE_AREA
+const SETTINGS_KEY = "default";
+
+// Default name for a filename to store settings
+const SETTINGS_FILENAME = "svg2gcode.json";
 
 class MiscViewModel extends ViewModel {
 
   constructor() {
     super();
-    this.debug = ko.observable(App.options.debug);
-    this.saveSettingsFilename = ko.observable("settings.jscut");
-    this.loadLocalStorageFilename = ko.observable("settings.jscut");
-    this.localStorageSettings = ko.observableArray([]);
+
+    /**
+     * Units in use e.g. "mm". The Tool model has the units used by
+     * everything other than the Gcode converter.
+     * @member {observable.<Unit>}
+     */
+    this.units = ko.observable("mm");
+
+    /**
+     * Unit converter in the tool model. Shared by everything else.
+     */
+    this.unitConverter = new UnitConverter(this.units);
+
+    /**
+     * "Filename" to load/save settings.
+     * @member {observable.<string>}
+     */
+    this.settingsFilename = ko.observable(SETTINGS_FILENAME);
+
+    /**
+     * Local storage key to load/save settings.
+     * @member {observable.<string>}
+     */
+    this.settingsKey = ko.observable(SETTINGS_KEY);
+
+    /**
+     * Dropdown for local storage keys to load settings from.
+     * @member {observable.<string>}
+     */
+    this.browserSettings = ko.observableArray([]);
+
     // SMELL: the following should be part of GcodeGeneration, but are
     // only relevant to calls out to CPP
     //CPP this.loadedCamCpp = ko.observable(false);
@@ -33,63 +74,98 @@ class MiscViewModel extends ViewModel {
 
     ko.applyBindings(
       this,
-      document.getElementById("LoadSettingsFromLocalModal"));
+      document.getElementById("LoadSettingsFromBrowserModal"));
 
     ko.applyBindings(
       this,
-      document.getElementById("DeleteSettingsFromLocalModal"));
+      document.getElementById("DeleteSettingsFromBrowserModal"));
   }
 
   /**
    * Support for storing settings in the browser local storage
    */
-  checkLocalStorageForSettings() {
-    const settings = localStorage.getItem("settings");
+  checkBrowserForSettings() {
+    const settings = localStorage.getItem(LOCAL_STORAGE_AREA);
     if (settings) {
-      this.localStorageSettings(Object.keys(JSON.parse(settings)));
+      this.browserSettings(Object.keys(JSON.parse(settings)));
       return "";
     } else
       return "No settings stored locally yet.";
   }
 
-  saveSettingsInLocalStorage() {
-    let settings = JSON.parse(localStorage.getItem("settings")) ?? {};
-    const fn = this.saveSettingsFilename();
+  /**
+   * Invoked from dialog
+   */
+  saveSettingsInBrowser() {
+    let settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA)) ?? {};
+    const fn = this.settingsKey();
     settings[fn] = App.toJson();
-    localStorage.setItem("settings", JSON.stringify(settings));
+    localStorage.setItem(LOCAL_STORAGE_AREA, JSON.stringify(settings));
     this.hideModal('SaveSettingsModal');
-    alert(`Settings saved in browser as '${fn}'`);
   }
 
+  /**
+   * Invoked from dialog
+   */
   saveSettingsInLocalFile() {
     const json = JSON.stringify(App.toJson());
     const blob = new Blob([json], {type: 'text/json'});
-    const fn = this.saveSettingsFilename();
+    const fn = this.settingsFilename();
     saveAs(blob, fn);
     this.hideModal('SaveSettingsModal');
-    alert(`Settings saved in file '${fn}'`);
   }
 
-  loadSettingsFromLocalStorage() {
-    const settings = JSON.parse(localStorage.getItem("settings"));
-    const json = settings[this.models.Misc.loadLocalStorageFilename()];
-    App.fromJson(json);
-    App.updateSvgSize();
-    this.hideModal('LoadSettingsFromLocalModal');
+  /**
+   * Invoked from dialog and on preload
+   */
+  loadSettingsFromBrowser() {
+    this.hideModal('LoadSettingsFromBrowserModal');
+    const settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA));
+    if (settings) {
+      const json = settings[this.settingsKey()];
+      App.fromJson(json);
+    }
   }
 
-  deleteSettingsFromLocalStorage() {
-    const settings = JSON.parse(localStorage.getItem("settings"));
-    const name = this.loadLocalStorageFilename();
+  /**
+   * Invoked from dialog
+   */
+  gotoBrowserDelete() {
+    App.hideModal('LoadSettingsFromBrowserModal');
+    App.showModal('DeleteSettingsFromBrowserModal');
+  }
+
+  /**
+   * Invoked from dialog
+   */
+  deleteSettingsFromBrowser() {
+    debugger;
+    const settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA));
+    const name = this.settingsKey();
     delete settings[name];
-    localStorage.setItem("settings", JSON.stringify(settings));
-    this.hideModal('DeleteSettingsFromLocalModal');
-    alert(
-      `Deleted "${name}" from browser local storage`, "alert-info");
+    localStorage.setItem(LOCAL_STORAGE_AREA, JSON.stringify(settings));
+    this.hideModal('DeleteSettingsFromBrowserModal');
+    alert(`Deleted "${name}" from browser`, "alert-info");
   }
 
   // @override
-  get jsonFieldName() { return 'misc'; }
+  jsonFieldName() { return 'misc'; }
+
+  // @override
+  toJson() {
+    return {
+      units: this.units(),
+      settingsFilename: this.settingsFilename(),
+      settingsKey: this.settingsKey()
+    };
+  }
+
+  // @override
+  fromJson(json) {
+    this.updateObservable(json, 'units');
+    this.updateObservable(json, 'settingsFilename');
+    this.updateObservable(json, 'settingsKey');
+  }
 }
 
 export { MiscViewModel }

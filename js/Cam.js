@@ -3,7 +3,12 @@
 //CPP /* global Module */ // from Emscripten
 /* global App */
 
-import * as ClipperPaths from "./ClipperPaths.js";
+import * as InternalPaths from "./InternalPaths.js";
+
+/**
+ * Support for different CAM operations
+ * @namespace Cam
+ */
 
 /**
  * @typedef {object} CamPath
@@ -17,6 +22,7 @@ import * as ClipperPaths from "./ClipperPaths.js";
  * double**& cPathsRef, int& cNumPathsRef, int*& cPathSizesRef
  * Assumes each point has X, Y, Z (stride = 3)
  * @private
+ * @memberof Cam
  *
 function convertPathsFromCppToCamPath(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
 
@@ -55,24 +61,18 @@ function convertPathsFromCppToCamPath(memoryBlocks, cPathsRef, cNumPathsRef, cPa
 /CPP*/
 
 /**
- * Get distance between two points
- */
-export function dist(x1, y1, x2, y2) {
-  return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-}
-
-/**
  * Try to merge paths. A merged path doesn't cross outside of bounds.
  * @param {InternalPath} bounds
  * @param {InternalPath[]} paths
  * @return {CamPath[]} merged paths
+ * @memberof Cam
  */
 export function mergePaths(bounds, paths) {
-  return ClipperPaths.mergePaths(bounds, paths).map(path => {
+  return InternalPaths.mergePaths(bounds, paths).map(path => {
     // convert to CamPath
     return {
       path: path,
-      safeToClose: !ClipperPaths.crosses(bounds, path[0], path[path.length - 1])
+      safeToClose: !InternalPaths.crosses(bounds, path[0], path[path.length - 1])
     };});
 }
 
@@ -81,9 +81,10 @@ export function mergePaths(bounds, paths) {
  * @param {number} cutterDia is in internal units
  * @param {number} overlap is in the range [0, 1)
  * @return {CamPath[]}
+ * @memberof Cam
  */
 export function pocket(geometry, cutterDia, overlap, climb) {
-  let current = ClipperPaths.offset(geometry, -cutterDia / 2);
+  let current = InternalPaths.offset(geometry, -cutterDia / 2);
   const bounds = current.slice(0);
   let allPaths = [];
   while (current.length != 0) {
@@ -91,7 +92,7 @@ export function pocket(geometry, cutterDia, overlap, climb) {
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
     allPaths = current.concat(allPaths);
-    current = ClipperPaths.offset(current, -cutterDia * (1 - overlap));
+    current = InternalPaths.offset(current, -cutterDia * (1 - overlap));
   }
   return mergePaths(bounds, allPaths);
 };
@@ -101,11 +102,12 @@ export function pocket(geometry, cutterDia, overlap, climb) {
  * @param {number} cutterDia is in internal units
  * @param {number} overlap is in the range [0, 1)
  * @return {CamPath[]}
+ * @memberof Cam
  *
 export function hspocket(geometry, cutterDia, overlap, climb) {
   const memoryBlocks = [];
 
-  const cGeometry = ClipperPaths.toCpp(geometry, memoryBlocks);
+  const cGeometry = InternalPaths.toCpp(geometry, memoryBlocks);
 
   const resultPathsRef = Module._malloc(4);
   const resultNumPathsRef = Module._malloc(4);
@@ -140,6 +142,7 @@ export function hspocket(geometry, cutterDia, overlap, climb) {
  * @param {number} overlap is in the range [0, 1)
  * @param {boolean} climb
  * @return {CamPath[]}
+ * @memberof Cam
  */
 export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   let currentWidth = cutterDia;
@@ -152,13 +155,13 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   let needReverse;
 
   if (isInside) {
-    current = ClipperPaths.offset(geometry, -cutterDia / 2);
-    bounds = ClipperPaths.diff(current, ClipperPaths.offset(geometry, -(width - cutterDia / 2)));
+    current = InternalPaths.offset(geometry, -cutterDia / 2);
+    bounds = InternalPaths.diff(current, InternalPaths.offset(geometry, -(width - cutterDia / 2)));
     eachOffset = -eachWidth;
     needReverse = climb;
   } else {
-    current = ClipperPaths.offset(geometry, cutterDia / 2);
-    bounds = ClipperPaths.diff(ClipperPaths.offset(geometry, width - cutterDia / 2), current);
+    current = InternalPaths.offset(geometry, cutterDia / 2);
+    bounds = InternalPaths.diff(InternalPaths.offset(geometry, width - cutterDia / 2), current);
     eachOffset = eachWidth;
     needReverse = !climb;
   }
@@ -171,7 +174,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     allPaths = current.concat(allPaths);
     const nextWidth = currentWidth + eachWidth;
     if (nextWidth > width && width - currentWidth > 0) {
-      current = ClipperPaths.offset(current, width - currentWidth);
+      current = InternalPaths.offset(current, width - currentWidth);
       if (needReverse)
         for (i = 0; i < current.length; ++i)
           current[i].reverse();
@@ -179,7 +182,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
       break;
     }
     currentWidth = nextWidth;
-    current = ClipperPaths.offset(current, eachOffset);
+    current = InternalPaths.offset(current, eachOffset);
   }
   return mergePaths(bounds, allPaths);
 };
@@ -189,6 +192,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
  * @param {InternalPath[]} geometry
  * @param {boolean} climb
  * @return {CamPath[]}
+ * @memberof Cam
  */
 export function engrave(geometry, climb) {
   const allPaths = [];
@@ -212,7 +216,7 @@ function vPocket(geometry, cutterAngle, passDepth, maxDepth) {
 
   const memoryBlocks = [];
 
-  const cGeometry = ClipperPaths.toCpp(geometry, memoryBlocks);
+  const cGeometry = InternalPaths.toCpp(geometry, memoryBlocks);
 
   const resultPathsRef = Module._malloc(4);
   const resultNumPathsRef = Module._malloc(4);
@@ -241,10 +245,16 @@ function vPocket(geometry, cutterAngle, passDepth, maxDepth) {
 
 let displayedCppTabError1 = false;
 let displayedCppTabError2 = false;
+/CPP*/
 
+/**
+ * Currently does nothing
+ * @private
+ */
+export function separateTabs(cutterPath, tabGeometry) {
+/*CPP
 // SMELL: unclear to me why this requires a call out, since Clipper
 // can do what it seems to do (intersect polygons)
-function separateTabs(cutterPath, tabGeometry) {
   if (tabGeometry.length == 0)
     return [cutterPath];
 
@@ -258,8 +268,8 @@ function separateTabs(cutterPath, tabGeometry) {
 
   const memoryBlocks = [];
 
-  const cCutterPath = ClipperPaths.toCpp([ cutterPath ], memoryBlocks);
-  const cTabGeometry = ClipperPaths.toCpp(tabGeometry, memoryBlocks);
+  const cCutterPath = InternalPaths.toCpp([ cutterPath ], memoryBlocks);
+  const cTabGeometry = InternalPaths.toCpp(tabGeometry, memoryBlocks);
 
   const errorRef = Module._malloc(4);
   const resultPathsRef = Module._malloc(4);
@@ -285,231 +295,12 @@ function separateTabs(cutterPath, tabGeometry) {
    displayedCppTabError2 = true;
   }
 
-  const result = ClipperPaths.fromCpp(
+  const result = InternalPaths.fromCpp(
     memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
 
   for (let i = 0; i < memoryBlocks.length; ++i)
     Module._free(memoryBlocks[i]);
 
   return result;
-}
 /CPP*/
-
-/**
- * Convert paths to gcode. Assumes that the current Z
- * position is safe.
- * @param {object} namedArgs
- * @param {CamPath[]} namedArgs.paths Paths to convert. These paths are
- * in internal units, and will be transformed to Gcode units using the
- * `Scale` parameters.
- * @param {number} namedArgs.xScale Factor to convert internal units to
- * gcode units
- * @param {number} namedArgs.yScale Factor to convert internal units to
- * gcode units
- * @param {number} namedArgs.zScale Factor to convert internal units to
- * gcode units
- * @param {boolean} namedArgs.ramp Ramp these paths?
- * @param {number} namedArgs.offsetX Offset X (Gcode units)
- * @param {number} namedArgs.offsetY Offset Y (Gcode units)
- * @param {number} namedArgs.decimal Number of decimal places to keep
- * in gcode
- * @param {number} namedArgs.topZ Top of area to cut (Gcode units)
- * @param {number} namedArgs.botZ Bottom of area to cut (Gcode units)
- * @param {number} namedArgs.safeZ Z position to safely move over
- * uncut areas (Gcode units)
- * @param {number} namedArgs.passDepth Cut depth for each pass (Gcode
- * units)
- * @param {number} namedArgs.plungeFeed Feedrate to plunge cutter
- * (Gcode units)
- * @param {number} namedArgs.retractFeed Feedrate to retract cutter
- * (Gcode units)
- * @param {number} namedArgs.cutFeed Feedrate for horizontal cuts
- * (Gcode units)
- * @param {number} namedArgs.rapidFeed Feedrate for rapid moves (Gcode
- * units)
- *
- * @param {boolean} namedArgs.useZ Use Z coordinates in paths?
- * (optional, defaults to false)
- * @param {number} namedArgs.tabGeometry Tab geometry (optional), will be
- * defined in internal units and require scaling.
- * @param {number} namedArgs.tabZ Z position over tabs (required if
- * tabGeometry is not empty) (Gcode units)
- * @return {string[]} array of Gcode lines
- */
-export function getGcode(namedArgs) {
-  const paths = namedArgs.paths;
-  const ramp = namedArgs.ramp;
-  const xScale = namedArgs.xScale;
-  const yScale = namedArgs.yScale;
-  const zScale = namedArgs.zScale;
-  const offsetX = namedArgs.offsetX;
-  const offsetY = namedArgs.offsetY;
-  const decimal = namedArgs.decimal;
-  const topZ = namedArgs.topZ;
-  const botZ = namedArgs.botZ;
-  const safeZ = namedArgs.safeZ;
-  const passDepth = namedArgs.passDepth;
-  const plungeF = `F${namedArgs.plungeFeed}`;
-  const cutF = `F${namedArgs.cutFeed}`;
-  const rapidF = `F${namedArgs.rapidFeed}`;
-  const useZ = namedArgs.useZ ?? false;
-  let tabGeometry = namedArgs.tabGeometry;
-  let tabZ = namedArgs.tabZ;
-
-  // Tab depth must be > the botZ depth of the Operation. If it isn't,
-  // then ignore the tab geometry
-  if (!tabGeometry || tabGeometry.length === 0) {
-    tabZ = botZ;
-  }
-  if (tabGeometry && tabZ <= botZ) {
-    App.showAlert(
-      "Tabs are cut deeper than the max operation depth, and will be ignored.",
-      'alert-warning');
-    tabGeometry = undefined;
-  }
-
-  const gcode = [];
-
-  const retractToSafeZ =
-        `G1 Z${safeZ.toFixed(decimal)} ${rapidF} ; Retract`;
-
-  const retractForTabGcode =
-      `G1 Z${tabZ.toFixed(decimal)} ${rapidF} ; Retract for tab`;
-
-  // Scale and offset a internal X coordinate to gcode units
-  function getX(x) {
-    return x * xScale + offsetX;
-  }
-
-  // Scale and offset an internal Y coordinate to gcode units
-  function getY(y) {
-    return y * yScale + offsetY;
-  }
-
-  // Generate Gcode for a point, scaling internal to gcode units
-  function convertPoint(p, useZ) {
-    const result = [
-      `X${getX(p.X).toFixed(decimal)}`,
-      `Y${getY(p.Y).toFixed(decimal)}`
-    ];
-    if (useZ)
-      result.push(`Z${(p.Z * zScale + topZ).toFixed(decimal)}`);
-    return result.join(" ");
-  }
-
-  let pathIndex = 0;
-  for (const path of paths) {
-    const origPath = path.path;
-    if (origPath.length == 0)
-      continue;
-
-    const separatedPaths = tabGeometry
-          ? separateTabs(origPath, tabGeometry) // CPP
-          : [ origPath ];
-
-    gcode.push(`; Path ${pathIndex++}`);
-
-    let currentZ = safeZ;
-    let finishedZ = topZ;
-
-    while (finishedZ > botZ) {
-      const nextZ = Math.max(finishedZ - passDepth, botZ);
-
-      if (currentZ < safeZ && (!path.safeToClose || tabGeometry)) {
-        gcode.push(retractToSafeZ);
-        currentZ = safeZ;
-      }
-
-      currentZ = tabGeometry ? Math.max(finishedZ, tabZ) : finishedZ;
-
-      gcode.push(
-        "; Rapid to initial position",
-        `G1 ${convertPoint(origPath[0], false)} ${rapidF}`,
-        `G1 Z${currentZ.toFixed(decimal)}`);
-
-      let selectedPaths;
-      if (nextZ >= tabZ || useZ)
-        selectedPaths = [origPath];
-      else
-        selectedPaths = separatedPaths;
-
-      for (let selectedIndex = 0;
-           selectedIndex < selectedPaths.length; ++selectedIndex) {
-        const selectedPath = selectedPaths[selectedIndex];
-        if (selectedPath.length == 0)
-          continue;
-
-        if (!useZ) {
-          let selectedZ;
-          if (selectedIndex & 1)
-            selectedZ = tabZ;
-          else
-            selectedZ = nextZ;
-
-          if (selectedZ < currentZ) {
-            let executedRamp = false;
-            if (ramp) {
-              const minPlungeTime = (currentZ - selectedZ)
-                    / namedArgs.plungeFeed;
-              const idealDist = namedArgs.cutFeed * minPlungeTime;
-              let end;
-              let totalDist = 0;
-              for (end = 1; end < selectedPath.length; ++end) {
-                if (totalDist > idealDist)
-                  break;
-                totalDist += 2 * dist(getX(selectedPath[end - 1]),
-                                      getY(selectedPath[end - 1]),
-                                      getX(selectedPath[end]),
-                                      getY(selectedPath[end]));
-              }
-              if (totalDist > 0) {
-                gcode.push('; ramp');
-                executedRamp = true;
-                const rampPath = selectedPath.slice(0, end)
-                      .concat(selectedPath.slice(0, end - 1).reverse());
-                let distTravelled = 0;
-                for (let i = 1; i < rampPath.length; ++i) {
-                  distTravelled += dist(getX(rampPath[i - 1]),
-                                        getY(rampPath[i - 1]),
-                                        getX(rampPath[i]),
-                                        getY(rampPath[i]));
-                  const newZ = currentZ + distTravelled
-                        / totalDist * (selectedZ - currentZ);
-                  let gc = `G1 ${convertPoint(rampPath[i], false)} Z${newZ.toFixed(decimal)}`;
-                  if (i == 1) {
-                    const feed = Math.min(totalDist / minPlungeTime,
-                                          namedArgs.cutFeed);
-                    gc += ` F${feed.toFixed(decimal)}`;
-                  }
-                  gcode.push(gc);
-                }
-              }
-            }
-            if (!executedRamp) {
-              gcode.push('M4 ; start spindle');
-              gcode.push(
-                `G1 Z${selectedZ.toFixed(decimal)} ${plungeF} ; plunge`);
-            }
-          } else if (selectedZ > currentZ) {
-            gcode.push(retractForTabGcode);
-          }
-          currentZ = selectedZ;
-        } // !useZ
-
-        gcode.push('; cut');
-
-        for (let i = 1; i < selectedPath.length; ++i) {
-          gcode.push(
-            `G1 ${convertPoint(selectedPath[i], useZ)} ${i == 1 ? cutF : ""}`);
-        }
-      } // selectedIndex
-      finishedZ = nextZ;
-      if (useZ)
-        break;
-    } // while (finishedZ > botZ)
-    gcode.push(retractToSafeZ);
-    gcode.push("M5 ; stop spindle");
-  } // pathIndex
-
-  return gcode;
 }

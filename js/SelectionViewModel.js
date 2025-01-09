@@ -30,6 +30,7 @@ class SelectionViewModel extends ViewModel {
 
     /**
      * Number of elements selected (==this.svgGroup size)
+     * @member {observable.<number>}
      */
     this.numSelected = ko.observable(0);
   }
@@ -58,8 +59,8 @@ class SelectionViewModel extends ViewModel {
     try {
       const path = SnapPaths.fromElement(
         elem,
-        App.models.CurveConversion.curveMinSegs(),
-        App.models.CurveConversion.curveMinSegLen.toUnits("px"));
+        App.models.CurveConversion.minSegs(),
+        App.models.CurveConversion.minSegLen.toUnits("px"));
       const newPath = this.svgGroup.path(path);
       newPath.attr("class", "selectedPath");
       if (elem.attr("fill-rule") === "evenodd")
@@ -95,6 +96,9 @@ class SelectionViewModel extends ViewModel {
     this.svgGroup.selectAll("path").remove();
     this.numSelected(0);
   }
+
+  // @override
+  jsonFieldName() { return "selection"; }
 }
 
 export { SelectionViewModel }

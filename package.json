@@ -9,6 +9,7 @@
 		"docdash": "^2.0.2",
 		"eslint": "^9.15.0",
 		"eslint-formatter-unix": "^8.40.0",
+		"eslint-plugin-import": "^2.31.0",
 		"jsdoc": "^4.0.4",
 		"mocha": "^11.0.1"
 	},
@@ -22,10 +23,7 @@
 		"clipper-lib": "^6.4.2",
 		"file-saver": "^2.0.5",
 		"gl-matrix": "^3.4.3",
-		"jquery": "^3.7.1",
 		"knockout": "^3.5.1",
-		"knockout-esnext": "^3.5.1026",
-		"snapsvg": "^0.5.1",
-		"webgl-utils": "^1.0.1"
+		"snapsvg": "^0.5.1"
 	}
 }

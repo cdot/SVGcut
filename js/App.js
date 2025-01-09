@@ -85,7 +85,7 @@ class App {
     // Note: The order the groups are created in is important. Later
     // groups will override earlier groups during selections, so we always
     // create the selection group last.
-    
+
     /**
      * SVG group containing geometry loaded from input files.
      * @member {SVGGraphicsElement}
@@ -114,10 +114,10 @@ class App {
     });
 
     // Create view models.
-    this.models.Tool = new ToolViewModel();
-    const unitConverter = this.models.Tool.unitConverter;
-
     this.models.Misc = new MiscViewModel();
+    const unitConverter = this.models.Misc.unitConverter;
+
+    this.models.Tool = new ToolViewModel(unitConverter);
     this.models.Material = new MaterialViewModel(unitConverter);
     this.models.CurveConversion = new CurveConversionViewModel(unitConverter);
     this.models.Selection = new SelectionViewModel(this.mainSvg.group());
@@ -141,22 +141,21 @@ class App {
 
       const files = event.target.files;
       for (const file of files) {
-        const lert = this.showAlert(`loading ${file.name}`, "alert-info");
+        const lert = this.showAlert(`Loading ${file.name}`, "alert-info");
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           this.loadSvg(e.target.result);
-          if (lert)
-            lert.remove();
-          this.showAlert(`loaded ${file.name}`, "alert-success");
-          this.tutorial(2, 'Click 1 or more objects');
+          lert.remove();
+          this.showAlert(`Loaded ${file.name}`, "alert-success");
+          this.tutorial(2);
         });
         reader.addEventListener("abort", e => {
           lert.remove();
-          this.showAlert(`aborted reading ${file.name} ${e}`, "alert-danger");
+          this.showAlert(`Aborted reading ${file.name} ${e}`, "alert-danger");
         });
         reader.addEventListener("error", e => {
           lert.remove();
-          this.showAlert(`error reading ${file.name} ${e}`, "alert-danger");
+          this.showAlert(`Error reading ${file.name} ${e}`, "alert-danger");
         });
         reader.readAsText(file);
       }
@@ -178,7 +177,7 @@ class App {
         // Ignore clicks that are not on SVG elements
         if (this.models.Selection.clickOnSvg(Snap(e.target))) {
           if (this.models.Selection.isSomethingSelected()) {
-            this.tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
+            this.tutorial(3);
             return true;
           }
         }
@@ -198,35 +197,33 @@ class App {
       if (selectedPaths.length > 0) {
         selectedPaths.forEach(element =>
           this.models.Selection.clickOnSvg(element));
-        if (this.models.Selection.isSomethingSelected()) {
-          this.tutorial(3, 'Click "Create Operation" after you have finished selecting objects.');
-        }
+        if (this.models.Selection.isSomethingSelected())
+          this.tutorial(3);
       }
     });
 
     document.getElementById('choose-settings-file')
     .addEventListener("change", event => {
-      var files = event.target.files;
+      const files = event.target.files;
       for (const file of files) {
-        var lert = this.showAlert(
-          `loading settings from ${file.name}`, "alert-info");
-        var reader = new FileReader();
+        const lert = this.showAlert(
+          `Loading settings from ${file.name}`, "alert-info");
+        const reader = new FileReader();
         reader.addEventListener("load", e => {
           this.fromJson(JSON.parse(e.target.result));
-          this.updateMainSvgSize();
           lert.remove();
-          this.showAlert(`loaded setting from ${file.name}`, "alert-success");
+          this.showAlert(`Loaded setting from ${file.name}`, "alert-success");
         });
         reader.addEventListener("abort", () => {
           lert.remove();
           this.showAlert(
-            `aborted reading settings from ${file.name}`, "alert-danger");
+            `Aborted reading settings from ${file.name}`, "alert-danger");
         });
         reader.addEventListener("error", e => {
           console.error(e);
           lert.remove();
           this.showAlert(
-            `error reading settings from ${file.name}`, "alert-danger");
+            `Error reading settings from ${file.name}`, "alert-danger");
         });
         reader.readAsText(file);
       }
@@ -256,9 +253,8 @@ class App {
     });
 
     if (this.options.preloadInBrowser) {
-      const settings = JSON.parse(localStorage.getItem("settings"));
-      if (settings)
-        this.fromJson(settings[this.options.preloadInBrowser]);
+      this.models.Misc.settingsKey(this.options.preloadInBrowser);
+      this.models.Misc.loadSettingsFromBrowser();
     }
 
     // Complete UI initialisation of the view models
@@ -277,11 +273,11 @@ class App {
    * @return {Promise} promise that resolves to undefined
    */
   start() {
-    this.updateSvgAutoHeight();   
+    this.updateSvgAutoHeight();
     this.updateMainSvgSize();
     this.updateSimulationCanvasSize();
 
-    this.tutorial(1, 'Open an SVG file.');
+    this.tutorial(1);
 
     return this.simulation.start();
   }
@@ -326,8 +322,10 @@ class App {
     const a = document.createElement("a");
     a.append("× ");
     a.classList.add("close");
+    a.classList.add("ecks");
     a.dataset.dismiss = "alert";
     alDiv.prepend(a);
+    a.addEventListener("click", event => alDiv.remove());
 
     const alp = document.getElementById('alert_placeholder');
     alp.prepend(alDiv);
@@ -362,6 +360,7 @@ class App {
 
   /**
    * Get the bounding box of the main SVG.
+   * @return {Rect} the BB (in px units)
    */
   getMainSvgBBox() {
     return new Rect(this.mainSvg.getBBox());
@@ -370,6 +369,7 @@ class App {
   /**
    * Update the size of the simulation canvas to match
    * the size of the main SVG.
+   * @private
    */
   updateSimulationCanvasSize() {
     const mSvgDiv = document.getElementById("MainSvgDiv");
@@ -383,6 +383,7 @@ class App {
    * Update the client size of any svg that's tagged as autoheight
    * so that the aspect ratio is preserved. This is currently only
    * used for the MaterialSvg picture.
+   * @private
    */
   updateSvgAutoHeight() {
     const nodes = document.querySelectorAll("svg.autoheight");
@@ -396,6 +397,7 @@ class App {
   /**
    * Set the client area of the main SVG so that it fits the
    * viewing area.
+   * @private
    */
   updateMainSvgSize() {
     const bbox = this.mainSvg.getBBox();
@@ -411,6 +413,7 @@ class App {
   /**
    * Load SVG from plain text
    * @param {Buffer|string} content the svg plain text
+   * @private
    */
   loadSvg(content) {
     const svg = Snap.parse(content);
@@ -419,21 +422,28 @@ class App {
   }
 
   /**
-   * Change to the given tutorial step
-   * @param {number} step the step to change to
-   * @param {string} message text for the tutorial message
+   * Change the tutorial alert to the given tutorial step.  Changing to a step
+   * that has no message in the HTML will clear the tutorial alert. The
+   * tutorial will only run through once.
+   * @param {number} step the step to change to.
    */
-  tutorial(step, message) {
+  tutorial(step) {
     // Don't go backwards
     if (step > this.currentTutorialStep) {
       if (this.tutorialAlert)
         this.tutorialAlert.remove();
-      this.tutorialAlert = this.showAlert(
-        `Step ${step}: ${message}`, "alert-info");
-      this.currentTutorialStep = step;
+      const messEl = document.querySelector(
+        `#tutorialSteps>div[name="Step${step}"]`);
+      if (messEl) {
+        const message = messEl.innerHTML;
+        this.tutorialAlert = this.showAlert(
+          `Step ${step}: ${message}`, "alert-info");
+        this.currentTutorialStep = step;
+      }
     }
   }
 
+  // @override
   toJson() {
     const json = {};
     for (const m in this.models)
@@ -441,10 +451,13 @@ class App {
     return json;
   }
 
+  // @override
   fromJson(json) {
-    if (json)
+    if (json) {
       for (const m in this.models)
         this.models[m].getJson(json);
+      this.updateMainSvgSize();
+    }
   }
 }
 

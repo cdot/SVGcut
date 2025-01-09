@@ -5,7 +5,6 @@
 
 /* global App */
 
-import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
 
 const popovers = [
@@ -19,68 +18,58 @@ const popovers = [
   { id: "toolCutRate" }
 ];
 
+/**
+ * View model for the Tool pane
+ */
 class ToolViewModel extends ViewModel {
 
-  constructor() {
-    super();
-
-    /**
-     * Units in use e.g. "mm". The Tool model has the units used by
-     * everything other than the Gcode converter.
-     * @member {string}
-     */
-    this.units = ko.observable("mm");
-
-    /**
-     * Unit converter in the tool model. Shared by everything else.
-     * SMELL: this really should be in a "settings" model.
-     */
-    this.unitConverter = new UnitConverter(this.units);
+  constructor(unitConverter) {
+    super(unitConverter);
 
     /**
      * Fraction of the tool diameter.
-     * @member {number}
+     * @member {observable.<number>}
      */
     this.stepover = ko.observable(0.4);
 
     /**
-     * Tool diameter
-     * @member {number}
+     * Tool diameter.
+     * @member {observable.<number>}
      */
-    this.diameter = ko.observable(this.unitConverter.fromUnits(3, "mm"));
-    this.unitConverter.add(this.diameter);
+    this.diameter = ko.observable(unitConverter.fromUnits(3, "mm"));
+    unitConverter.add(this.diameter);
 
     /**
-     * Depth of each tool pass
-     * @member {number}
+     * Depth of each tool pass.
+     * @member {observable.<number>}
      */
-    this.passDepth = ko.observable(this.unitConverter.fromUnits(3, "mm"));
-    this.unitConverter.add(this.passDepth);
+    this.passDepth = ko.observable(unitConverter.fromUnits(1, "mm"));
+    unitConverter.add(this.passDepth);
 
     /**
      * Rapid movement rate
-     * @member {number}
+     * @member {observable.<number>}
      */
-    this.rapidRate = ko.observable(this.unitConverter.fromUnits(2500, "mm"));
-    this.unitConverter.add(this.rapidRate);
+    this.rapidRate = ko.observable(unitConverter.fromUnits(2500, "mm"));
+    unitConverter.add(this.rapidRate);
 
     /**
      * Tool plunge rate
-     * @member {number}
+     * @member {observable.<number>}
      */
-   this.plungeRate = ko.observable(this.unitConverter.fromUnits(100, "mm"));
-    this.unitConverter.add(this.plungeRate);
+   this.plungeRate = ko.observable(unitConverter.fromUnits(100, "mm"));
+    unitConverter.add(this.plungeRate);
 
     /**
      * Tool cut rate
-     * @member {number}
+     * @member {observable.<number>}
      */
-    this.cutRate = ko.observable(this.unitConverter.fromUnits(1000, "mm"));
-    this.unitConverter.add(this.cutRate);
+    this.cutRate = ko.observable(unitConverter.fromUnits(1000, "mm"));
+    unitConverter.add(this.cutRate);
 
     /**
      * Tool v-bit angle
-     * @member {number}
+     * @member {observable.<number>}
      */
     this.angle = ko.observable(180 /*degrees*/);
     this.angle.subscribe(newValue => {
@@ -123,12 +112,11 @@ class ToolViewModel extends ViewModel {
   }
 
   // @override
-  get jsonFieldName() { return "tool"; }
+  jsonFieldName() { return "tool"; }
 
   // @override
   toJson() {
     return {
-      units: this.units(),
       diameter: this.diameter(),
       angle: this.angle(),
       passDepth: this.passDepth(),
@@ -141,7 +129,6 @@ class ToolViewModel extends ViewModel {
 
   // @override
   fromJson(json) {
-    this.updateObservable(json, 'tool');
     this.updateObservable(json, 'diameter');
     this.updateObservable(json, 'angle');
     this.updateObservable(json, 'passDepth');

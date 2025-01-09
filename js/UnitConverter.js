@@ -6,7 +6,7 @@ import { Rect } from "./Rect.js";
 const INTERNAL_PER_MM   = 100000; // millimetres
 const INTERNAL_PER_INCH = 25.4 * INTERNAL_PER_MM; // inches
 // Browsers assume a fixed conversion of pixels to mm of
-// 25.4/96 (96 dpi). 
+// 25.4/96 (96 dpi).
 const INTERNAL_PER_PX = INTERNAL_PER_INCH / 96;
 
 /**

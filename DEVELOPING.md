@@ -1,136 +1,51 @@
-# SVG
-Draw polys and fill them with colour so they can easily be identified in jscut.
-It doesn't matter what the page size is, jscut orients itself to the drawn polys.
+# DEVELOPING
 
-Don't enable stroke paint! It just complicates the origins. Just use fill.
+First, clone the repository. Then
+```
+npm install
+npm run doc
+```
+You should be able to open `index.html` through a local web server.
 
-Inkscape uses an origin at the top left of the figure, with Y increasing downwards. This reflects how SVG works directly, but causes some irritation in jscut. See "Gcode Conversion" for more.
+# Overview of the code
+`index.html` uses script tags to load most third-party dependencies.
+One of these dependencies is `knockout`, and MVVM package that supports
+association of HTML elements directly with code. Read their documentation
+to understand how HTML elements link to the code.
 
-# USAGE
+`index.html` loads `js/app.js` which is a simple stub that just instantiates
+`App.js`, the main application singleton. This in turn creates all the view models, one for each pane in the display. Some panes (Operations, Tabs) have sub-view models for items dynamically created in those panes.
 
-Make sure everything is flipped to mm before doing anything else.
+The display of imported SVG is handled in an SVG-enabled canvas, making use of `snapsvg` to manipulate the SVG DOM.
 
-Older version reviewed at https://www.youtube.com/watch?v=dVgf0Hf91vA&t=2927s
+The simulation is done in a canvas using WebGL. See `js/Simulation.js`.
 
-## Operations
-- Inside follows the tool radius inside the boundary
-- Pocket cleans out the pocket
-- Outside follows the tool radius outside the boundary
-- Engrave follows the boundary with the centre of the tool
+## Units
+There are three unit systems at play.
+- The first is "user" units, which are selectable using the "Units" dropdown. These are the units used to display measures to the user in all panes except Gcode Generation, which has it's own set of user units.
+- When an SVG is imported, the units used in the SVG are automatically converted into "px" units by `snapsvg`, assuming a conversion of 96 pixels per inch.
+- Once SVG manipulation is complete, px units are converted to "internal" units. This conversion is designed to help reduce rounding errors in floating point calculations performed on polygons. Tool paths are internally represented using internal units.
+- Finally internal units are mapped back to px units for generating SVG elements, and to whatever physical units were requested for Gcode Generation.
 
-You can have multiple operations, each on a different poly. Select a poly,
-select "Create Operation". Repeat.
+Note that the conversion to Gcode isn't as simple as the others, because px and internal units assume 0,0 at the top left with Y incresing downwards, but Gcode is generated assuming 0,0 at the lower left with Y increasing upwards.
 
-## Tabs
-When you select generated paths, you can then select another non-path figure that intersects with it and set a shallower depth. Tabs will compute an intersection with the generated paths and retain that (used to connect inner figures in cut-through)
+# Coding Standards
++ All files are named either for the class or namespace they define.
++ The use of global variables is strongly discouraged.
++ 2-space indentation
++ Literate coding. All names should be expressive of their purpose.
++ Prefer object-oriented code using ES6 syntax.
++ All methods, function and members must be documented using JSDoc.
++ `observable.<type>` is used to document and observable that observes a `type`.
++ Use `const` and `let` and avoid the use of `var`.
++ Use spaces around operators.
++ Keep `npm run lint` clean.
++ Use `npm run doc` to generate and check code documentation.
 
-## Tool
-- Angle is the angle of the cutter, used by V Pocket, which I assume is used for undercutting. Leave at 180.
-- Pass Depth controls the incremental depth step. 1mm is OK for MDF.
-- Step Over when pocketing, controls the fracion of the tool diameter between concentric passes. Leave at 0.4
-- Rapid not useful
-- Plunge slower is probably better
-- Cut slower is better
-
-## Material
-- Thickness is a bit irrelevant
-- Z Origin keep as the top of the material
-- Clearance make sure it's high enough to dodge clips (26mm or more, though avoid end stop)
-
-## Curve to Line Conversion
-
-## Gcode Conversion
-Doesn't do anything until Gcode has been generated.
-
-By default the code assumes a coordinate space that has 0,0 at the top
-left, as SVG does. The Gcode converter then negates the Y-axis, so a drawing
-of a (0, 0) -> (180, 180) rect in Inkscape ends up in Gcode as (0, 0) -> (180, -180). The 3018 uses a coordinate space with 0,0 lower left and Y increasing, so we have to zero the Y axis.
-
-To draw a poly accurately relative to the machine origin, we need
-to find the maximum Y coordinate on the poly in the SVG, maxY. The generated Gcode for an Engrave operation will have this at 0,-maxY. If we Zero lower left, this becomes 0,0. At the same time, 0,0 in the SVG becomes 0,maxY on the machine. So if we want the bottom of the poly to be at polyY on the machine, we need to
-add polyY to the Yoffset.
-
-Then we have the problem of tool diameter. An outside cut will trace around the outside of the poly. By default, jscut will generate a -ve coordinate for the
-tool at the left edge.
-
-### Inside operation
-Also Pocket.
-
-#### Default behaviour
-- X and Y Offsets are both 0
-- Min X is the tool radius
-- Max X is +ve the maximum in the SVG
-- Min Y is -ve the maximum in the SVG
-- Max Y is -ve the tool radius
-
-#### After Zero lower left
-- X Offset is -ve the tool radius
-- Y Offset is the maximum in the SVG - the tool radius
-- Min X, Max X are unchanged
-- Min Y is 0
-- Max Y is the maximum in the SVG - the tool diameter
-
-To align the edge of the cutter to the X and Y axes we then:
-+ *set X Offset = 0*
-+ *set Y offset = the calculated Y offset + the cutter radius*
-
-### Outside operation
-#### Default behaviour
-- X and Y Offsets are both 0
-- Min X is -ve the tool radius
-- Max X is the maximum in the SVG + the tool radius
-- Min Y is -ve the maximum in the SVG + the tool radius
-- Max Y is +ve the tool radius
-
-#### After Zero lower left
-- X Offset is +ve the tool radius
-- Y Offset is the maximum in the SVG + the cutter diameter
-- Min X is 0
-- Max X is the maximum X in the SVG + the cutter diameter
-- Min Y is 0
-- Max Y is the maximum Y in the SVG + the cutter diameter
-
-To align the edge of the cutter to the X and Y axes we then:
-+ *set X Offset = 0*
-+ *set Y offset = calculated Y offset + the tool radius*
-
-### Engrave operation
-#### Default behaviour
-- X and Y Offsets are both 0
-- Min X is 0
-- Max X is the maximum X in the SVG
-- Min Y is 0
-- Max Y is the maximum Y in the SVG
-
-#### After Zero lower left
-- X Offset is 0
-- Y Offset is the maximum Y in the SVG
-- Min X, Max X are unchanged
-- Min Y is 0
-- Max Y is the maximum Y in the SVG
-
-To align the edge of the cutter to the X and Y axes we then:
-+ *set X Offset = tool radius*
-+ *set Y offset = calculated Y offset + tool radius*
-
-# Save Gcode
-See https://www.linuxcnc.org/docs/html/gcode for Gcode. Not sure what
-is supported on the 3018.
-
-# The Code
-## Bower
-Bower is only used to install Polymer (see npm @polymer/polymer. which
-AFAICT is only used for testing.
-
-## Boost
-boost and boost-libs required
-
-## Emscripten
-Used to compile C++ code to WebAssembly, which can then be called
-from Javascript. "Module" is a global JavaScript object provided by
-Emscripten with attributes that Emscripten-generated code calls at
-various points in its execution.
-See https://emscripten.org/docs/api_reference/module.html.
-
-separateTabs
-vPocket
+## Third-party Libraries
+SVG2Gcode makes heavy use of a number of third party libraries:
++ `knockout` is used to bind UI elements in the HTML to members in view models.
++ `bootstrap` is used to format the UI, and provides some widgets.
++ `snap` is used for manipulating SVG in the DOM.
++ `clipper` is used for polygon operations.
+Please avoid the use of any libraries that have overlapping functionality.
