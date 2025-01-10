@@ -72,15 +72,15 @@ class GcodeGenerationViewModel extends ViewModel {
     this.returnTo00.subscribe(() => this.generateGcode());
 
     /**
-     * Where the origin is, either "SVG page" or "Bounding box".
+     * Where the origin isone of "SVG page", "Bounding box" or
+     * "Centre".
      * In SVG, the origin is at the top left, and Y increases
      * downwards. Internally we use internal coordinates, which follow
      * this pattern. Gcode, on the other hand, assumes Y increases
-     * upwards and the origin is at the bottom left of the work
-     * area. Because the whole SVG might be much bigger than the
-     * actual work (the selected objects used to generate the Gcode)
-     * it is useful to be able to realign the Gcode origin with the
-     * lower-left corner of the bounding box around the actual work.
+     * upwards. "SVG page" will align the machine origin with the lower
+     * left corner of the SVG page. "Bounding box" will align with the
+     * lower left corner of the work bounding box. "Centre" will align
+     * with the centre of the work bounding box.
      * @member {observable.<string>}
      */
     this.origin = ko.observable("SVG page");
@@ -229,14 +229,18 @@ class GcodeGenerationViewModel extends ViewModel {
     const svgBB = this.unitConverter.fromUnits(App.getMainSvgBBox(), "px");
     let ox = svgBB.left + this.extraOffsetX();
     let oy = svgBB.bottom + this.extraOffsetY();
-    if (this.origin() === "Bounding box") {
+    if (this.origin() === "Bounding box" || this.origin() === "Centre") {
       const tpBB = this.unitConverter.fromUnits(
         App.models.Operations.getBBox(), "internal");
       ox += tpBB.left - svgBB.left;
       oy += svgBB.bottom - tpBB.bottom;
+      if (this.origin() === "Centre") {
+        ox += tpBB.width / 2;
+        oy += tpBB.height / 2;
+      }
     }
     const gcode = [
-      `; Bounding box:(${Number(this.bbWidth()).toFixed(2)},${Number(this.bbHeight()).toFixed(2)})${gunits}`,
+      `; Work area:(${Number(this.bbWidth()).toFixed(2)},${Number(this.bbHeight()).toFixed(2)})${gunits}`,
       `; Offset:      (${Number(ox).toFixed(2)},${Number(oy).toFixed(2)})${gunits}`
     ];
 

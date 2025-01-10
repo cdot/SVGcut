@@ -64,11 +64,13 @@ You can choose for the machine origin to correspond to the bottom left of the SV
 
 <img src="/images/coords.svg" style="width:50%;height: auto"></img>
 
-When we load up SVGcut and generate Gcode for this drawing with Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
+When we load up SVGcut and generate Gcode for this drawing with the Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
 
-If we now switch Origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
+If we now switch the origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
 
-As well as the "SVG page" and "Bounding box" origins, you can also add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut.
+If the origin is set to "Centre" then the centre of the bounding box will be machine (0,0) while the bottom left corner will be at (-30,-15).
+
+As well as the "SVG page", "Bounding box", and "Centre", origins, you can also generate Gcode to add an additional offset to the origin. For example, if you want to move the machine origin several times and repeat the same cut. 
 
 Now you can click "Generate" on the Operations you created above to generate the actual tool paths, and the Gcode for those paths.
 

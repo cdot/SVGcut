@@ -413,6 +413,7 @@
                       <select id="gcodeOrigin" data-bind="value: origin">
                         <option>SVG page</option>
                         <option>Bounding box</option>
+                        <option>Centre</option>
                       </select>
                     </td>
                   </tr>
@@ -786,14 +787,16 @@
       these codes (or you are more comfortable thinking in inches!)
     </div>
     <div name="gcodeOrigin">
-      Set the machine origin to be at either the bottom left corner of the
-      SVG page, or the bottom left corner of the bounding box around
-      all the chosen operations.
+      Set the machine origin. "SVG page" will set (0,0) to the bottom
+      left of the SVG page. "Bounding box" will set it to the bottom left
+      of the bounding box around the toolpaths. "Centre" will set it to
+      the middle of the toolpaths. Choose the origin that works best
+      with your CNC machine.
     </div>
     <div name="gcodeExtraOffsetX">
-      Extra X offset of the work origin from the machine origin</div>
+      Extra X offset added to the the machine origin</div>
     <div name="gcodeExtraOffsetY">
-      Extra Y offset of the work origin from the machine origin</div>
+      Extra Y offset added to the machine origin</div>
     <div name="gcodeWidth">Width of the work.</div>
     <div name="gcodeHeight">Height of the work</div>
     <div name="gcodeReturn00">Move the tool to 0,0 after the last

@@ -33,7 +33,7 @@ class ToolViewModel extends ViewModel {
     this.stepover = ko.observable(0.4);
 
     /**
-     * Tool diameter.
+     * Tool diameter mm
      * @member {observable.<number>}
      */
     this.diameter = ko.observable(unitConverter.fromUnits(3, "mm"));
@@ -47,31 +47,31 @@ class ToolViewModel extends ViewModel {
     unitConverter.add(this.passDepth);
 
     /**
-     * Rapid movement rate
+     * Rapid movement rate mm/min
      * @member {observable.<number>}
      */
-    this.rapidRate = ko.observable(unitConverter.fromUnits(2500, "mm"));
+    this.rapidRate = ko.observable(unitConverter.fromUnits(300, "mm"));
     unitConverter.add(this.rapidRate);
 
     /**
-     * Tool plunge rate
+     * Tool plunge rate mm/min
      * @member {observable.<number>}
      */
-   this.plungeRate = ko.observable(unitConverter.fromUnits(100, "mm"));
+   this.plungeRate = ko.observable(unitConverter.fromUnits(80, "mm"));
     unitConverter.add(this.plungeRate);
 
     /**
-     * Tool cut rate
+     * Tool cut rate mm/min
      * @member {observable.<number>}
      */
-    this.cutRate = ko.observable(unitConverter.fromUnits(1000, "mm"));
+    this.cutRate = ko.observable(unitConverter.fromUnits(100, "mm"));
     unitConverter.add(this.cutRate);
 
     /**
      * Tool v-bit angle
      * @member {observable.<number>}
      */
-    this.angle = ko.observable(180 /*degrees*/);
+    this.angle = ko.observable(180 /*degrees, 180=flat*/);
     this.angle.subscribe(newValue => {
       if (newValue <= 0 || newValue > 180)
         this.angle(180);

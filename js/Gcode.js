@@ -367,7 +367,7 @@ export function generate(args) {
               }
             }
             if (!executedRamp) {
-              gcode.push('M4 ; start spindle');
+              gcode.push('M3 ; start spindle');
               gcode.push(
                 `G1 Z${selectedZ.toFixed(dec)} ${plungeF} ; plunge`);
             }
