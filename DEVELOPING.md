@@ -43,9 +43,9 @@ Note that the conversion to Gcode isn't as simple as the others, because px and 
 + Use `npm run doc` to generate and check code documentation.
 
 ## Third-party Libraries
-SVG2Gcode makes heavy use of a number of third party libraries:
+SVGcut makes heavy use of third party libraries:
 + `knockout` is used to bind UI elements in the HTML to members in view models.
 + `bootstrap` is used to format the UI, and provides some widgets.
 + `snap` is used for manipulating SVG in the DOM.
 + `clipper` is used for polygon operations.
-Please avoid the use of any libraries that have overlapping functionality.
+Authors of these libraries are acknowledged and thanked. Please avoid the use of any libraries that have overlapping functionality.
