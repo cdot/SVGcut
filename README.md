@@ -101,12 +101,13 @@ space, so keep the browser for templates and store project files to disc.)
 
 # Relationship to jscut
 SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVGcut has fixes for some of these, and more.
-+ Extensive in-code documentation and literate programming techniques
++ Support for saving and loading projects
 + Uses G0 rather than G1 for travel
 + Added "select all" on a double-click
-+ Extensive newbie and in-code documentation
 + Easier to work with XY origins
 + Gcode text preview
++ Extensive newbie documentation
++ Extensive in-code documentation and literate programming techniques
 
 Some features of jscut have been disabled/removed. This may be because they are  deemed too esoteric, or the (undocumented) code was too complex to reverse engineer, for limited end-user value.
 - Tabs
