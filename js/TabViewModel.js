@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global ClipperLib */ // ../lib/clipper_unminified-6.1.3.2.js
 
@@ -106,7 +106,7 @@ export class TabViewModel extends ViewModel {
   };
 
   // @override
-  toJson() {
+  toProjectJson() {
     return {
       rawPaths: this.rawPaths,
       enabled: this.enabled(),
@@ -115,7 +115,7 @@ export class TabViewModel extends ViewModel {
   };
 
   // @override
-  fromJson(json) {
+  fromProjectJson(json) {
     this.loading = true;
     this.rawPaths = json.rawPaths;
     this.updateObservable(json, 'margin');

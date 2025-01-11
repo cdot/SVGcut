@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global App */
 
@@ -520,19 +520,19 @@ class Simulation {
       }
 
       //if (index > this.pathVerticesPerLine)
-      //    console.log("oops...");
+      //    console.debug("oops...");
       while (index < this.pathVerticesPerLine)
         addToBuffer(index++, 200, 0, 0, 0, 1, 0);
     } else {
-      //console.log("cut");
+      //console.debug("cut");
       // cut
       const planeContactAngle = Math.asin(
         (prev.z - curr.z) / xyDist
         * Math.sin(this.cutterAngleRad / 2)
         / Math.cos(this.cutterAngleRad / 2));
-      //console.log("\nxyDist = ", xyDist);
-      //console.log("delta z = " + (z - prev.z));
-      //console.log("planeContactAngle = " + (planeContactAngle * 180 / Math.PI));
+      //console.debug("\nxyDist = ", xyDist);
+      //console.debug("delta z = " + (z - prev.z));
+      //console.debug("planeContactAngle = " + (planeContactAngle * 180 / Math.PI));
 
       let index = 0;
       //if (true) {
@@ -570,7 +570,7 @@ class Simulation {
             * (endAngle - startAngle);
         let a2 = startAngle + (circleIndex + 1) / HALF_CIRCLE_SEGMENTS
             * (endAngle - startAngle);
-        //console.log(`a1,a2: ${a1 * 180 / Math.PI}, ${a2 * 180 / Math.PI}`);
+        //console.debug(`a1,a2: ${a1 * 180 / Math.PI}, ${a2 * 180 / Math.PI}`);
 
         addToBuffer(index++, 100, coneDia / 2 * Math.cos(a2),
                     coneDia / 2 * Math.sin(a2), coneHeight, 1, 0);
@@ -585,7 +585,7 @@ class Simulation {
       }
 
       //if (index != this.pathVerticesPerLine)
-      //    console.log("oops...");
+      //    console.debug("oops...");
       //while (index < this.pathVerticesPerLine)
       //    addToBuffer(index++, 200, 0, 0, 0, 1, 0);
     }

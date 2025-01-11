@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -16,20 +16,12 @@ class SelectionViewModel extends ViewModel {
   /**
    * Note that this model doesn't require a unit converter, as it has
    * no UI components that require conversion.
-   * @param {SVGGraphicsElement} svgGroup SVG group for containing the selection
    */
-  constructor(svgGroup) {
+  constructor() {
     super();
 
     /**
-     * The SVG group used for selections
-     * @member {SVGGraphicsElement}
-     * @private
-     */
-    this.svgGroup = svgGroup;
-
-    /**
-     * Number of elements selected (==this.svgGroup size)
+     * Number of elements selected (==App.selSvgGroup size)
      * @member {observable.<number>}
      */
     this.numSelected = ko.observable(0);
@@ -61,7 +53,7 @@ class SelectionViewModel extends ViewModel {
         elem,
         App.models.CurveConversion.minSegs(),
         App.models.CurveConversion.minSegLen.toUnits("px"));
-      const newPath = this.svgGroup.path(path);
+      const newPath = App.selSvgGroup.path(path);
       newPath.attr("class", "selectedPath");
       if (elem.attr("fill-rule") === "evenodd")
         newPath.attr("fill-rule", "evenodd");
@@ -86,14 +78,14 @@ class SelectionViewModel extends ViewModel {
    * @return {SVGElement[]} list of SVG elements
    */
   getSelection() {
-    return this.svgGroup.selectAll("path");
+    return App.selSvgGroup.selectAll("path");
   }
 
   /**
    * Deselect all SVG elements
    */
   clearSelection() {
-    this.svgGroup.selectAll("path").remove();
+    App.selSvgGroup.selectAll("path").remove();
     this.numSelected(0);
   }
 

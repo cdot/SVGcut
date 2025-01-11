@@ -1,6 +1,6 @@
 const options = {
   // Preload in-browser settings file.
-  preloadInBrowser: 'svg2gcode_defaults'
+  preloadInBrowser: 'default'
 };
 
 export default options;

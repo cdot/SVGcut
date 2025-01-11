@@ -17,7 +17,7 @@ To prepare your SVG, make sure draw it at the size that you want your final work
 
 *Tip* If you have a drawing that makes heavy use of complex features (such as text, or shapes, or meshes) you might consider taking a copy and preparing it for machining, rather than converting your original to paths and losing all the nice features.
 
-Load SVGcut in your browser, and select "Open SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
+Load SVGcut in your browser.
 
 ## Tool
 
@@ -26,6 +26,10 @@ The next step is to set the parameters of the tool you are using. Click on the "
 ## Material
 
 Now open the material pane to specify the material you are working with. There is popup help on each of the options.
+
+## Import SVG
+
+Select "Import SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
 
 ## Operations
 
@@ -82,8 +86,18 @@ Once you have generated the Gcode you can preview it in the "Simulate" pane. Thi
 You can also use the "View Gcode" button in the "Gcode Generation" pane to open
 a text view on the Gcode.
 
+
 ## Saving the Gcode
 Once you are happy with the Gcode save it to a file. You can call it what you want, though if you use the extension `.nc` it will be easier to find in Candle.
+
+# Projects
+
+The "Project" menu lets you save and reload projects. You can save in a file, or in the browser.
+
+When you start up the app for the first time, it starts up with a bunch of defaults, many of which you will probably change to create your own set of defaults. You can save these defaults for use in other projects by selecting "Template only" when you save your project. If you save a template called "default" in the browser, it will automatically be loaded whenever you start up. You might have a number of different tool configurations; you can save them the same way, giving them meaningful names.
+
+(Be warned; projects can be quite big, and the browser has limited storage
+space, so keep the browser for templates and store project files to disc.)
 
 # Relationship to jscut
 SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVGcut has fixes for some of these, and more.

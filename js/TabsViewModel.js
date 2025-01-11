@@ -15,9 +15,14 @@ class TabsViewModel extends ViewModel {
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
-    super();
+    super(unitConverter);
+
     this.tabs = ko.observableArray();
 
+    /**
+     * Maximum depth operations may cut to when they pass over tabs
+     * @member {observable.<number>}
+     */
     this.maxCutDepth = ko.observable(0);
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth.subscribe(() =>
@@ -34,9 +39,10 @@ class TabsViewModel extends ViewModel {
     const rawPaths = [];
 
     App.models.Selection.getSelection().forEach(element => {
+      // rawPaths.pus(new RawPath({...
       rawPaths.push({
-        'path': Snap.parsePathString(element.attr('d')),
-        'nonzero': element.attr("fill-rule") != "evenodd"
+        path: Snap.parsePathString(element.attr('d')),
+        nonzero: element.attr("fill-rule") != "evenodd"
       });
     });
     App.models.Selection.clearSelection();
@@ -58,16 +64,17 @@ class TabsViewModel extends ViewModel {
   jsonFieldName() { return "tabs"; }
 
   // @override
-  toJson() {
-    return {
-      maxCutDepth: this.maxCutDepth(),
-      tabs: this.tabs.map(tab => tab.toJson())
+  toJson(template) {
+    const json = {
+      maxCutDepth: this.maxCutDepth()
     };
-  };
+    if (!template)
+      json.tabs = this.tabs.map(tab => tab.toJson());
+    return json;
+  }
 
   // @override
   fromJson(json) {
-    this.updateObservable(json, 'units');
     this.updateObservable(json, 'maxCutDepth');
 
     for (const tab of this.tabs())

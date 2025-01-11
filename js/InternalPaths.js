@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global Module */
 
@@ -131,7 +131,7 @@ export function toCpp(paths, memoryBlocks) {
     memoryBlocks.push(cPath);
     if (cPath & 4)
       cPath += 4;
-    //console.log("-> " + cPath.toString(16));
+    //console.debug("-> " + cPath.toString(16));
     const pathArray = new Float64Array(
       Module.HEAPU32.buffer, Module.HEAPU32.byteOffset + cPath);
 

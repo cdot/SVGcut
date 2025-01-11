@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 //import "file-saver"
 /* global saveAs */
@@ -62,7 +62,7 @@ class GcodeGenerationViewModel extends ViewModel {
      * Filename to store gcode in
      * @member {observable.<string>}
      */
-    this.gcodeFilename = ko.observable("svg2gcode.nc");
+    this.gcodeFilename = ko.observable("svgcut.nc");
 
     /**
      * True to return to machine 0,0 at the end of the GCode.
@@ -321,7 +321,7 @@ class GcodeGenerationViewModel extends ViewModel {
    * Support for storing gcode in local files.
    * Saves the gcode and hides the modal that invoked the function.
    */
-  saveGcodeInLocalFile() {
+  saveGcodeInFile() {
     const gcode = this.gcode();
     if (gcode == "")
       alert('Click "Generate Gcode" first', "alert-danger");

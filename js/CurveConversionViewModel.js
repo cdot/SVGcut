@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -47,7 +47,7 @@ class CurveConversionViewModel extends ViewModel {
   jsonFieldName() { return "curveToLine"; }
 
   // @override
-  toJson() {
+  toSettingsJson() {
     return {
       minSegs: this.minSegs(),
       minSegLen: this.minSegLen()
@@ -55,7 +55,7 @@ class CurveConversionViewModel extends ViewModel {
   }
 
   // @override
-  fromJson(json) {
+  fromSettingsJson(json) {
     this.updateObservable(json, 'minSegs');
     this.updateObservable(json, 'minSegLen');
   }

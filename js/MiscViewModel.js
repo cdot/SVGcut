@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 //import "file-saver"
 /* global saveAs */
@@ -15,13 +15,13 @@
 import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
 
-// Name of a key in browser LocalStorage that can store many sets of settings
-const LOCAL_STORAGE_AREA = "svg2gcode";
-// Name of a default key within the LOCAL_STORAGE_AREA
-const SETTINGS_KEY = "default";
+// Name of a key in browser LocalStorage that can store many projects
+const LOCAL_PROJECTS_AREA = "svgcut";
+// Name of a default key within the LOCAL_PROJECTS_AREA
+const DEFAULT_PROJECT_KEY = "default";
 
-// Default name for a filename to store settings
-const SETTINGS_FILENAME = "svg2gcode.json";
+// Default name for a filename to store projects
+const DEFAULT_PROJECT_FILENAME = "svgcut.json";
 
 class MiscViewModel extends ViewModel {
 
@@ -34,6 +34,9 @@ class MiscViewModel extends ViewModel {
      * @member {observable.<Unit>}
      */
     this.units = ko.observable("mm");
+    this.units.subscribe(nu => {
+     document.getElementById("pickedUnits").innerText = nu;
+    });
 
     /**
      * Unit converter in the tool model. Shared by everything else.
@@ -41,25 +44,30 @@ class MiscViewModel extends ViewModel {
     this.unitConverter = new UnitConverter(this.units);
 
     /**
-     * "Filename" to load/save settings.
+     * "Filename" to load/save project.
      * @member {observable.<string>}
      */
-    this.settingsFilename = ko.observable(SETTINGS_FILENAME);
+    this.projectFilename = ko.observable(DEFAULT_PROJECT_FILENAME);
 
     /**
-     * Local storage key to load/save settings.
+     * Local storage key to load/save project.
      * @member {observable.<string>}
      */
-    this.settingsKey = ko.observable(SETTINGS_KEY);
+    this.projectKey = ko.observable(DEFAULT_PROJECT_KEY);
 
     /**
-     * Dropdown for local storage keys to load settings from.
+     * Whether to save just a template, or a whole project
+     * @member {observable.<boolean>}
+     */
+    this.templateOnly = ko.observable(false);
+
+    /**
+     * Dropdown for local storage keys to load projects from.
      * @member {observable.<string>}
      */
-    this.browserSettings = ko.observableArray([]);
+    this.browserProjects = ko.observableArray([]);
 
-    // SMELL: the following should be part of GcodeGeneration, but are
-    // only relevant to calls out to CPP
+    // SMELL: the following are only relevant to calls out to CPP
     //CPP this.loadedCamCpp = ko.observable(false);
     //CPP this.camCppError = ko.observable("");
     //CPP this.debugArg0 = ko.observable(0);
@@ -70,82 +78,124 @@ class MiscViewModel extends ViewModel {
   initialise() {
     ko.applyBindings(
       this,
-      document.getElementById("SaveSettingsModal"));
+      document.getElementById("NavBar"));
 
     ko.applyBindings(
       this,
-      document.getElementById("LoadSettingsFromBrowserModal"));
+      document.getElementById("SaveProjectModal"));
 
     ko.applyBindings(
       this,
-      document.getElementById("DeleteSettingsFromBrowserModal"));
+      document.getElementById("LoadProjectFromBrowserModal"));
+
+    ko.applyBindings(
+      this,
+      document.getElementById("DeleteProjectFromBrowserModal"));
+
+    document.getElementById('chosenProjectFile')
+    .addEventListener("change", event => {
+      const files = event.target.files;
+      for (const file of files) {
+        const lert = App.showAlert(
+          `Loading project from ${file.name}`, "alert-info");
+        const reader = new FileReader();
+        reader.addEventListener("load", e => {
+          App.fromJson(JSON.parse(e.target.result));
+          lert.remove();
+          App.showAlert(`Loaded project from ${file.name}`, "alert-success");
+        });
+        reader.addEventListener("abort", () => {
+          lert.remove();
+          App.showAlert(
+            `Aborted reading project from ${file.name}`, "alert-danger");
+        });
+        reader.addEventListener("error", e => {
+          console.error(e);
+          lert.remove();
+          App.showAlert(
+            `Error reading project from ${file.name}`, "alert-danger");
+        });
+        reader.readAsText(file);
+      }
+    });
   }
 
   /**
-   * Support for storing settings in the browser local storage
+   * Support for storing projects in the browser local storage.
+   * Get a list of projects already there.
    */
-  checkBrowserForSettings() {
-    const settings = localStorage.getItem(LOCAL_STORAGE_AREA);
-    if (settings) {
-      this.browserSettings(Object.keys(JSON.parse(settings)));
+  getBrowserProjectsList() {
+    const json = localStorage.getItem(LOCAL_PROJECTS_AREA);
+    if (json) {
+      this.browserProjects(Object.keys(JSON.parse(json)));
       return "";
     } else
-      return "No settings stored locally yet.";
+      return "No projects found in the browser.";
   }
 
   /**
-   * Invoked from dialog
+   * Invoked from SaveProjectModal, save the project in the
+   * browser local storage.
    */
-  saveSettingsInBrowser() {
-    let settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA)) ?? {};
-    const fn = this.settingsKey();
-    settings[fn] = App.toJson();
-    localStorage.setItem(LOCAL_STORAGE_AREA, JSON.stringify(settings));
-    this.hideModal('SaveSettingsModal');
+  saveProjectInBrowser() {
+    let json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA)) ?? {};
+    const fn = this.projectKey();
+    json[fn] = App.toJson(this.templateOnly());
+    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
+    this.hideModal('SaveProjectModal');
+    App.showAlert(`${fn} saved in the browser`);
   }
 
   /**
-   * Invoked from dialog
+   * Invoked from SaveProjectModal, save the project in a file.
    */
-  saveSettingsInLocalFile() {
-    const json = JSON.stringify(App.toJson());
-    const blob = new Blob([json], {type: 'text/json'});
-    const fn = this.settingsFilename();
+  saveProjectInFile() {
+    this.hideModal('SaveProjectModal');
+
+    const json = JSON.stringify(App.toJson(this.templateOnly()));
+    const blob = new Blob([ json ], { type: 'text/json' });
+    const fn = this.projectFilename();
+    // No way to get a status report back, we just have to hope
     saveAs(blob, fn);
-    this.hideModal('SaveSettingsModal');
   }
 
   /**
    * Invoked from dialog and on preload
    */
-  loadSettingsFromBrowser() {
-    this.hideModal('LoadSettingsFromBrowserModal');
-    const settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA));
-    if (settings) {
-      const json = settings[this.settingsKey()];
-      App.fromJson(json);
+  loadProjectFromBrowser() {
+    this.hideModal('LoadProjectFromBrowserModal');
+    const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
+    if (projects) {
+      const json = projects[this.projectKey()];
+      if (json) 
+        App.fromJson(json);
+      else
+        App.showAlert(`No json for ${this.projectKey()}`);
     }
   }
 
   /**
    * Invoked from dialog
    */
-  gotoBrowserDelete() {
-    App.hideModal('LoadSettingsFromBrowserModal');
-    App.showModal('DeleteSettingsFromBrowserModal');
+  gotoDeleteBrowserProject() {
+    App.hideModal(`LoadProjectFromBrowserModal`);
+    App.showModal(`DeleteProjectFromBrowserModal`);
   }
 
   /**
    * Invoked from dialog
    */
-  deleteSettingsFromBrowser() {
-    debugger;
-    const settings = JSON.parse(localStorage.getItem(LOCAL_STORAGE_AREA));
-    const name = this.settingsKey();
-    delete settings[name];
-    localStorage.setItem(LOCAL_STORAGE_AREA, JSON.stringify(settings));
-    this.hideModal('DeleteSettingsFromBrowserModal');
+  deleteProjectFromBrowser() {
+    const json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
+    const name = this.projectKey();
+    delete json[name];
+    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
+    this.hideModal('DeleteProjectFromBrowserModal');
     alert(`Deleted "${name}" from browser`, "alert-info");
+  }
+
+  openProject() {
+    App.showModal('LoadProjectModal');
   }
 
   // @override
@@ -155,16 +205,16 @@ class MiscViewModel extends ViewModel {
   toJson() {
     return {
       units: this.units(),
-      settingsFilename: this.settingsFilename(),
-      settingsKey: this.settingsKey()
+      projectFilename: this.projectFilename(),
+      projectKey: this.projectKey()
     };
   }
 
   // @override
   fromJson(json) {
     this.updateObservable(json, 'units');
-    this.updateObservable(json, 'settingsFilename');
-    this.updateObservable(json, 'settingsKey');
+    this.updateObservable(json, 'projectFilename');
+    this.updateObservable(json, 'projectKeyKey');
   }
 }
 

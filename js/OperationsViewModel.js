@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "snapsvg";
 /* global Snap */
@@ -156,7 +156,9 @@ class OperationsViewModel extends ViewModel {
   jsonFieldName() { return "operations"; }
 
   // @override
-  toJson() {
+  toJson(template) {
+    if (template)
+      return undefined;
     return {
       operations: this.operations().map(op => op.toJson())
     };
@@ -171,12 +173,14 @@ class OperationsViewModel extends ViewModel {
 
     this.operations.removeAll();
 
-    for (const opJson of json.operations) {
-      const op = new OperationViewModel([], true);
-      op.fromJson(opJson);
-      this.operations.push(op);
-      op.enabled.subscribe(() => this.updateBB());
-      op.toolPaths.subscribe(() => this.updateBB());
+    if (json.operations) {
+      for (const opJson of json.operations) {
+        const op = new OperationViewModel(this.unitConverter, [], true);
+        op.fromJson(opJson);
+        this.operations.push(op);
+        op.enabled.subscribe(() => this.updateBB());
+        op.toolPaths.subscribe(() => this.updateBB());
+      }
     }
 
     this.updateBB();

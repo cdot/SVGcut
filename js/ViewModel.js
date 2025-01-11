@@ -1,4 +1,4 @@
-/*Copyright Crawford Currie 2024. This file is part of SVG2Gcode, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Crawford Currie 2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "bootstrap"
 /* global bootstrap */
@@ -113,23 +113,21 @@ class ViewModel {
   }
 
   /**
-   * Populate a structure that is serialisable to JSON. This adds a
-   * uniquely-named field to the json that will be detected during
-   * deserialisation.
-   * @param {object} json the JSON structure to populate.
+   * Populate a structure that is serialisable to JSON.
+   * @return {object?} an object suitable for serialisation, or undefined
+   * if there is nothing to serialise
+   * @param {boolean} template true if only serialising a project
+   * template, not the actual project.
    */
-  putJson(json) {
-    return json[this.jsonFieldName()] = this.toJson();
+  toJson(template) {
+    return undefined;
   }
 
   /**
-   * Populate a structure that is serialisable to JSON. This adds a
-   * uniquely-named field to the json that will be detected during
-   * deserialisation.
-   * @return {object} an object suitable for serialisation
+   * Reconstruct from a structure.
+   * @param {object} json the structure being recreated from.
    */
-  toJson() {
-    return {};
+  fromJson(json) {
   }
 
   /**
@@ -154,22 +152,6 @@ class ViewModel {
     const modal = bootstrap.Modal.getInstance(el);
     if (modal)
       modal.hide();
-  }
-
-  /**
-   * Reconstruct from a structure that has the field expected by the model.
-   * @param {object} json the parent structure being recreated from.
-   */
-  getJson(json) {
-    if (json[this.jsonFieldName()])
-      this.fromJson(json[this.jsonFieldName()]);
-  }
-
-  /**
-   * Reconstruct from a structure.
-   * @return {object} the structure being recreated from.
-   */
-  fromJson() {
   }
 }
 
