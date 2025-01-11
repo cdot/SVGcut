@@ -1,15 +1,15 @@
-# <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVG2Gcode
+# <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVGcut
 
 A simple Computer Aided Manufacturing (CAM) application that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine using an application such as [Candle](https://github.com/Denvi/Candle). It is primarily aimed at hobbyist milling machines (routers).
 
-No need to install anything, you can [run it in your browser](https://cdot.github.io/SVG2Gcode/index.html).
+No need to install anything, you can [run it in your browser](https://cdot.github.io/SVGcut/index.html).
 
-SVG2Gcode is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a SainSmart Genmitsu 3018-PRO Router. If you want to contribute to development, see [DEVELOPING](DEVELOPING.md).
+SVGcut is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a SainSmart Genmitsu 3018-PRO Router. If you want to contribute to development, see [DEVELOPING](DEVELOPING.md).
 
 ## Preparing your SVG
 
 To prepare your SVG, make sure draw it at the size that you want your final work to be. If you are using Inkscape, then set your units to whatever physical measure you feel most comfortable with (usually millimetres or inches) and simply draw at that scale. It is easiest, though not essential, to set your page size to the area that your CNC machine can handle. There are some limitations:
-- SVG2Gcode can only handle closed paths.
+- SVGcut can only handle closed paths.
     - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
     - Simple unclosed paths (such as lines or arcs) aren't supported, so don't use them.
 - Colour is ignored, so beware of creating paths the same colour as their background.
@@ -17,7 +17,7 @@ To prepare your SVG, make sure draw it at the size that you want your final work
 
 *Tip* If you have a drawing that makes heavy use of complex features (such as text, or shapes, or meshes) you might consider taking a copy and preparing it for machining, rather than converting your original to paths and losing all the nice features.
 
-Load SVG2Gcode in your browser, and select "Open SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
+Load SVGcut in your browser, and select "Open SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
 
 ## Tool
 
@@ -53,7 +53,7 @@ Bezier curves in paths are supported by converting them to a sequence of straigh
 
 You are now ready to generate Gcode. In the Gcode pane, select the units that your machine operates in. If your machine supports the G21 code, you can just the units you are most comfortable in.
 
-When you draw in an SVG editor such as Inkscape, you work in a coordinate system where 0, 0 is at the top left of the page, and Y increases downwards. However hobbyist CNC machine coordinates usually work from an origin at the bottom left, with Y increasing away from the operator, and this is the convention that SVG2Gcode follows.
+When you draw in an SVG editor such as Inkscape, you work in a coordinate system where 0, 0 is at the top left of the page, and Y increases downwards. However hobbyist CNC machine coordinates usually work from an origin at the bottom left, with Y increasing away from the operator, and this is the convention that SVGcut follows.
 
 The application handles most of the details of converting between these coordinate systems. However it helps if you have a clear idea of how the different systems relate.
 
@@ -64,7 +64,7 @@ You can choose for the machine origin to correspond to the bottom left of the SV
 
 <img src="/images/coords.svg" style="width:50%;height: auto"></img>
 
-When we load up SVG2Gcode and generate Gcode for this drawing with Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
+When we load up SVGcut and generate Gcode for this drawing with Origin set to "SVG Page", then the lower left corner of the SVG page becomes machine (0,0) and the lower left corner of the bounding box will be at machine (10,30), as shown by the orange letters.
 
 If we now switch Origin to "Bounding Box", then the lower left corner of the bounding box becomes machine (0,0), and the top right is (60,30), as shown by the magenta letters.
 
@@ -84,7 +84,7 @@ a text view on the Gcode.
 Once you are happy with the Gcode save it to a file. You can call it what you want, though if you use the extension `.nc` it will be easier to find in Candle.
 
 # Relationship to jscut
-SVG2Gcode is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVG2Gcode has fixes for some of these, and more.
+SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). Development of jscut was abandoned over 10 years ago, leaving a number of pull requests and issues unaddressed. SVGcut has fixes for some of these, and more.
 + Extensive in-code documentation and literate programming techniques
 + Uses G0 rather than G1 for travel
 + Added "select all" on a double-click
@@ -99,20 +99,20 @@ Some features of jscut have been disabled/removed. This may be because they are 
 - gist
 
 # LICENSE & COPYRIGHT
-Tim Fleming is recognised as author of all his code, even where it has been extensively rewritten. Because jscut is GPL, so is SVG2Gcode.
+Tim Fleming is recognised as author of all his code, even where it has been extensively rewritten. Because jscut is GPL, so is SVGcut.
 
 + Copyright 2014 Todd Fleming
 + Copyright 2024-2025 Crawford Currie
 
-SVG2Gcode is free software: you can redistribute it and/or modify
+SVGcut is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-SVG2Gcode is distributed in the hope that it will be useful,
+SVGcut is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with SVG2Gcode.  If not, see <http://www.gnu.org/licenses/>.
+along with SVGcut.  If not, see <http://www.gnu.org/licenses/>.
