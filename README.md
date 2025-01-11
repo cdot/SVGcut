@@ -2,7 +2,7 @@
 
 A simple Computer Aided Manufacturing (CAM) application that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine using an application such as [Candle](https://github.com/Denvi/Candle). It is primarily aimed at hobbyist milling machines (routers).
 
-No need to install anything, you can [run it in your browser](https://cdot.github.io/SVGcut/index.html).
+No need to install anything, you can [run it in your browser](https://cdot.github.io/SVGcut/app.html).
 
 SVGcut is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a SainSmart Genmitsu 3018-PRO Router. If you want to contribute to development, see [DEVELOPING](DEVELOPING.md).
 
