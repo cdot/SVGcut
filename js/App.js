@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "file-saver"
 /* global saveAs */
@@ -129,7 +129,7 @@ class App {
      */
     this.selSvgGroup = this.mainSnap.group();
     this.selSvgGroup.attr("id", "selSvgGroup");
-    
+
     // Create view models.
     this.models.Misc = new MiscViewModel();
     const unitConverter = this.models.Misc.unitConverter;
@@ -352,14 +352,16 @@ class App {
   }
 
   /**
-   * Hide the referenced modal, if it is currently shown.
+   * Hide all open modals, if any.
    * @param {string} id the id attribute of the modal
    */
-  hideModal(id) {
-    const el = document.getElementById(id);
-    const modal = bootstrap.Modal.getInstance(el);
-    if (modal)
-      modal.hide();
+  hideModals() {
+    const els = document.querySelectorAll(".modal");
+    els.forEach(el => {
+      const modal = bootstrap.Modal.getInstance(el);
+      if (modal)
+        modal.hide();
+    });
   }
 
   /**
@@ -453,7 +455,9 @@ class App {
     }
   }
 
-  // @override
+  /**
+   * @override
+   */
   toJson(template) {
     const container = {};
     for (const m in this.models) {
@@ -468,7 +472,9 @@ class App {
     return container;
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(container) {
     for (const m in this.models) {
       const json = container[this.models[m].jsonFieldName()];

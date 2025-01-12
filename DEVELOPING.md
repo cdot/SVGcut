@@ -8,7 +8,7 @@ npm run doc
 You should be able to open `index.html` through a local web server.
 
 # Overview of the code
-`index.html` uses script tags to load most third-party dependencies.
+`app.html` uses script tags to load most third-party dependencies.
 One of these dependencies is `knockout`, and MVVM package that supports
 association of HTML elements directly with code. Read their documentation
 to understand how HTML elements link to the code.
@@ -21,23 +21,30 @@ The display of imported SVG is handled in an SVG-enabled canvas, making use of `
 The simulation is done in a canvas using WebGL. See `js/Simulation.js`.
 
 ## Units
-There are three unit systems at play.
+There are three coordinate systems at play.
 - The first is "user" units, which are selectable using the "Units" dropdown. These are the units used to display measures to the user in all panes except Gcode Generation, which has it's own set of user units.
 - When an SVG is imported, the units used in the SVG are automatically converted into "px" units by `snapsvg`, assuming a conversion of 96 pixels per inch.
 - Once SVG manipulation is complete, px units are converted to "internal" units. This conversion is designed to help reduce rounding errors in floating point calculations performed on polygons. Tool paths are internally represented using internal units.
 - Finally internal units are mapped back to px units for generating SVG elements, and to whatever physical units were requested for Gcode Generation.
 
-Note that the conversion to Gcode isn't as simple as the others, because px and internal units assume 0,0 at the top left with Y incresing downwards, but Gcode is generated assuming 0,0 at the lower left with Y increasing upwards.
+Note that the conversion to Gcode units isn't as simple as the others, because px and internal units assume 0,0 at the top left with Y incresing downwards, but Gcode is generated assuming 0,0 at the lower left (or centre) with Y increasing upwards.
 
 # Coding Standards
-+ All files are named either for the class or namespace they define.
-+ The use of global variables is strongly discouraged.
-+ 2-space indentation
 + Literate coding. All names should be expressive of their purpose.
++ All files are named either for the class or namespace they define.
++ Naming conventions
+    + Use CamelCase for JS class and namespace names.
+    + Use camelCase for JS method and function names.
+    + Use UPPER_CASE for module-level and static consts.
+    + Use dash-separated-names for CSS classes.
+    + Use #CamelCase for DOM ids of major blocks (such as modals)
+    + Use #camelCase for DOM cross-reference ids
++ The use of JS global variables is strongly discouraged. Most "globals" can be encapsulated in the `App` singleton if necessary.
++ 2-space indentation in JS and HTML.
 + Prefer object-oriented code using ES6 syntax.
-+ All methods, function and members must be documented using JSDoc.
-+ `observable.<type>` is used to document and observable that observes a `type`.
-+ Use `const` and `let` and avoid the use of `var`.
++ All methods, functions, and members must be documented using JSDoc.
++ `observable.<type>` is used to document an knockout observable that observes a `type`.
++ Use `const` and `let`. Do not use `var`.
 + Use spaces around operators.
 + Keep `npm run lint` clean.
 + Use `npm run doc` to generate and check code documentation.

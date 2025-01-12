@@ -46,7 +46,9 @@ class OperationsViewModel extends ViewModel {
     });
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
     this.addPopovers([
       {
@@ -152,10 +154,14 @@ class OperationsViewModel extends ViewModel {
     return App.models.Selection.isSomethingSelected();
   }
 
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return "operations"; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson(template) {
     if (template)
       return undefined;
@@ -164,7 +170,9 @@ class OperationsViewModel extends ViewModel {
     };
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     for (const op of this.operations()) {
       op.removeCombinedGeometrySvg();

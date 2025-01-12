@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Crawford Currie 2024-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 //import "file-saver"
 /* global saveAs */
@@ -23,6 +23,12 @@ const DEFAULT_PROJECT_KEY = "default";
 // Default name for a filename to store projects
 const DEFAULT_PROJECT_FILENAME = "svgcut.json";
 
+/**
+ * View model that handles miscellaneous UI features; specifically:
+ * + Global units
+ * + Loading and saving projects
+ * + The toolbar
+ */
 class MiscViewModel extends ViewModel {
 
   constructor() {
@@ -74,7 +80,9 @@ class MiscViewModel extends ViewModel {
     //CPP this.debugArg1 = ko.observable(0);
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
     ko.applyBindings(
       this,
@@ -92,6 +100,8 @@ class MiscViewModel extends ViewModel {
       this,
       document.getElementById("DeleteProjectFromBrowserModal"));
 
+    // Handler for loading a project from disc when a file is chosen
+    // in the browser
     document.getElementById('chosenProjectFile')
     .addEventListener("change", event => {
       const files = event.target.files;
@@ -123,6 +133,7 @@ class MiscViewModel extends ViewModel {
   /**
    * Support for storing projects in the browser local storage.
    * Get a list of projects already there.
+   * Invoked from #LoadProjectFromBrowserModal.
    */
   getBrowserProjectsList() {
     const json = localStorage.getItem(LOCAL_PROJECTS_AREA);
@@ -134,23 +145,24 @@ class MiscViewModel extends ViewModel {
   }
 
   /**
-   * Invoked from SaveProjectModal, save the project in the
-   * browser local storage.
+   * Save the project in the browser local storage.
+   * Invoked from #SaveProjectModal.
    */
   saveProjectInBrowser() {
+    App.hideModals();
     let json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA)) ?? {};
     const fn = this.projectKey();
     json[fn] = App.toJson(this.templateOnly());
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
-    this.hideModal('SaveProjectModal');
     App.showAlert(`${fn} saved in the browser`);
   }
 
   /**
-   * Invoked from SaveProjectModal, save the project in a file.
+   * Save the project in a file.
+   * Invoked from #SaveProjectModal.
    */
   saveProjectInFile() {
-    this.hideModal('SaveProjectModal');
+    App.hideModals();
 
     const json = JSON.stringify(App.toJson(this.templateOnly()));
     const blob = new Blob([ json ], { type: 'text/json' });
@@ -160,14 +172,17 @@ class MiscViewModel extends ViewModel {
   }
 
   /**
-   * Invoked from dialog and on preload
+   * Load a project from the browser local storage.
+   * Invoked from #LoadProjectFromBrowserModal and from App.js
+   * on preload.
    */
   loadProjectFromBrowser() {
-    this.hideModal('LoadProjectFromBrowserModal');
+    App.hideModals();
+
     const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
     if (projects) {
       const json = projects[this.projectKey()];
-      if (json) 
+      if (json)
         App.fromJson(json);
       else
         App.showAlert(`No json for ${this.projectKey()}`);
@@ -175,33 +190,36 @@ class MiscViewModel extends ViewModel {
   }
 
   /**
-   * Invoked from dialog
+   * Invoked from #LoadProjectFromBrowserModal when the delete
+   * button is pressed. Switches into the #DeleteProjectFromBrowserModal.
    */
   gotoDeleteBrowserProject() {
-    App.hideModal(`LoadProjectFromBrowserModal`);
+    App.hideModals();
     App.showModal(`DeleteProjectFromBrowserModal`);
   }
 
   /**
-   * Invoked from dialog
+   * Delete the chosen projects from browser local storage.
+   * Invoked from #DeleteProjectFromBrowserModal.
    */
   deleteProjectFromBrowser() {
+    App.hideModals();
+
     const json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
     const name = this.projectKey();
     delete json[name];
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
-    this.hideModal('DeleteProjectFromBrowserModal');
     alert(`Deleted "${name}" from browser`, "alert-info");
   }
 
-  openProject() {
-    App.showModal('LoadProjectModal');
-  }
-
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return 'misc'; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson() {
     return {
       units: this.units(),
@@ -210,11 +228,13 @@ class MiscViewModel extends ViewModel {
     };
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     this.updateObservable(json, 'units');
     this.updateObservable(json, 'projectFilename');
-    this.updateObservable(json, 'projectKeyKey');
+    this.updateObservable(json, 'projectKey');
   }
 }
 

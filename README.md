@@ -21,7 +21,7 @@ Load SVGcut in your browser.
 
 ## Tool
 
-The next step is to set the parameters of the tool you are using. Click on the "Tool Settings" button. There is popup help on each of the options.
+The next step is to set the parameters of the tool you are using. Click on the "Tool Settings" button to open the settings pane. There is popup help on each of the options.
 
 ## Material
 
@@ -29,7 +29,7 @@ Now open the material pane to specify the material you are working with. There i
 
 ## Import SVG
 
-Select "Import SVG" from the toolbar to open your SVG file. If you have more than one SVG file, you can load them all at once, or one after another.
+Open the "Project" menu and select "Import SVG" to load your SVG file. If you have more than one SVG file you can load them all at once, or one after another.
 
 ## Operations
 
@@ -43,7 +43,7 @@ The Toolpaths display will change to what has been selected for the operation.
 
 Now you have to generate the actual tool paths. First set the depth to which you want the operation to cut (it won't necessarily cut to this depth immediately, it may do several passes in steps of the "Pass Depth" you set in the Tool pane). There are other options that can be set in the drop-down that opens when you click ▶.
 + Name - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
-+ Ramp Plunge - Ramping refers to simultaneous radial and axial motion of a cutting tool, making an angular tool path. This method is used to approach a part when there is a need to create closed forms such as pockets, cavities, engravings, and holes. When ramping, the need to plunge with an end mill or drill create a starting point is eliminated. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
++ Ramp Plunge - Normally a deep cut is started by plunging the tool down into the work - effectively drilling a hole. Some tools or materials are not suitable for this, so a different approach is required. A ramp plunge is where the tool moves along the tool path while it also descends into the work. As such it can be used with tools that are better at cutting sideways. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
 + Combine - specifies the boolean operation to apply to the selected paths.
 + Direction
     + Conventional, the cutter rotates against the direction of the feed.

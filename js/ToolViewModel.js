@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -7,7 +7,7 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const popovers = [
+const POPOVERS = [
   { id: "toolUnits" },
   { id: "toolDiameter" },
   { id: "toolAngle" },
@@ -78,9 +78,11 @@ class ToolViewModel extends ViewModel {
     });
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
-    this.addPopovers(popovers);
+    this.addPopovers(POPOVERS);
     ko.applyBindings(this, document.getElementById("ToolView"));
   }
 
@@ -111,10 +113,14 @@ class ToolViewModel extends ViewModel {
     return result;
   }
 
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return "tool"; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson() {
     return {
       diameter: this.diameter(),
@@ -127,7 +133,9 @@ class ToolViewModel extends ViewModel {
     };
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     this.updateObservable(json, 'diameter');
     this.updateObservable(json, 'angle');

@@ -30,7 +30,7 @@ class ViewModel {
 
   /**
    * Apply popovers. Locations to attach popovers are identified by
-   * the element id, which is matched in the `popovers` structure.
+   * the element id, which is matched in the `#popovers` div in HTML.
    * If `nodes` are passed, then the id's of those nodes (and their
    * descendants) will be matched agains the keys in popovers, and the
    * popovers only applied if there is a match. If nodes are not
@@ -43,6 +43,7 @@ class ViewModel {
     if (!popovers)
       return;
 
+    // Get the HTML for the popover associated with the given id
     function getHTML(id) {
       const pot = document.querySelector(`#popovers>[name="${id}"]`);
       if (!pot)
@@ -50,6 +51,7 @@ class ViewModel {
       return pot.innerHTML;
     }
 
+    // Handle a mousein on a popovered element
     function popoverHover(element, po) {
       if (element && po) {
         new bootstrap.Popover(element, {
@@ -67,6 +69,7 @@ class ViewModel {
       const pol = {};
       popovers.map(po => pol[po.id] = po);
 
+      // Recursively explore a list of child nodes
       function explore(nodes) {
         if (nodes)
           for (const node of nodes) {
@@ -106,7 +109,8 @@ class ViewModel {
   }
 
   /**
-   * Get the field name to use for this model when serializing
+   * Get the field name to use for this model when serializing. It
+   * must be unique for each view model.
    */
   jsonFieldName() {
     throw new Error("Pure virtual");
@@ -114,24 +118,26 @@ class ViewModel {
 
   /**
    * Populate a structure that is serialisable to JSON.
+   * @param {boolean} template true if caller is only serialising a project
+   * template, not the actual project. A template consists just of the
+   * settings for the view model, and not the data (tool paths etc).
    * @return {object?} an object suitable for serialisation, or undefined
    * if there is nothing to serialise
-   * @param {boolean} template true if only serialising a project
-   * template, not the actual project.
    */
   toJson(template) {
     return undefined;
   }
 
   /**
-   * Reconstruct from a structure.
+   * Reconstruct from a structure created by `toJson`.
    * @param {object} json the structure being recreated from.
    */
   fromJson(json) {
   }
 
   /**
-   * Convenience support for fromJson methods.
+   * Convenience support for `fromJson` methods in subclasses.
+   * Update the value in an observable iff it is defined.
    * @param {object} json structure rebuilt from JSON
    * @param {string} key the key
    * @protected
@@ -139,19 +145,6 @@ class ViewModel {
   updateObservable(json, key) {
     if (typeof json[key] !== "undefined")
       this[key](json[key]);
-  }
-
-  /**
-   * Hide the referenced modal, if it is currently shown.
-   * Convenience method for subclasses.
-   * @param {string} id the id attribute of the modal
-   * @protected
-   */
-  hideModal(id) {
-    const el = document.getElementById(id);
-    const modal = bootstrap.Modal.getInstance(el);
-    if (modal)
-      modal.hide();
   }
 }
 

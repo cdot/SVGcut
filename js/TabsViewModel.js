@@ -29,7 +29,9 @@ class TabsViewModel extends ViewModel {
       document.dispatchEvent(new Event("toolPathsChanged")));
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
     this.addPopovers([{ id: "tabsMaxCutDepth" } ]);
     ko.applyBindings(this, document.getElementById("TabsView"));
@@ -60,10 +62,14 @@ class TabsViewModel extends ViewModel {
     document.dispatchEvent(new Event("toolPathsChanged"));
   };
 
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return "tabs"; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson(template) {
     const json = {
       maxCutDepth: this.maxCutDepth()
@@ -73,7 +79,9 @@ class TabsViewModel extends ViewModel {
     return json;
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     this.updateObservable(json, 'maxCutDepth');
 

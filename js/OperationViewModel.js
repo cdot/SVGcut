@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global ClipperLib */ // ../lib/clipper_unminified-6.1.3.2.js
 
@@ -182,7 +182,9 @@ class OperationViewModel extends ViewModel {
       this.recombine();
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise(nodes) {
     this.addPopovers([
       { id: "opEnabled" },
@@ -399,7 +401,9 @@ class OperationViewModel extends ViewModel {
     document.dispatchEvent(new Event("toolPathsChanged"));
   }
 
-  // @override
+  /**
+   * @override
+   */
   toJson() {
     const result = {
       rawPaths: this.rawPaths,
@@ -421,7 +425,9 @@ class OperationViewModel extends ViewModel {
     return result;
   };
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     // suppress recombine until we're finished
     this.disableRecombination = true;

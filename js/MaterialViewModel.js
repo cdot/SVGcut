@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -8,7 +8,7 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const popovers = [
+const POPOVERS = [
   { id:"inputMatClearance" }
 ];
 
@@ -119,17 +119,23 @@ class MaterialViewModel extends ViewModel {
     });
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
-    this.addPopovers(popovers);
+    this.addPopovers(POPOVERS);
 
     ko.applyBindings(this, document.getElementById("MaterialView"));
   }
 
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return "operations"; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson() {
     return {
       thickness: this.thickness(),
@@ -138,7 +144,9 @@ class MaterialViewModel extends ViewModel {
     };
   };
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     this.updateObservable(json, 'thickness');
     this.updateObservable(json, 'zOrigin');

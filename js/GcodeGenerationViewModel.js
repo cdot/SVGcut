@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 //import "file-saver"
 /* global saveAs */
@@ -12,7 +12,7 @@ import { UnitConverter } from "./UnitConverter.js";
 import * as Gcode from "./Gcode.js";
 import { ViewModel } from "./ViewModel.js";
 
-const popovers = [
+const POPOVERS = [
   { id: "gcodeUnits" },
   { id: "gcodeOrigin" },
   { id: "gcodeExtraOffsetX" },
@@ -20,9 +20,10 @@ const popovers = [
   { id: "gcodeWidth" },
   { id: "gcodeHeight" },
   { id: "gcodeReturn00" }
-]
+];
+
 /**
- * ViewModel for Gcode generation
+ * ViewModel for Gcode Generation panel
  */
 class GcodeGenerationViewModel extends ViewModel {
 
@@ -137,9 +138,11 @@ class GcodeGenerationViewModel extends ViewModel {
       this.generateGcode());
   }
 
-  // @override
+  /**
+   * @override
+   */
   initialise() {
-    this.addPopovers(popovers);
+    this.addPopovers(POPOVERS);
 
     ko.applyBindings(
       this, document.getElementById("GcodeGenerationView"));
@@ -322,6 +325,8 @@ class GcodeGenerationViewModel extends ViewModel {
    * Saves the gcode and hides the modal that invoked the function.
    */
   saveGcodeInFile() {
+    App.hideModals();
+
     const gcode = this.gcode();
     if (gcode == "")
       alert('Click "Generate Gcode" first', "alert-danger");
@@ -329,13 +334,16 @@ class GcodeGenerationViewModel extends ViewModel {
       const blob = new Blob([gcode], {type: 'text/plain'});
       saveAs(blob, this.gcodeFilename());
     }
-    this.hideModal("SaveGcodeModal");
   }
 
-  // @override
+  /**
+   * @override
+   */
   jsonFieldName() { return 'gcodeConversion'; }
 
-  // @override
+  /**
+   * @override
+   */
   toJson() {
     return {
       units: this.unitConverter.units(),
@@ -347,7 +355,9 @@ class GcodeGenerationViewModel extends ViewModel {
     };
   }
 
-  // @override
+  /**
+   * @override
+   */
   fromJson(json) {
     this.updateObservable(json, 'units');
     this.updateObservable(json, 'gcodeFilename');
