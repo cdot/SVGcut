@@ -21,7 +21,7 @@ class SelectionViewModel extends ViewModel {
     super();
 
     /**
-     * Number of elements selected (==App.selSvgGroup size)
+     * Number of elements selected (==App.svgGroups.selection size)
      * @member {observable.<number>}
      */
     this.numSelected = ko.observable(0);
@@ -53,7 +53,7 @@ class SelectionViewModel extends ViewModel {
         elem,
         App.models.CurveConversion.minSegs(),
         App.models.CurveConversion.minSegLen.toUnits("px"));
-      const newPath = App.selSvgGroup.path(path);
+      const newPath = App.svgGroups.selection.path(path);
       newPath.attr("class", "selectedPath");
       if (elem.attr("fill-rule") === "evenodd")
         newPath.attr("fill-rule", "evenodd");
@@ -78,14 +78,14 @@ class SelectionViewModel extends ViewModel {
    * @return {SVGElement[]} list of SVG elements
    */
   getSelection() {
-    return App.selSvgGroup.selectAll("path");
+    return App.svgGroups.selection.selectAll("path");
   }
 
   /**
    * Deselect all SVG elements
    */
   clearSelection() {
-    App.selSvgGroup.selectAll("path").remove();
+    App.svgGroups.selection.selectAll("path").remove();
     this.numSelected(0);
   }
 

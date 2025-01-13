@@ -56,3 +56,5 @@ SVGcut makes heavy use of third party libraries:
 + `snap` is used for manipulating SVG in the DOM.
 + `clipper` is used for polygon operations.
 Authors of these libraries are acknowledged and thanked. Please avoid the use of any libraries that have overlapping functionality.
+
+Also included in the dependencies is `2d-geometry`. This typeScript module from npm is compiled for node.js and doesn't work in the browser, so has had to be hacked locally to create `lib/2d-geometry`. It is functionally identical to the npm module, just uses browser-friendly import paths. Use of this library has enabled us to implement holding tabs in pure JS.

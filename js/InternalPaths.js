@@ -197,20 +197,23 @@ export function fromCpp(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
  * @param {InternalPath} bounds the bounds path
  * @param {InternalPoint} p1 line endpoint
  * @param {InternalPoint} p2 line endpoint
- * @return {boolean} true if the line cross the bounds path, or the bounds
- * path is null.
+ * @return {boolean} true if the line cross the bounds poly, or the bounds
+ * poly is null.
  * @memberof InternalPaths
  */
 export function crosses(bounds, p1, p2) {
   if (bounds == null)
     return true;
-  if (p1.X == p2.X && p1.Y == p2.Y)
+  if (p1.X == p2.X && p1.Y == p2.Y) // 1D line, can't cross anything
     return false;
   const clipper = new ClipperLib.Clipper();
   clipper.AddPath([p1, p2], ClipperLib.PolyType.ptSubject, false);
   clipper.AddPaths(bounds, ClipperLib.PolyType.ptClip, true);
   const result = new ClipperLib.PolyTree();
-  clipper.Execute(ClipperLib.ClipType.ctIntersection, result, ClipperLib.PolyFillType.pftEvenOdd, ClipperLib.PolyFillType.pftEvenOdd);
+  clipper.Execute(ClipperLib.ClipType.ctIntersection,
+                  result,
+                  ClipperLib.PolyFillType.pftEvenOdd,
+                  ClipperLib.PolyFillType.pftEvenOdd);
   if (result.ChildCount() == 1) {
     const child = result.Childs()[0];
     const points = child.Contour();

@@ -17,11 +17,13 @@ import { ViewModel } from "./ViewModel.js";
 
 // Name of a key in browser LocalStorage that can store many projects
 const LOCAL_PROJECTS_AREA = "svgcut";
-// Name of a default key within the LOCAL_PROJECTS_AREA
-const DEFAULT_PROJECT_KEY = "default";
 
-// Default name for a filename to store projects
-const DEFAULT_PROJECT_FILENAME = "svgcut.json";
+// Default name for a project
+const DEFAULT_PROJECT_NAME = "default";
+
+const POPOVERS = [
+  { id: "selectProject" } 
+];
 
 /**
  * View model that handles miscellaneous UI features; specifically:
@@ -50,16 +52,11 @@ class MiscViewModel extends ViewModel {
     this.unitConverter = new UnitConverter(this.units);
 
     /**
-     * "Filename" to load/save project.
+     * Local storage key / file basename to load/save project.
+     8 When the App starts up it will try to load this project.
      * @member {observable.<string>}
      */
-    this.projectFilename = ko.observable(DEFAULT_PROJECT_FILENAME);
-
-    /**
-     * Local storage key to load/save project.
-     * @member {observable.<string>}
-     */
-    this.projectKey = ko.observable(DEFAULT_PROJECT_KEY);
+    this.projectName = ko.observable(DEFAULT_PROJECT_NAME);
 
     /**
      * Whether to save just a template, or a whole project
@@ -104,6 +101,8 @@ class MiscViewModel extends ViewModel {
     // in the browser
     document.getElementById('chosenProjectFile')
     .addEventListener("change", event => {
+      this.addPopovers(POPOVERS);
+
       const files = event.target.files;
       for (const file of files) {
         const lert = App.showAlert(
@@ -145,16 +144,19 @@ class MiscViewModel extends ViewModel {
   }
 
   /**
-   * Save the project in the browser local storage.
+   * Save the project in the browser local storage. If the selected
+   * project name is DEFAULT_PROJECT_NAME, will only save a template.
    * Invoked from #SaveProjectModal.
    */
   saveProjectInBrowser() {
     App.hideModals();
     let json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA)) ?? {};
-    const fn = this.projectKey();
-    json[fn] = App.toJson(this.templateOnly());
+    const name = this.projectName();
+    json[name] = App.toJson(
+      this.templateOnly() || name === DEFAULT_PROJECT_NAME);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
-    App.showAlert(`${fn} saved in the browser`);
+    const asTemplate = this.templateOnly() ? " as a template" : "";
+    App.showAlert(`${name} saved in the browser${asTemplate}`);
   }
 
   /**
@@ -166,7 +168,7 @@ class MiscViewModel extends ViewModel {
 
     const json = JSON.stringify(App.toJson(this.templateOnly()));
     const blob = new Blob([ json ], { type: 'text/json' });
-    const fn = this.projectFilename();
+    const fn = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, fn);
   }
@@ -180,13 +182,17 @@ class MiscViewModel extends ViewModel {
     App.hideModals();
 
     const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
+    const name = this.projectName();
     if (projects) {
-      const json = projects[this.projectKey()];
-      if (json)
+      const json = projects[name];
+      if (json) {
         App.fromJson(json);
-      else
-        App.showAlert(`No json for ${this.projectKey()}`);
+        return;
+      }
     }
+    if (name !== DEFAULT_PROJECT_NAME)
+      App.showAlert(`Project "${name}" not found in the browser.`,
+                    "alert-danger");
   }
 
   /**
@@ -206,10 +212,10 @@ class MiscViewModel extends ViewModel {
     App.hideModals();
 
     const json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
-    const name = this.projectKey();
+    const name = this.projectName();
     delete json[name];
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
-    alert(`Deleted "${name}" from browser`, "alert-info");
+    alert(`Deleted project "${name}" from the browser`, "alert-info");
   }
 
   /**
@@ -223,8 +229,7 @@ class MiscViewModel extends ViewModel {
   toJson() {
     return {
       units: this.units(),
-      projectFilename: this.projectFilename(),
-      projectKey: this.projectKey()
+      projectName: this.projectName()
     };
   }
 
@@ -233,8 +238,7 @@ class MiscViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'units');
-    this.updateObservable(json, 'projectFilename');
-    this.updateObservable(json, 'projectKey');
+    this.updateObservable(json, 'projectName');
   }
 }
 

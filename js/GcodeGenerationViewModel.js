@@ -6,10 +6,14 @@
 // import "knockout"
 /* global ko */
 
+// import "ClipperLib"
+/* global ClipperLib */
+
 /* global App */
 
 import { UnitConverter } from "./UnitConverter.js";
 import * as Gcode from "./Gcode.js";
+import * as InternalPaths from "./InternalPaths.js";
 import { ViewModel } from "./ViewModel.js";
 
 const POPOVERS = [
@@ -202,10 +206,9 @@ class GcodeGenerationViewModel extends ViewModel {
     let cutRate = App.models.Tool.cutRate.toUnits(gunits);
     let passDepth = App.models.Tool.passDepth.toUnits(gunits);
     const topZ = App.models.Material.topZ.toUnits(gunits);
-    /*CPP
+    // tabs
     const tabCutDepth = App.models.Tabs.maxCutDepth.toUnits(gunits);
     const tabZ = topZ - tabCutDepth;
-    /CPP*/
 
     if (passDepth < 0) {
       App.showAlert(
@@ -215,18 +218,17 @@ class GcodeGenerationViewModel extends ViewModel {
       passDepth = 0;
     }
 
-    /* CPP
     let tabGeometry = [];
     const tabs = App.models.Tabs.tabs();
-    for (let i = 0; i < tabs.length; ++i) {
-      const tab = tabs[i];
+    for (const tab of tabs) {
       if (tab.enabled()) {
-        const offset = App.models.Tool.diameter.toUnits("internal")() / 2;
-        const geometry = offset(tab.combinedGeometry, offset);
+        // Bloat tab geometry by the cutter radius
+        const bloat = App.models.Tool.diameter.toUnits("internal") / 2;
+        const tg = InternalPaths.offset(tab.combinedGeometry, bloat);
         tabGeometry = InternalPaths.clip(
-          tabGeometry, geometry, ClipperLib.ClipType.ctUnion);
+          tabGeometry, tg, ClipperLib.ClipType.ctUnion);
       }
-    }*/
+    }
 
     // Work out origin offset
     const svgBB = this.unitConverter.fromUnits(App.getMainSvgBBox(), "px");
@@ -284,8 +286,8 @@ class GcodeGenerationViewModel extends ViewModel {
         offsetX:        ox,
         offsetY:        oy,
         //CPP useZ:           op.operation() == "V Pocket",
-        //CPP tabGeometry:    tabGeometry,
-        //CPP tabZ:           tabZ,
+        tabGeometry:    tabGeometry,
+        tabZ:           tabZ,
         decimal:        2, // 100th mm
         topZ:           topZ,
         botZ:           topZ - cutDepth,

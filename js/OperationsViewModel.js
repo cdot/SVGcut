@@ -24,7 +24,7 @@ class OperationsViewModel extends ViewModel {
     super(unitConverter);
 
     /**
-     * List of operations
+     * List of operations.
      * @member {observableArray.OperationViewModel}
      */
     this.operations = ko.observableArray();
@@ -113,6 +113,9 @@ class OperationsViewModel extends ViewModel {
       this.boundingBox(newBB);
   }
 
+  /**
+   * Invoked from #OperationsViewPane
+   */
   addOperation() {
     // Get the paths from the current selection
     const rawPaths = [];
@@ -135,15 +138,19 @@ class OperationsViewModel extends ViewModel {
     op.enabled.subscribe(() => this.updateBB());
     op.toolPaths.subscribe(() => this.updateBB());
 
+    document.dispatchEvent(new Event("toolPathsChanged"));
+
     App.tutorial(4);
   };
 
   /**
-   * Remove the given operation from consideration
-   * @param {OperationViewModel} operation the operation to remove
+   * Remove the given operation.
+   * @param {OperationViewModel} op the operation to remove
    */
-  removeOperation(operation) {
-    this.operations.remove(operation);
+  removeOperation(op) {
+    op.removeCombinedGeometry();
+    op.removeToolPaths();
+    this.operations.remove(op);
   };
 
   /**
@@ -175,7 +182,7 @@ class OperationsViewModel extends ViewModel {
    */
   fromJson(json) {
     for (const op of this.operations()) {
-      op.removeCombinedGeometrySvg();
+      op.removeCombinedGeometry();
       op.removeToolPaths();
     }
 

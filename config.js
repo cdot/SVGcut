@@ -1,6 +1,5 @@
 const options = {
-  // Preload in-browser settings file.
-  preloadInBrowser: 'default'
+  // Might be needed again
 };
 
 export default options;

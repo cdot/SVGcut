@@ -4,6 +4,7 @@
 /* global App */
 
 import * as InternalPaths from "./InternalPaths.js";
+import { Point, Segment, Polygon } from '2d-geometry';
 
 /**
  * Support for different CAM operations
@@ -61,18 +62,19 @@ function convertPathsFromCppToCamPath(memoryBlocks, cPathsRef, cNumPathsRef, cPa
 /CPP*/
 
 /**
- * Try to merge paths. A merged path doesn't cross outside of bounds.
- * @param {InternalPath} bounds
+ * Try to merge paths. A merged path doesn't cross outside of the clip poly.
+ * @param {InternalPath} clipPoly
  * @param {InternalPath[]} paths
  * @return {CamPath[]} merged paths
  * @memberof Cam
  */
-export function mergePaths(bounds, paths) {
-  return InternalPaths.mergePaths(bounds, paths).map(path => {
+export function mergePaths(clipPoly, paths) {
+  return InternalPaths.mergePaths(clipPoly, paths).map(path => {
     // convert to CamPath
     return {
       path: path,
-      safeToClose: !InternalPaths.crosses(bounds, path[0], path[path.length - 1])
+      // It's safe to close if the closing segment doesn't cross the clip poly
+      safeToClose: !InternalPaths.crosses(clipPoly, path[0], path[path.length - 1])
     };});
 }
 
@@ -85,7 +87,7 @@ export function mergePaths(bounds, paths) {
  */
 export function pocket(geometry, cutterDia, overlap, climb) {
   let current = InternalPaths.offset(geometry, -cutterDia / 2);
-  const bounds = current.slice(0);
+  const clipPoly = current.slice(0);
   let allPaths = [];
   while (current.length != 0) {
     if (climb)
@@ -94,7 +96,7 @@ export function pocket(geometry, cutterDia, overlap, climb) {
     allPaths = current.concat(allPaths);
     current = InternalPaths.offset(current, -cutterDia * (1 - overlap));
   }
-  return mergePaths(bounds, allPaths);
+  return mergePaths(clipPoly, allPaths);
 };
 
 /*CPP*
@@ -156,12 +158,14 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
 
   if (isInside) {
     current = InternalPaths.offset(geometry, -cutterDia / 2);
-    bounds = InternalPaths.diff(current, InternalPaths.offset(geometry, -(width - cutterDia / 2)));
+    bounds = InternalPaths.diff(
+      current, InternalPaths.offset(geometry, -(width - cutterDia / 2)));
     eachOffset = -eachWidth;
     needReverse = climb;
   } else {
     current = InternalPaths.offset(geometry, cutterDia / 2);
-    bounds = InternalPaths.diff(InternalPaths.offset(geometry, width - cutterDia / 2), current);
+    bounds = InternalPaths.diff(
+      InternalPaths.offset(geometry, width - cutterDia / 2), current);
     eachOffset = eachWidth;
     needReverse = !climb;
   }
@@ -248,59 +252,70 @@ let displayedCppTabError2 = false;
 /CPP*/
 
 /**
- * Currently does nothing
- * @private
+ * Given a tool path and an array of paths representing a set of
+ * disjoint polygons, split the toolpath into a sequence of paths such
+ * that where a path enters or leaves one of the polygons it gets
+ * split into two paths. In this way it generates a new array of paths
+ * where the odd-numbered paths are outside the polygons, while the
+ * even numbered paths are inside the polygons.
+ * @param {InternalPath} toolPath path being followed by the cutter
+ * @param {InternalPath[]} tabGeometry polygons representing tabs
  */
-export function separateTabs(cutterPath, tabGeometry) {
-/*CPP
-// SMELL: unclear to me why this requires a call out, since Clipper
-// can do what it seems to do (intersect polygons)
-  if (tabGeometry.length == 0)
-    return [cutterPath];
+export function separateTabs(toolPath, tabGeometry) {
+  const tabPolys = [];
+  for (const poly of tabGeometry) {
+    const poly2d = new Polygon(poly.map(pt => new Point(pt.X, pt.Y)));
+    tabPolys.push(poly2d);
+  }
+  let ip0 = toolPath[toolPath.length - 1];
+  let p0 = new Point(ip0.X, ip0.Y);
 
-  if (typeof Module == 'undefined') {
-    if (!displayedCppTabError1) {
-      App.showAlert("Failed to load cam-cpp.js; tabs will be missing. This message will not repeat.", "alert-danger");
-      displayedCppTabError1 = true;
+  // If the first point of the last path is outside a tab poly,
+  // then we need to add a zero-length path so that all even-numbered
+  // paths are tab paths
+  for (const tab of tabPolys) {
+    if (tab.contains(p0)) {
+      // add a zero-length path
+      paths.unshift([ ip0, ip0 ]);
+      break;
     }
-    return cutterPath;
   }
 
-  const memoryBlocks = [];
-
-  const cCutterPath = InternalPaths.toCpp([ cutterPath ], memoryBlocks);
-  const cTabGeometry = InternalPaths.toCpp(tabGeometry, memoryBlocks);
-
-  const errorRef = Module._malloc(4);
-  const resultPathsRef = Module._malloc(4);
-  const resultNumPathsRef = Module._malloc(4);
-  const resultPathSizesRef = Module._malloc(4);
-  memoryBlocks.push(errorRef);
-  memoryBlocks.push(resultPathsRef);
-  memoryBlocks.push(resultNumPathsRef);
-  memoryBlocks.push(resultPathSizesRef);
-
-  //extern "C" void separateTabs(
-  //    double** pathPolygons, int numPaths, int* pathSizes,
-  //    double** tabPolygons, int numTabPolygons, int* tabPolygonSizes,
-  //    bool& error,
-  //    double**& resultPaths, int& resultNumPaths, int*& resultPathSizes)
-  Module.ccall(
-    'separateTabs',
-    'void', ['number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number', 'number'],
-    [cCutterPath[0], cCutterPath[1], cCutterPath[2], cTabGeometry[0], cTabGeometry[1], cTabGeometry[2], errorRef, resultPathsRef, resultNumPathsRef, resultPathSizesRef]);
-
-  if (Module.HEAPU32[errorRef >> 2] && !displayedCppTabError2) {
-    App.showAlert("Internal error processing tabs; tabs will be missing. This message will not repeat.", "alert-danger", false);
-   displayedCppTabError2 = true;
+  const paths = [];
+  let currPath = [ ip0 ];
+  //console.debug("Path starts at ", ip0);
+  for (const ip1 of toolPath) {
+    if (ip1.X !== ip0.X || ip1.Y !== ip0.Y) {
+      //console.debug("\tnew point at ", ip1);
+      const p1 = new Point(ip1.X, ip1.Y);
+      const seg = new Segment(p0, p1);
+      for (const tabPoly of tabPolys) {
+        const intersections = seg.intersect(tabPoly);
+        if (intersections.length > 0) {
+          // Sort the intersections by ascending distance from the start point
+          // of the segment
+          intersections.sort((a, b) => a.distanceTo(p0)[0] - b.distanceTo(p0)[0]);
+          //console.debug("\tintersections at ", intersections);
+          // Each intersection is the start of a new path
+          for (const intersection of intersections) {
+            const ins = { X: intersection.x, Y: intersection.y };
+            //console.debug("\tintersection at ", ins, intersection.distanceTo(p0)[0]);
+            currPath.push(ins);
+            paths.push(currPath);
+            currPath = [ ins ];
+          }
+          currPath.push(ip1);
+        } else {
+          // add the segment to the current path intact
+          currPath.push(ip1);
+        }
+      }
+      p0 = p1;
+      ip0 = ip1;
+    }
   }
-
-  const result = InternalPaths.fromCpp(
-    memoryBlocks, resultPathsRef, resultNumPathsRef, resultPathSizesRef);
-
-  for (let i = 0; i < memoryBlocks.length; ++i)
-    Module._free(memoryBlocks[i]);
-
-  return result;
-/CPP*/
+  if (currPath.length > 1)
+    paths.push(currPath);
+  //console.debug("Separated paths", paths);
+  return paths;
 }

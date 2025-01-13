@@ -80,7 +80,7 @@ Now you can click "Generate" on the Operations you created above to generate the
 
 ## Previewing the Gcode
 ### Simulator
-Once you have generated the Gcode you can preview it in the "Simulate" pane. This really is a Gcode simulator; it reloads the generated Gcode, and displays the paths the tool will follow.
+Once you have generated the Gcode you can preview it in the "Simulate" pane. This really is a Gcode simulator; it reloads the generated Gcode, and displays the paths the tool will follow. Previewing is a good idea, as it can help you pick up on cases where the tool diameter is too great to cut an acute angle.
 
 ### Code preview
 You can also use the "View Gcode" button in the "Gcode Generation" pane to open
@@ -110,11 +110,15 @@ SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). D
 + Extensive in-code documentation and literate programming techniques
 
 Some features of jscut have been disabled/removed. This may be because they are  deemed too esoteric, or the (undocumented) code was too complex to reverse engineer, for limited end-user value.
-- Tabs
-- Save to Chilipeppr
-- Google Drive, Dropbox
-- gist
+- [Holding tabs](https://www.axyz.com/technical-tip-of-the-week-when-to-use-holding-tabs/). Currently unsupported because the jscut implementation uses a call to external CPP, and the code is undocumented and obscure. If you want tabs, use Fusion360.
+- [V pockets](https://www.youtube.com/watch?v=fxSkk-J228Q&list=PLStJ_yoRd9Nb_tapyti_kjR8iSU4f16L_&ab_channel=LarsChristensen). Currently unsupported because the jscut implementation uses a call to external CPP, and the code is undocumented and obscure. If you want to do V pockets, use Fusion360.
+- [Chilipeppr](http://www.chilipeppr.com/)
+- [Google Drive](https://drive.google.com/)
+- [Dropbox](https://www.dropbox.com/)
+- [Github gists](https://gist.github.com/)
+- The undocumented API
 
+Holding tabs
 # LICENSE & COPYRIGHT
 Tim Fleming is recognised as author of all his code, even where it has been extensively rewritten. Because jscut is GPL, so is SVGcut.
 

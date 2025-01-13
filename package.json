@@ -11,13 +11,16 @@
 		"eslint-formatter-unix": "^8.40.0",
 		"eslint-plugin-import": "^2.31.0",
 		"jsdoc": "^4.0.4",
-		"mocha": "^11.0.1"
+		"mocha": "^11.0.1",
+		"webpack-cli": "^6.0.1"
 	},
 	"scripts": {
+		"build": "webpack -c 2d-geometry-webpack.js",
 		"lint": "eslint js -f unix",
 		"doc": "jsdoc -c jsdoc_config.json js"
 	},
 	"dependencies": {
+		"2d-geometry": "^3.0.0",
 		"bootstrap": "^5.3.3",
 		"bootstrap-slider": "^11.0.2",
 		"clipper-lib": "^6.4.2",

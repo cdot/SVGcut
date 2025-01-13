@@ -15,7 +15,8 @@
   <script type="importmap">
     {
       "imports": {
-        "gl-matrix/": "./node_modules/gl-matrix/esm/"
+        "gl-matrix/": "./node_modules/gl-matrix/esm/",
+        "2d-geometry": "./lib/2d-geometry/index.js"
       }
     }
   </script>
@@ -34,7 +35,7 @@
         </div>
         <div class="modal-body">
           <label for="spName">Name</label>
-          <input id="spName" data-bind="value: projectFilename">
+          <input id="spName" data-bind="value: projectName">
           <label for="spTemplate">Template only</label>
           <input id="spTemplate" type="checkbox"
                  data-bind="checked: templateOnly" />
@@ -67,7 +68,7 @@
           <p data-bind="text: getBrowserProjectsList()"></p>
           <p>Select Project:
             <select id="selectProject"
-                    data-bind="options: browserProjects, value: projectKey">
+                    data-bind="options: browserProjects, value: projectName">
             </select>
           </p>
         </div>
@@ -96,7 +97,7 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          Delete "<b><span data-bind="text: projectKey"></span></b>"?
+          Delete "<b><span data-bind="text: projectName"></span></b>"?
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
@@ -168,26 +169,29 @@
           <div id="OperationsViewPane" class="collapse show">
             <div class="card-body">
               <div style="display: inline-block">
-                <button id="createOperationButton" class="btn btn-primary"
-                        data-bind="click: addOperation, enable: App.models.Selection.isSomethingSelected()">
+                <button
+                  id="createOperationButton" class="btn btn-primary"
+                  data-bind="click: addOperation, enable: App.models.Selection.isSomethingSelected()">
                   Create Operation
                 </button>
               </div>
             </div>
             <div style="display:table">
               <div data-bind="foreach: {data: operations, afterRender: addSubview}">
-                <!-- template for operations table row -->
-                <div style="display:table-row" class="op-table-row">
-                  <div style="display:table-cell" class="op-table-detail">
+                <!-- template for operations table row. Instances are
+                  automatically bound to OperationViewModel
+                  by knockout (well, the code doesn't do it) -->
+                <div style="display:table-row" class="entry-row">
+                  <div style="display:table-cell" class="entry-detail">
                     <label id="opShowDetail"
                            data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'">
                     </label>
                   </div>
-                  <div style="display: table-cell" class="op-table-enabled">
+                  <div style="display: table-cell" class="entry-enabled">
                     <input id="opEnabled" type="checkbox"
                            data-bind="checked: enabled" />
                   </div>
-                  <div style="display: table-cell" class="op-table-mid">
+                  <div style="display: table-cell" class="entry-mid">
                     <select id="opOperation" data-bind="value: operation">
                       <option>Pocket</option>
                       <option>Inside</option>
@@ -197,12 +201,12 @@
                     </select>
                   </div>
                   <div
-                    style="display: table-cell" class="op-table-mid">
+                    style="display: table-cell" class="entry-mid">
                     <input id="opCutDepth"
                            class="number" type="number" step="any"
                            data-bind="visible: operation()!='V Pocket', value: cutDepth">
                   </div>
-                  <div style="display: table-cell" class="op-table-mid">
+                  <div style="display: table-cell" class="entry-mid">
                     <label  class="control-label"
                             data-bind="visible: operation()!='V Pocket'">
                       <span data-bind="text: App.models.Misc.units"></span>
@@ -314,16 +318,16 @@
         </div>
 
         <!-- Tabs View -->
-        <!--CPP
         <div class="card" id="TabsView">
-          <div class="card-header-heading">
+          <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
-                 href="#TabsViewPane">Tabs</a>
+                 href="#TabsViewPane" class="nav-link">Tabs</a>
             </h3>
           </div>
-          <div id="TabsViewPane" class="collapse show">
+          <div id="TabsViewPane" class="collapse hide">
             <div class="card-body">
+              <!--CPP
               <div class="alert alert-danger"
                    data-bind="visible: tabs().length != 0 && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
                 <div>Waiting for cam-cpp.js to load.</div>
@@ -332,41 +336,42 @@
                    data-bind="visible: tabs().length != 0 && App.models.Misc.camCppError().length != 0">
                 <div data-bind="html: App.models.Misc.camCppError()"></div>
               </div>
+              /CPP-->
               <table class="table">
-                <tr>
-                  <td><label for="tabsUnits" class="control-label">Units</label>
-                  <td><select id="tabsUnits" data-bind="value: units">
-                      <option>inch</option>
-                      <option>mm>/option>
-                  </select></td>
-                </tr>
                 <tr>
                   <td><label for="tabsMaxCutDepth" class="control-label">
                       Max Cut Depth</label></td>
-                  <td><input id="tabsMaxCutDepth" type="number" step="any"
-                             data-bind="value: maxCutDepth"></td>
+                  <td>
+                    <input id="tabsMaxCutDepth" type="number" step="any"
+                           data-bind="value: maxCutDepth">
+                  </td>
                 </tr>
               </table>
               <div style="display: inline-block">
-                <button id="createTabsButton" class="btn btn-default"
-                        data-bind="click: addTab, enable: App.models.Selection.isSomethingSelected()">
-                  Create Tabs</button>
+                <button
+                  id="createTabButton" class="btn btn-primary"
+                  data-bind="click: addTab, enable: App.models.Selection.isSomethingSelected()">
+                  Create Tabs
+                </button>
               </div>
             </div>
             <div style="display:table">
               <div data-bind="foreach: { data: tabs, afterRender: addSubview }">
-                <div style="display:table-row">
-                  <div style="display: table-cell; width: 1px; padding-right: 5px; padding-left: 5px">
+                <div style="display:table-row" class="entry-row">
+                  <!-- template for operations table row. Instances are
+                       automatically bound to OperationViewModel
+                       by knockout (well, the code doesn't do it) -->
+                  <div style="display: table-cell" class="entry-enabled">
                     <input id="tabEnabled" type="checkbox"
                            data-bind="checked: enabled" />
                   </div>
-                  <div style="display: table-cell; width: 1px; padding-right: 5px">
+                  <div style="display: table-cell" class="entry-mid">
                     <input id="tabMargin" class="number" type="number"
                            step="any" data-bind="value: margin">
                   </div>
-                  <div style="display: table-cell; width: 1px; padding-right: 5px">
+                  <div style="display: table-cell">
                     <button class="btn btn-secondary btn-sm"
-                            data-bind="click: $root.removeTab">
+                            data-bind="click: removeTab">
                       Delete
                     </button>
                   </div>
@@ -375,7 +380,6 @@
             </div>
           </div>
         </div>
-        /CPP-->
 
         <!-- Gcode Generation view -->
         <div class="card" id="GcodeGenerationView">
@@ -786,6 +790,7 @@
     <div name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</div>
   </div>
   <div id="popovers" style="display:none">
+    <div name="selectProject">Select a project fromthe projects held in this browser.</div>
     <!-- tool -->
     <div name="toolUnits">Display units, does not affect Gcode generation.</div>
     <div name="toolDiameter">Diameter of tool. The simulator ignores this if Angle &lt; 180. <!--CPP V Pocket also ignores this.--></div>
@@ -802,13 +807,15 @@
       The speed the tool plunges downwards into the material</div>
     <div name="toolCutRate">
       The speed the tool moves horizontally during cutting</div>
-    <!--CPP
-    <div name="tabEnabled">Whether this tab is enabled</div>
-    <div name="tabMargin">Positive: how much to expand tab.<br><br>
-      Negative: how much to shrink tab</div>
+    <!-- Tabs -->
+    <div name="createTabButton"><p class='bg-danger'>
+        Select one or more paths in the "Toolpaths" tab before clicking
+        here</p></div>
+    <div name="tabEnabled">Enable/disable this tab</div>
+    <div name="tabMargin">Margin<br>+ve: how much to expand tab<br>
+      -ve: how much to shrink tab</div>
     <div name="tabsMaxCutDepth">Maximum depth operations may cut when
       they pass over tabs</div>
-    /CPP-->
     <!-- Gcode Generation -->
     <div name="gcodeUnits">
       The units used by the machine the Gcode is targeted for. The Gcode
@@ -837,7 +844,7 @@
       Increase this when using clamps or screws to fasten the material.</div>
     <!-- operations -->
     <div name="createOperationButton"><p class='bg-danger'>
-        Select 1 or more objects in the "Toolpaths" tab before clicking
+        Select one or more objects in the "Toolpaths" tab before clicking
         here</p></div>
     <div name="opEnabled">Enable/disable this operation. Only enabled operation are shown.</div>
     <div name="opGenerate">Generate toolpaths and Gcode for this operation</div>
@@ -862,7 +869,6 @@
       object (it becomes blue).</div>
   }
   </div>
-  <!--script src="node_modules/eve/eve.js"></script-->
   <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
   <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
   </script>

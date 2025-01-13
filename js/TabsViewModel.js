@@ -9,6 +9,9 @@
 import { ViewModel } from "./ViewModel.js";
 import { TabViewModel } from "./TabViewModel.js";
 
+/**
+ * View model for (holding) Tabs pane.
+ */
 class TabsViewModel extends ViewModel {
 
   /**
@@ -17,6 +20,10 @@ class TabsViewModel extends ViewModel {
   constructor(unitConverter) {
     super(unitConverter);
 
+    /**
+     * List of tabs.
+     * @member {observableArray.<TabViewModel>}
+     */
     this.tabs = ko.observableArray();
 
     /**
@@ -25,6 +32,7 @@ class TabsViewModel extends ViewModel {
      */
     this.maxCutDepth = ko.observable(0);
     unitConverter.add(this.maxCutDepth);
+    this.maxCutDepth(App.models.Tool.passDepth() / 2);
     this.maxCutDepth.subscribe(() =>
       document.dispatchEvent(new Event("toolPathsChanged")));
   }
@@ -33,10 +41,19 @@ class TabsViewModel extends ViewModel {
    * @override
    */
   initialise() {
-    this.addPopovers([{ id: "tabsMaxCutDepth" } ]);
+    this.addPopovers([
+      {
+        id: "createTabButton",
+        trigger: "manual"
+      },
+      { id: "tabsMaxCutDepth" }
+    ]);
     ko.applyBindings(this, document.getElementById("TabsView"));
   }
 
+  /**
+   * Invoked from #TabsViewPane
+   */
   addTab() {
     const rawPaths = [];
 
@@ -49,16 +66,18 @@ class TabsViewModel extends ViewModel {
     });
     App.models.Selection.clearSelection();
 
-    const tab = new TabViewModel(rawPaths, false);
+    const tab = new TabViewModel(this.unitConverter, rawPaths, false);
     this.tabs.push(tab);
 
     document.dispatchEvent(new Event("toolPathsChanged"));
   };
 
+  /**
+   * Remove a tab. Invoked from #TabsView
+   */
   removeTab(tab) {
-    tab.removeCombinedGeometrySvg();
+    tab.removeCombinedGeometry();
     this.tabs.remove(tab);
-
     document.dispatchEvent(new Event("toolPathsChanged"));
   };
 
@@ -75,7 +94,7 @@ class TabsViewModel extends ViewModel {
       maxCutDepth: this.maxCutDepth()
     };
     if (!template)
-      json.tabs = this.tabs.map(tab => tab.toJson());
+      json.tabs = this.tabs().map(tab => tab.toJson());
     return json;
   }
 
@@ -86,15 +105,14 @@ class TabsViewModel extends ViewModel {
     this.updateObservable(json, 'maxCutDepth');
 
     for (const tab of this.tabs())
-      tab.removeCombinedGeometrySvg();
-
+      tab.removeCombinedGeometry();
     this.tabs.removeAll();
 
     if (json.tabs)
       for (const tabJson of json.tabs) {
-        const tab = new TabViewModel([], true);
+        const tab = new TabViewModel(this.unitConverter, [], true);
         tab.fromJson(tabJson);
-        this.tabs.push(tab);
+        this.tabs().push(tab);
       }
   };
 }

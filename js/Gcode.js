@@ -183,7 +183,8 @@ export function parse(gcode, verbose = false) {
 
 /**
  * Generate gcode for a set of paths. Assumes that the current Z
- * position is safe.
+ * position is safe. Parameters are in gcode units unless specified
+ * otherwise.
  * @param {object} args
  * @param {CamPath[]} args.paths Paths to convert. These paths are
  * in internal units, and will be transformed to Gcode units using the
@@ -194,32 +195,27 @@ export function parse(gcode, verbose = false) {
  * gcode units
  * @param {number} args.zScale Factor to convert internal units to
  * gcode units
- * @param {boolean} args.ramp Ramp these paths?
- * @param {number} args.offsetX Origin offset X (Gcode units)
- * @param {number} args.offsetY Origin ffset Y (Gcode units)
+ * @param {boolean} args.ramp Ramp plunge. Default is to drill plunge.
+ * @param {number} args.offsetX Origin offset X
+ * @param {number} args.offsetY Origin offset Y
  * @param {number} args.decimal Number of decimal places to keep
  * in gcode
- * @param {number} args.topZ Top of area to cut (Gcode units)
- * @param {number} args.botZ Bottom of area to cut (Gcode units)
+ * @param {number} args.topZ Top of area to cut
+ * @param {number} args.botZ Maximum depth to cut
+ * @param {number} args.tabZ Depth to cut over tabs (only useful if
+ * tabGeometry is not empty)
  * @param {number} args.safeZ Z position to safely move over
- * uncut areas (Gcode units)
- * @param {number} args.passDepth Cut depth for each pass (Gcode
- * units)
+ * uncut areas
+ * @param {number} args.passDepth Cut depth for each pass
  * @param {number} args.plungeFeed Feedrate to plunge cutter
- * (Gcode units)
  * @param {number} args.retractFeed Feedrate to retract cutter
- * (Gcode units)
  * @param {number} args.cutFeed Feedrate for horizontal cuts
- * (Gcode units)
- * @param {number} args.rapidFeed Feedrate for rapid moves (Gcode
- * units)
+ * @param {number} args.rapidFeed Feedrate for rapid moves
  *
  * @param {boolean} args.useZ Use Z coordinates in paths?
  * (optional, defaults to false)
  * @param {number} args.tabGeometry Tab geometry (optional), will be
  * defined in internal units and require scaling.
- * @param {number} args.tabZ Z position over tabs (required if
- * tabGeometry is not empty) (Gcode units)
  * @return {string[]} array of Gcode lines
  * @memberof Cam
  */
@@ -232,13 +228,11 @@ export function generate(args) {
   // Tab depth must be > the botZ depth of the Operation. If it isn't,
   // then ignore the tab geometry
   let tabGeometry = args.tabGeometry;
-  let tabZ = args.tabZ;
-  if (!tabGeometry || tabGeometry.length === 0) {
-    tabZ = args.botZ;
-  }
+  let tabZ = args.tabZ ?? args.botZ;
+
   if (tabGeometry && tabZ <= args.botZ) {
     App.showAlert(
-      "Tabs are cut deeper than the max operation depth, and will be ignored.",
+      "Holding tabs are cut deeper than the max cut depth, and will be ignored.",
       'alert-warning');
     tabGeometry = undefined;
   }
@@ -247,9 +241,6 @@ export function generate(args) {
 
   const retractToSafeZ =
         `G0 Z${args.safeZ.toFixed(dec)} ${rapidF} ; Retract`;
-
-  const retractForTabGcode =
-      `G0 Z${tabZ.toFixed(dec)} ${rapidF} ; Retract for tab`;
 
   /// Get distance between two points
   function dist(x1, y1, x2, y2) {
@@ -284,23 +275,28 @@ export function generate(args) {
     if (origPath.length == 0)
       continue;
 
-    const separatedPaths = tabGeometry
-          ? Cam.separateTabs(origPath, tabGeometry) // CPP
+    const separatedPaths = (tabGeometry && tabGeometry.length > 0)
+          ? Cam.separateTabs(origPath, tabGeometry)
           : [ origPath ];
 
     gcode.push(`; Path ${pathIndex++}`);
 
-    let currentZ = args.safeZ;
-    let finishedZ = args.topZ;
+    let currentZ = args.safeZ; // Current cut depth
+    let finishedZ = args.topZ; // Last deepest cut
 
     while (finishedZ > args.botZ) {
+      // Calculate next cut depth
       const nextZ = Math.max(finishedZ - args.passDepth, args.botZ);
 
+      // The current Z is deeper than the safe Z and the path isn't
+      // safe to close (perhaps because of tab geometry), retract to
+      // a safe depth
       if (currentZ < args.safeZ && (!path.safeToClose || tabGeometry)) {
         gcode.push(retractToSafeZ);
         currentZ = args.safeZ;
       }
 
+      // Note that Math.max in this case means "shallowest"
       currentZ = tabGeometry ? Math.max(finishedZ, tabZ) : finishedZ;
 
       gcode.push(
@@ -309,8 +305,11 @@ export function generate(args) {
 
       let selectedPaths;
       if (nextZ >= tabZ || args.useZ)
-        selectedPaths = [origPath];
+        // Cutting above tab depth, or useZ is defined (something to do
+        // with V Pocket?)
+        selectedPaths = [ origPath ];
       else
+        // Cutting below tab depth, so need to exclude tabGeometry
         selectedPaths = separatedPaths;
 
       for (let selectedIndex = 0;
@@ -320,18 +319,22 @@ export function generate(args) {
           continue;
 
         if (!args.useZ) {
-          let selectedZ;
-          if (selectedIndex & 1)
-            selectedZ = tabZ;
-          else
-            selectedZ = nextZ;
+          // Every even-numbered path is cut to tabZ, every odd numbered
+          // to nextZ. Without tabGeometry, all paths are cut to nextZ,
+          // but with tabGeometry, even numbered paths are the tab
+          // paths so are cut shallower.
+          let selectedZ = ((selectedIndex & 1) !== 0) ? tabZ : nextZ;
 
-          if (selectedZ < currentZ) {
+          if (selectedZ < currentZ) { // do we need to be deeper?
             let executedRamp = false;
             if (args.ramp) {
+              // Calculate the best angle for the ramp
               const minPlungeTime = (currentZ - selectedZ)
                     / args.plungeFeed;
               const idealDist = args.cutFeed * minPlungeTime;
+
+              // Calculate the path segments that need to be
+              // involved in the ramp
               let end;
               let totalDist = 0;
               for (end = 1; end < selectedPath.length; ++end) {
@@ -342,12 +345,15 @@ export function generate(args) {
                                       getX(selectedPath[end]),
                                       getY(selectedPath[end]));
               }
-              if (totalDist > 0) {
+
+              if (totalDist > 0) { // is the ramp an option?
                 gcode.push('; ramp');
-                executedRamp = true;
+
+                // We ramp in by backtracking the path
                 const rampPath = selectedPath.slice(0, end)
                       .concat(selectedPath.slice(0, end - 1).reverse());
                 let distTravelled = 0;
+                const feed = Math.min(totalDist / minPlungeTime, args.cutFeed);
                 for (let i = 1; i < rampPath.length; ++i) {
                   distTravelled += dist(getX(rampPath[i - 1]),
                                         getY(rampPath[i - 1]),
@@ -357,26 +363,30 @@ export function generate(args) {
                         / totalDist * (selectedZ - currentZ);
                   const gp = pt2Gcode(rampPath[i], false);
                   let gc = `G1 ${gp} Z${newZ.toFixed(dec)}`;
-                  if (i == 1) {
-                    const feed = Math.min(totalDist / minPlungeTime,
-                                          args.cutFeed);
-                    gc += ` F${feed.toFixed(dec)}`;
-                  }
+                  if (i == 1) gc += ` F${feed.toFixed(dec)}`;
+
                   gcode.push(gc);
+                  executedRamp = true;
                 }
               }
             }
+
             if (!executedRamp) {
+              // No ramp, so drill plunge
               gcode.push('M3 ; start spindle');
               gcode.push(
                 `G1 Z${selectedZ.toFixed(dec)} ${plungeF} ; plunge`);
             }
-          } else if (selectedZ > currentZ) {
-            gcode.push(retractForTabGcode);
-          }
+          } else if (selectedZ > currentZ)
+            // We're over a tab, retract to the tab level
+            // SMELL: why not retract to selectedZ?
+            gcode.push(
+              `G0 Z${tabZ.toFixed(dec)} ${rapidF} ; Retract for tab`);
+
           currentZ = selectedZ;
         } // !args.useZ
 
+        // We're ready to cut the path
         gcode.push('; cut');
 
         for (let i = 1; i < selectedPath.length; ++i) {
@@ -384,12 +394,14 @@ export function generate(args) {
           gcode.push(`G1 ${gp}${i == 1 ? ` ${cutF}` : ""}`);
         }
       } // selectedIndex
+
       finishedZ = nextZ;
       if (args.useZ)
         break;
     } // while (finishedZ > args.botZ)
-    gcode.push(retractToSafeZ);
+
     gcode.push("M5 ; stop spindle");
+    gcode.push(retractToSafeZ);
   } // pathIndex
 
   return gcode;
