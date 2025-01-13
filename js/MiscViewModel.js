@@ -105,24 +105,22 @@ class MiscViewModel extends ViewModel {
 
       const files = event.target.files;
       for (const file of files) {
-        const lert = App.showAlert(
-          `Loading project from ${file.name}`, "alert-info");
+        console.log(file);
+        const lert = App.showAlert("loadingProject", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           App.fromJson(JSON.parse(e.target.result));
           lert.remove();
-          App.showAlert(`Loaded project from ${file.name}`, "alert-success");
+          App.showAlert("loadedProject", "alert-success", file.name);
         });
         reader.addEventListener("abort", () => {
           lert.remove();
-          App.showAlert(
-            `Aborted reading project from ${file.name}`, "alert-danger");
+          App.showAlert("projectLoadAbort", "alert-danger", file.name);
         });
         reader.addEventListener("error", e => {
           console.error(e);
           lert.remove();
-          App.showAlert(
-            `Error reading project from ${file.name}`, "alert-danger");
+          App.showAlert("projectLoadError", "alert-danger", file.name);
         });
         reader.readAsText(file);
       }
@@ -154,9 +152,8 @@ class MiscViewModel extends ViewModel {
     const name = this.projectName();
     json[name] = App.toJson(
       this.templateOnly() || name === DEFAULT_PROJECT_NAME);
-    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
-    const asTemplate = this.templateOnly() ? " as a template" : "";
-    App.showAlert(`${name} saved in the browser${asTemplate}`);
+    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
+    App.showAlert("projectSavedInBrowser", "alert-info", name);
   }
 
   /**
@@ -191,8 +188,7 @@ class MiscViewModel extends ViewModel {
       }
     }
     if (name !== DEFAULT_PROJECT_NAME)
-      App.showAlert(`Project "${name}" not found in the browser.`,
-                    "alert-danger");
+      App.showAlert("projectNotInBrowser", "alert-danger", name);
   }
 
   /**

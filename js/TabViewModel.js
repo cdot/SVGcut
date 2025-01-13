@@ -47,7 +47,7 @@ export class TabViewModel extends ViewModel {
      */
     this.enabled = ko.observable(true);
     this.enabled.subscribe(
-      () => document.dispatchEvent(new Event("toolPathsChanged")));
+      () => document.dispatchEvent(new Event("TOOL_PATHS_CHANGED")));
     this.enabled.subscribe(newValue => {
       const v = newValue ? "visible" : "hidden";
       if (this.combinedGeometrySvg)
@@ -119,20 +119,17 @@ export class TabViewModel extends ViewModel {
       return;
 
     const startTime = Date.now();
-    console.debug("tabs recombine...");
+    console.debug("Tab recombine...");
+
     this.removeCombinedGeometry();
 
     const all = [];
     for (const rp of this.rawPaths) {
-      try {
-        const geometry = SnapPaths.toInternal(rp.path);
-        const fillRule = rp.nonzero
-              ? ClipperLib.PolyFillType.pftNonZero
-              : ClipperLib.PolyFillType.pftEvenOdd;
-        all.push(InternalPaths.simplifyAndClean(geometry, fillRule));
-      } catch (e) {
-        App.showAlert(e, "alert-warning");
-      }
+      const geometry = SnapPaths.toInternal(rp.path);
+      const fillRule = rp.nonzero
+            ? ClipperLib.PolyFillType.pftNonZero
+            : ClipperLib.PolyFillType.pftEvenOdd;
+      all.push(InternalPaths.simplifyAndClean(geometry, fillRule));
     }
 
     if (all.length > 0) {
@@ -148,18 +145,15 @@ export class TabViewModel extends ViewModel {
 
     if (this.combinedGeometry.length > 0) {
       const path = SnapPaths.fromInternal(this.combinedGeometry);
-      if (path != null) {
+      if (path) {
         this.combinedGeometrySvg = App.svgGroups.tabs
         .path(path)
         .attr("class", "tabsGeometry");
+        this.enabled(true);
       }
     }
 
-    console.debug("tabs recombine: " + (Date.now() - startTime));
-
-    this.enabled(true);
-
-    document.dispatchEvent(new Event("toolPathsChanged"));
+    console.debug("Tab recombine took " + (Date.now() - startTime));
   };
 
   /**
@@ -178,13 +172,15 @@ export class TabViewModel extends ViewModel {
    * @override
    */
   fromJson(json) {
+    // suppress recombine until we're finished
     this.disableRecombination = true;
+
     this.rawPaths = json.rawPaths;
     this.updateObservable(json, 'margin');
+    this.updateObservable(json, 'enabled');
+
     this.disableRecombination = false;
     this.recombine();
-
-    this.updateObservable(json, 'enabled');
   };
 }
 

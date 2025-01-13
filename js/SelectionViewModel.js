@@ -60,7 +60,7 @@ class SelectionViewModel extends ViewModel {
       this.numSelected(this.numSelected() + 1);
       return true;
     } catch (e) {
-      App.showAlert(e, "alert-warning");
+      console.error(e);
     }
 
     return false;

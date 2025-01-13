@@ -138,7 +138,7 @@ class OperationsViewModel extends ViewModel {
     op.enabled.subscribe(() => this.updateBB());
     op.toolPaths.subscribe(() => this.updateBB());
 
-    document.dispatchEvent(new Event("toolPathsChanged"));
+    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
 
     App.tutorial(4);
   };
@@ -198,6 +198,7 @@ class OperationsViewModel extends ViewModel {
       }
     }
 
+    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
     this.updateBB();
   }
 }

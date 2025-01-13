@@ -34,7 +34,7 @@ class TabsViewModel extends ViewModel {
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth(App.models.Tool.passDepth() / 2);
     this.maxCutDepth.subscribe(() =>
-      document.dispatchEvent(new Event("toolPathsChanged")));
+      document.dispatchEvent(new Event("TOOL_PATHS_CHANGED")));
   }
 
   /**
@@ -69,7 +69,7 @@ class TabsViewModel extends ViewModel {
     const tab = new TabViewModel(this.unitConverter, rawPaths, false);
     this.tabs.push(tab);
 
-    document.dispatchEvent(new Event("toolPathsChanged"));
+    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   };
 
   /**
@@ -78,7 +78,7 @@ class TabsViewModel extends ViewModel {
   removeTab(tab) {
     tab.removeCombinedGeometry();
     this.tabs.remove(tab);
-    document.dispatchEvent(new Event("toolPathsChanged"));
+    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   };
 
   /**
@@ -112,7 +112,7 @@ class TabsViewModel extends ViewModel {
       for (const tabJson of json.tabs) {
         const tab = new TabViewModel(this.unitConverter, [], true);
         tab.fromJson(tabJson);
-        this.tabs().push(tab);
+        this.tabs.push(tab);
       }
   };
 }

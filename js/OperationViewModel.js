@@ -86,7 +86,7 @@ class OperationViewModel extends ViewModel {
     this.name = ko.observable("");
     this.name.subscribe(() => {
       if (!this.generatingToolpath)
-        document.dispatchEvent(new Event("toolPathsChanged"));
+        document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
     });
 
     /**
@@ -104,7 +104,7 @@ class OperationViewModel extends ViewModel {
     });
     this.enabled.subscribe(() => {
       if (!this.generatingToolpath)
-        document.dispatchEvent(new Event("toolPathsChanged"));
+        document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
     });
 
     /**
@@ -127,7 +127,7 @@ class OperationViewModel extends ViewModel {
     this.toolPaths = ko.observable([]);
     this.toolPaths.subscribe(() => {
       if (!this.generatingToolpath)
-        document.dispatchEvent(new Event("toolPathsChanged"));
+        document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
     });
 
     /**
@@ -254,13 +254,11 @@ class OperationViewModel extends ViewModel {
    * @return {boolean} true if recombination was successful
    */
   recombine() {
-    if (this.disableRecombination) {
-      console.debug("recombine disabled");
-      return false;
-    }
+    if (this.disableRecombination)
+      return;
 
     const startTime = Date.now();
-    console.debug("recombine...");
+    console.debug(`Operation ${this.name} recombine...`);
 
     this.removeCombinedGeometry();
     this.removeToolPaths();
@@ -273,11 +271,6 @@ class OperationViewModel extends ViewModel {
             ? ClipperLib.PolyFillType.pftNonZero
             : ClipperLib.PolyFillType.pftEvenOdd;
       all.push(InternalPaths.simplifyAndClean(geometry, fillRule));
-    }
-
-    if (all.length === 0) {
-      // SMELL: can't not never happen?
-      throw new Error("Operation has no paths to operate on");
     }
 
     let clipType;
@@ -329,15 +322,14 @@ class OperationViewModel extends ViewModel {
       }
     }
 
-    console.debug(`recombine-ing ${previewGeometry.length} paths took ${Date.now() - startTime}`);
-
-    return true;
+    console.debug(`Operation ${this.name} recombine took ${Date.now() - startTime}`);
   }
 
   /**
    * Generate the tool path(s) for this operation in response to
-   * the "Generate" button. The tool paths
-   * are type CamPath and are written to `this.toolPaths`.
+   * the "Generate" button. The tool paths are type CamPath and are
+   * written to `this.toolPaths`.
+   * SMELL: why not do this whenever something changes?
    */
   generateToolPath() {
     const toolCamArgs = App.models.Tool.getCamArgs();
@@ -395,15 +387,14 @@ class OperationViewModel extends ViewModel {
       .attr("style", "width:3px")
       .attr("class", "toolPath");
     } else {
-      App.showAlert(
-        "Operation doesn't generate any tool paths. Check that features are wider than the tool diameter.", "alert-warning");
+      App.showAlert("noToolPaths", "alert-warning", this.name);
     }
 
     console.debug(`generateToolPath for ${spaths.length} paths took ${Date.now() - startTime}`);
 
     this.enabled(true);
     this.generatingToolpath = false;
-    document.dispatchEvent(new Event("toolPathsChanged"));
+    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   }
 
   /**
@@ -441,18 +432,15 @@ class OperationViewModel extends ViewModel {
     this.updateObservable(json, 'name');
     this.updateObservable(json, 'ramp');
     this.updateObservable(json, 'combineOp');
-    if (json.operation == "Outline")
-      this.operation('Outside'); // compatibility, I guess
-    else
-      this.updateObservable(json, 'operation');
+    this.updateObservable(json, 'operation');
     this.updateObservable(json, 'direction');
     this.updateObservable(json, 'cutDepth');
     this.updateObservable(json, 'margin');
     this.updateObservable(json, 'width');
+    this.updateObservable(json, 'enabled');
 
     this.disableRecombination = false;
     this.recombine();
-    this.updateObservable(json, 'enabled');
   };
 }
 

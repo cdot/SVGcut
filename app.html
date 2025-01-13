@@ -193,10 +193,10 @@
                   </div>
                   <div style="display: table-cell" class="entry-mid">
                     <select id="opOperation" data-bind="value: operation">
-                      <option>Pocket</option>
-                      <option>Inside</option>
-                      <option>Outside</option>
-                      <option>Engrave</option>
+                      <option value="Pocket">Pocket</option>
+                      <option value="Inside">Inside</option>
+                      <option value="Outside">Outside</option>
+                      <option value="Engrave">Engrave</option>
                       <!--CPP <option>V Pocket</option> /CPP-->
                     </select>
                   </div>
@@ -267,10 +267,10 @@
                           </label>
                         </td><td>
                           <select id="opCombine" data-bind="value: combineOp">
-                            <option>Union</option>
-                            <option>Intersect</option>
-                            <option>Diff</option>
-                            <option>Xor</option>
+                            <option value="Union">Union</option>
+                            <option value="Intersect">Intersect</option>
+                            <option value="Diff">Diff</option>
+                            <option value="Xor">Xor</option>
                           </select>
                         </td>
                       </tr><tr data-bind="visible: operation()!='V Pocket'">
@@ -281,8 +281,8 @@
                         </td><td>
                           <select id="opDirection"
                                   data-bind="value: direction">
-                            <option>Conventional</option>
-                            <option>Climb</option>
+                            <option value="Conventional">Conventional</option>
+                            <option value="Climb">Climb</option>
                           </select>
                         </td>
                       </tr><tr data-bind="visible: operation()!='Engrave'">
@@ -413,9 +413,9 @@
                       </label>
                     </td><td colspan = 2>
                       <select id="gcodeOrigin" data-bind="value: origin">
-                        <option>SVG page</option>
-                        <option>Bounding box</option>
-                        <option>Centre</option>
+                        <option value="SVG page">SVG page</option>
+                        <option value="Bounding box">Bounding box</option>
+                        <option value="Centre">Centre</option>
                       </select>
                     </td>
                   </tr>
@@ -715,8 +715,8 @@
                       Z Origin</label>
                   </td><td>
                     <select id="selectMatZOrigin" data-bind="value: zOrigin">
-                      <option>Top</option>
-                      <option>Bottom</option>
+                      <option value="Top">Top</option>
+                      <option value="Bottom">Bottom</option>
                     </select>
                   </td>
                 </tr><tr>
@@ -783,91 +783,111 @@
   </div>
 
   <div id="tutorialSteps" style="display:none">
-    <div name="Step1">Import one or more SVG files.</div>
-    <div name="Step2">Click 1 or more paths</div>
-    <div name="Step3">Click "Create Operation" after you have finished selecting paths.</div>
-    <div name="Step4">Click "Generate" to generate Gcode for the operation.</div>
-    <div name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</div>
+    <span name="Step1">Import one or more SVG files.</span>
+    <span name="Step2">Click 1 or more paths</span>
+    <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
+    <span name="Step4">Click "Generate" to generate Gcode for the operation.</span>
+    <span name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</span>
   </div>
   <div id="popovers" style="display:none">
-    <div name="selectProject">Select a project fromthe projects held in this browser.</div>
+    <span name="selectProject">Select a project stored in this browser</span>
     <!-- tool -->
-    <div name="toolUnits">Display units, does not affect Gcode generation.</div>
-    <div name="toolDiameter">Diameter of tool. The simulator ignores this if Angle &lt; 180. <!--CPP V Pocket also ignores this.--></div>
-    <div name="toolAngle">Angle of V cutter. 180 for normal (flat bottom)
-      tools. <!--CPP V Pocket is the only operation which uses this.--></div>
-    <div name="toolPassDepth">Maximum depth the tool should plunge each pass.
-      Use a smaller pass depth for harder materials and better quality.</div>
-    <div name="toolStepOver">
+    <span name="toolUnits">Display units, does not affect Gcode generation</span>
+    <span name="toolDiameter">Diameter of tool. The simulator ignores
+      this if Angle &lt;180&deg; <!--CPP V Pocket also ignores this.--></span>
+    <span name="toolAngle">Angle of V cutter. 180&deg; for normal (flat bottom)
+      tools. <!--CPP V Pocket is the only operation which uses this.--></span>
+    <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
+      Use a smaller pass depth for harder materials and better quality</span>
+    <span name="toolStepOver">
       What fraction of the tool diameter the tool should step over each
       time around a loop. Smaller values produce better cuts and reduce
-      tool wear, but take longer to complete.</div>
-    <div name="toolRapidRate">The speed the tool moves while not cutting</div>
-    <div name="toolPlungeRate">
-      The speed the tool plunges downwards into the material</div>
-    <div name="toolCutRate">
-      The speed the tool moves horizontally during cutting</div>
+      tool wear, but take longer to complete</span>
+    <span name="toolRapidRate">The speed the tool moves while not cutting</span>
+    <span name="toolPlungeRate">
+      The speed the tool plunges downwards into the material</span>
+    <span name="toolCutRate">
+      The speed the tool moves horizontally during cutting</span>
     <!-- Tabs -->
-    <div name="createTabButton"><p class='bg-danger'>
-        Select one or more paths in the "Toolpaths" tab before clicking
-        here</p></div>
-    <div name="tabEnabled">Enable/disable this tab</div>
+    <span name="createTabButton"><p class='bg-danger'>
+        Select one or more paths in the "Toolpaths" pane before clicking
+        here</p></span>
+    <span name="tabEnabled">Enable/disable this holding tab</span>
     <div name="tabMargin">Margin<br>+ve: how much to expand tab<br>
       -ve: how much to shrink tab</div>
-    <div name="tabsMaxCutDepth">Maximum depth operations may cut when
-      they pass over tabs</div>
+    <span name="tabsMaxCutDepth">Maximum depth operations may cut when
+      they pass over holding tabs</span>
     <!-- Gcode Generation -->
-    <div name="gcodeUnits">
+    <span name="gcodeUnits">
       The units used by the machine the Gcode is targeted for. The Gcode
       will try to switch the machine into these units using G20/G21, so
       you should only need to change this if the machine doesn't support
       these codes (or you are more comfortable thinking in inches!)
-    </div>
-    <div name="gcodeOrigin">
+    </span>
+    <span name="gcodeOrigin">
       Set the machine origin. "SVG page" will set (0,0) to the bottom
       left of the SVG page. "Bounding box" will set it to the bottom left
       of the bounding box around the toolpaths. "Centre" will set it to
       the middle of the toolpaths. Choose the origin that works best
       with your CNC machine.
-    </div>
-    <div name="gcodeExtraOffsetX">
-      Extra X offset added to the the machine origin</div>
-    <div name="gcodeExtraOffsetY">
-      Extra Y offset added to the machine origin</div>
-    <div name="gcodeWidth">Width of the work.</div>
-    <div name="gcodeHeight">Height of the work</div>
-    <div name="gcodeReturn00">Move the tool to 0,0 after the last
-      operation.</div>
+    </span>
+    <span name="gcodeExtraOffsetX">
+      Extra X offset added to the the machine origin</span>
+    <span name="gcodeExtraOffsetY">
+      Extra Y offset added to the machine origin</span>
+    <span name="gcodeWidth">Width of the work</span>
+    <span name="gcodeHeight">Height of the work</span>
+    <span name="gcodeReturn00">Move the tool to 0,0 after the last
+      operation</span>
     <!-- material -->
-    <div name="inputMatThickness">How thick is the material</div>
-    <div name="inputMatClearance">How high the tool moves over the material.
-      Increase this when using clamps or screws to fasten the material.</div>
+    <span name="inputMatThickness">How thick is the material</span>
+    <span name="inputMatClearance">How high the tool moves over the material.
+      Increase this when using clamps or screws to fasten the material</span>
     <!-- operations -->
-    <div name="createOperationButton"><p class='bg-danger'>
+    <span name="createOperationButton"><p class='bg-danger'>
         Select one or more objects in the "Toolpaths" tab before clicking
-        here</p></div>
-    <div name="opEnabled">Enable/disable this operation. Only enabled operation are shown.</div>
-    <div name="opGenerate">Generate toolpaths and Gcode for this operation</div>
-    <div name="opName">Name used in gcode comments</div>
-    <div name="opRamp">Ramp the cutter in gradually instead of plunging straight down</div>
-    <div name="opCombine">How to combine multiple paths into this operation</div>
-    <div name="opDirection">What direction the cutter should travel.
-      See README for an explanation.</div>
-    <div name="opCutDepth">How deep this operation should cut in total</div>
-    <div name="opVMaxDepth">Maximum depth this operation should cut.
-      <p class="bg-danger">not implemented yet; this is ignored.</p></div>
-    <div name="opMargin"><p>Positive: how much material to leave uncut.</p>
+        here</p></span>
+    <span name="opEnabled">Enable/disable this operation. Only enabled operation are shown</span>
+    <span name="opGenerate">Generate toolpaths and Gcode for this operation</span>
+    <span name="opName">Name used in gcode comments</span>
+    <span name="opRamp">Ramp the cutter in gradually instead of plunging straight down</span>
+    <span name="opCombine">How to combine multiple paths into this operation</span>
+    <span name="opDirection">What direction the cutter should travel.
+      See README for an explanation</span>
+    <span name="opCutDepth">How deep this operation should cut in total</span>
+    <span name="opVMaxDepth">Maximum depth this operation should cut.
+      <p class="bg-danger">not implemented yet; this is ignored</p></span>
+    <div name="opMargin">
+      <p>Positive: how much material to leave uncut</p>
       <p>Negative: how much extra material to cut</p></div>
-    <div name="opWidth">How wide a path to cut. If this is less than the
-      cutter width then it uses the cutter width.</div>
+    <span name="opWidth">How wide a path to cut. If this is less than the
+      cutter width then it uses the cutter width</span>
     <!-- selection -->
-    <div name="inputMinNumSegments">Minimum number of line segments
-      to convert a curve to. This conversion is done when you select
-      an object (it becomes blue).</div>
-    <div name="inputMinSegmentLength">Minimum length of each line segment
+    <span name="inputMinNumSegments">Minimum number of line segments
+      to convert a curve to</span>
+    <span name="inputMinSegmentLength">Minimum length of each line segment
       when converting curves. This conversion is done when you select an
-      object (it becomes blue).</div>
-  }
+      object (it becomes blue)</span>
+  </div>
+  <div id="alerts" style="display:none">
+    <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
+    <span name="loadingProject">Loading project "$1"</span>
+    <span name="loadedProject">Loaded project "$1"</span>
+    <span name="projectLoadAbort">Aborted reading project "$1"</span>
+    <span name="projectLoadError">Error reading project "$1"</span>
+    <span name="projectSavedInBrowser">"$1" saved in the browser</span>
+    <span name="projectNotInBrowser">Project "$1" not found in the browser</span>
+    <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0</span>
+    <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0</span>
+    <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter</span>
+    <span name="toolTooSmall">Tool diameter must be greater than 0</span>
+    <span name="stepoverTooSmall">Tool stepover must be geater than 0</span>
+    <span name="stepoverTooBig">Tool stepover must be less than or equal to 1</span>
+    <span name="loadingSVG">Loading SVG from $1</span>
+    <span name="loadedSVG">Loaded SVG from $1</span>
+    <span name="svgLoadAbort">Aborted reading $1</span>
+    <span name="svgLoadError">Error reading $1</span>
+    <span name="tutorialStep">Step $1: $2</span>
   </div>
   <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
   <script src="node_modules/knockout/build/output/knockout-latest.debug.js">

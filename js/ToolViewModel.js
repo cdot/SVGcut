@@ -98,16 +98,15 @@ class ToolViewModel extends ViewModel {
       stepover: Number(this.stepover())
     };
     if (result.diameter <= 0) {
-      App.showAlert("Tool diameter must be greater than 0", "alert-danger");
+      App.showAlert("toolTooSmall", "alert-danger");
       return null;
     }
     if (result.stepover <= 0) {
-      App.showAlert("Tool stepover must be geater than 0", "alert-danger");
+      App.showAlert("stepoverTooSmall", "alert-danger");
       return null;
     }
     if (result.stepover > 1) {
-      App.showAlert(
-        "Tool stepover must be less than or equal to 1", "alert-danger");
+      App.showAlert("stepoverTooBig", "alert-danger");
       return null;
     }
     return result;

@@ -41,12 +41,6 @@ const SVG_GROUPS = [
 class App {
 
   constructor(config) {
-    /**
-     * UID for alerts
-     * @member {number}
-     * @private
-     */
-    this.nextAlertNum = 1;
 
     /**
      * Map from model name (e.g. "Operations") to the view model
@@ -102,12 +96,7 @@ class App {
       g.attr("id", group);
       this.svgGroups[group] = g;
     }
-
-    // Add a filter to dim the content
-    this.svgGroups.content.attr({
-      filter: this.mainSnap.filter(
-        Snap.filter.contrast(.5)).attr("filterUnits", "objectBoundingBox")
-    });
+    this.addSVGFilters();
 
     // Create view models.
 
@@ -151,21 +140,22 @@ class App {
 
       const files = event.target.files;
       for (const file of files) {
-        const lert = this.showAlert(`Loading ${file.name}`, "alert-info");
+        const lert = this.showAlert("loadingSVG", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           this.importSvg(e.target.result);
           lert.remove();
-          this.showAlert(`Loaded ${file.name}`, "alert-success");
+          this.showAlert("loadedSVG", "alert-success", file.name);
           this.tutorial(2);
         });
         reader.addEventListener("abort", e => {
           lert.remove();
-          this.showAlert(`Aborted reading ${file.name} ${e}`, "alert-danger");
+          this.showAlert("svgLoadAbort", "alert-danger", file.name);
         });
         reader.addEventListener("error", e => {
           lert.remove();
-          this.showAlert(`Error reading ${file.name} ${e}`, "alert-danger");
+          console.error(e);
+          this.showAlert("svgLoadError", "alert-danger");
         });
         reader.readAsText(file);
       }
@@ -184,7 +174,7 @@ class App {
       this.updateSimulationCanvasSize();
     });
 
-    document.addEventListener("updateSimulation", () => {
+    document.addEventListener("UPDATE_SIMULATION", () => {
       console.debug("Update simulation");
       if (this.simulation) {
         // Set the simulation path from the Gcode
@@ -226,6 +216,21 @@ class App {
     return this.simulation.start();
   }
 
+  /**
+   * Add filters to modify the rendering of SVG groups
+   * @private
+   */
+  addSVGFilters() {
+    // Add a filter to dim the content
+    this.svgGroups.content.attr({
+      filter: this.mainSnap.filter(
+        Snap.filter.contrast(.5)).attr("filterUnits", "objectBoundingBox")
+    });
+  }
+
+  /**
+   * Add handlers for evenet in SVG
+   */
   addSVGEventHandlers() {
     const mainSvgEl = document.getElementById("MainSvg");
     mainSvgEl
@@ -264,10 +269,9 @@ class App {
     });
   }
 
-  /**
+  /*CPP*
    * Asynchronously find and load cpp interface
-   */
-  /*
+   *
   downloadCpp() {
     if (this.tryCppPaths.length == 0) {
       const e = "cam-cpp.js is unavailable; tried the following paths:<ul>"
@@ -289,18 +293,27 @@ class App {
     })
     .catch(() => this.downloadCpp());
   }
-*/
+  /CPP*/
 
   /**
-   * @param {boolean} timeout if true, message will be shown for 5s then deleted
+   * Show an alert
+   * @param {string} id HTML name= of a message in <div id="alerts">
+   * @param {string} alerttype CSS class, e.g. "alert-warning"
+   * @param {object[]} params remaining paramsers are used to expan $n in the
+   * message
    */
-  showAlert(message, alerttype, timeout = false) {
-    const alertNum = this.nextAlertNum++;
+  showAlert(id, alerttype, ...params) {
+    let s = document.querySelector(`#alerts>[name="${id}"]`);
+    if (s) {
+      s = s.innerHTML.replace(
+        /\$(\d+)/g,
+        (m, index) => params[index - 1]);
+    } else
+      s = id;
     const alDiv = document.createElement("div");
-    alDiv.setAttribute("id", `AlertNum${alertNum}`);
     alDiv.classList.add("alert");
     alDiv.classList.add(alerttype);
-    alDiv.innerHTML = message;
+    alDiv.innerHTML = s;
     const a = document.createElement("a");
     a.append("× ");
     a.classList.add("close");
@@ -311,9 +324,6 @@ class App {
 
     const alp = document.getElementById('alert_placeholder');
     alp.prepend(alDiv);
-
-    if (timeout)
-      setTimeout(() => alDiv.remove(), 5000);
 
     return alDiv;
   }
@@ -426,7 +436,7 @@ class App {
       if (messEl) {
         const message = messEl.innerHTML;
         this.tutorialAlert = this.showAlert(
-          `Step ${step}: ${message}`, "alert-info");
+          "tutorialStep", "alert-info", step, message);
         this.currentTutorialStep = step;
       }
     }
@@ -436,15 +446,17 @@ class App {
    * @override
    */
   toJson(template) {
-    const container = {};
+    const container = { model: {}, svg: {}};
     for (const m in this.models) {
       const json = this.models[m].toJson(template);
       if (json)
-        container[this.models[m].jsonFieldName()] = json;
+        container.model[this.models[m].jsonFieldName()] = json;
     }
     if (!template) {
-      for (const group of SVG_GROUPS) {
-        container[group] = this.svgGroups[group].outerSVG();
+      // We don't need to serialise the combinedGeometry (it can
+      // be regenerated by recombine) or the tabs or the selection
+      for (const group of [ 'content', 'toolPaths' ]) {
+        container.svg[group] = this.svgGroups[group].outerSVG();
       }
     }
     return container;
@@ -454,20 +466,26 @@ class App {
    * @override
    */
   fromJson(container) {
+    // Clean out SVG groups (also kills filters)
+    for (const group of SVG_GROUPS)
+      this.svgGroups[group].clear();
+
+    // Reload models
     for (const m in this.models) {
-      const json = container[this.models[m].jsonFieldName()];
+      const json = container.model[this.models[m].jsonFieldName()];
       if (json)
         this.models[m].fromJson(json);
     }
+
+    // Reload SVG groups
     for (const group of SVG_GROUPS) {
-      if (container[group]) {
-        const snapEl = Snap.parse(container[group]);
-        // Clean out group
-        this.svgGroups[group].clear();
+      if (container.svg[group]) {
+        const snapEl = Snap.parse(container.svg[group]);
         // Append the reloaded content
         this.svgGroups[group].append(snapEl);
       }
     }
+    this.addSVGFilters();
     this.updateMainSvgSize();
   }
 }

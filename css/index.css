@@ -34,17 +34,17 @@ code {
 /* Highlighting in SVG */
 .selectedPath {
   stroke:none;
-  fill: rgba(255, 255, 0, 0.75);
+  fill: rgba(255, 255, 0, 0.5);
 }
 
 .combinedGeometry {
   stroke: none;
-  fill: rgba(0, 0, 255, 0.5);
+  fill: rgba(0, 0, 255, 0.3);
 }
 
 .tabsGeometry {
   stroke: none;
-  fill: rgba(230, 160, 0, 0.5);
+  fill: rgba(230, 160, 0, 0.3);
 }
 
 .toolPath {

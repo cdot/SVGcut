@@ -231,9 +231,7 @@ export function generate(args) {
   let tabZ = args.tabZ ?? args.botZ;
 
   if (tabGeometry && tabZ <= args.botZ) {
-    App.showAlert(
-      "Holding tabs are cut deeper than the max cut depth, and will be ignored.",
-      'alert-warning');
+    App.showAlert("tabsDeeper", 'alert-warning');
     tabGeometry = undefined;
   }
 
@@ -266,6 +264,20 @@ export function generate(args) {
     if (useZ)
       result.push(`Z${(p.Z * args.zScale + args.topZ).toFixed(dec)}`);
     return result.join(" ");
+  }
+
+  let spindleTurning = false;
+
+  function startSpindle() {
+    if (!spindleTurning)
+      gcode.push('M3 ; Start spindle');
+    spindleTurning = true;
+  }
+
+  function stopSpindle() {
+    if (spindleTurning)
+      gcode.push('M5 ; Sop spindle');
+    spindleTurning = false;
   }
 
   let pathIndex = 0;
@@ -302,6 +314,7 @@ export function generate(args) {
       gcode.push(
         "; Rapid to initial position",
         `G0 ${pt2Gcode(origPath[0], false)} Z${currentZ.toFixed(dec)} ${rapidF}`);
+      startSpindle();
 
       let selectedPaths;
       if (nextZ >= tabZ || args.useZ)
@@ -346,7 +359,7 @@ export function generate(args) {
                                       getY(selectedPath[end]));
               }
 
-              if (totalDist > 0) { // is the ramp an option?
+              if (totalDist > 0) { // is the ramp doable?
                 gcode.push('; ramp');
 
                 // We ramp in by backtracking the path
@@ -373,9 +386,8 @@ export function generate(args) {
 
             if (!executedRamp) {
               // No ramp, so drill plunge
-              gcode.push('M3 ; start spindle');
               gcode.push(
-                `G1 Z${selectedZ.toFixed(dec)} ${plungeF} ; plunge`);
+                `G1 Z${selectedZ.toFixed(dec)} ${plungeF} ; Plunge`);
             }
           } else if (selectedZ > currentZ)
             // We're over a tab, retract to the tab level
@@ -400,7 +412,7 @@ export function generate(args) {
         break;
     } // while (finishedZ > args.botZ)
 
-    gcode.push("M5 ; stop spindle");
+    stopSpindle();
     gcode.push(retractToSafeZ);
   } // pathIndex
 
