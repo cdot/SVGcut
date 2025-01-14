@@ -9,6 +9,8 @@
 import { ViewModel } from "./ViewModel.js";
 
 const POPOVERS = [
+  { id:"inputMatThickness" },
+  { id:"selectMatZOrigin" },
   { id:"inputMatClearance" }
 ];
 

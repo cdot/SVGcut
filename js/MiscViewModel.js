@@ -109,7 +109,7 @@ class MiscViewModel extends ViewModel {
         const lert = App.showAlert("loadingProject", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
-          App.fromJson(JSON.parse(e.target.result));
+          App.loadSaveable(JSON.parse(e.target.result));
           lert.remove();
           App.showAlert("loadedProject", "alert-success", file.name);
         });
@@ -150,7 +150,7 @@ class MiscViewModel extends ViewModel {
     App.hideModals();
     let json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA)) ?? {};
     const name = this.projectName();
-    json[name] = App.toJson(
+    json[name] = App.getSaveable(
       this.templateOnly() || name === DEFAULT_PROJECT_NAME);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
     App.showAlert("projectSavedInBrowser", "alert-info", name);
@@ -163,7 +163,7 @@ class MiscViewModel extends ViewModel {
   saveProjectInFile() {
     App.hideModals();
 
-    const json = JSON.stringify(App.toJson(this.templateOnly()));
+    const json = JSON.stringify(App.getSaveable(this.templateOnly()));
     const blob = new Blob([ json ], { type: 'text/json' });
     const fn = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
@@ -183,7 +183,7 @@ class MiscViewModel extends ViewModel {
     if (projects) {
       const json = projects[name];
       if (json) {
-        App.fromJson(json);
+        App.loadSaveable(json);
         return;
       }
     }

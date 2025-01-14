@@ -18,6 +18,20 @@ import * as Cam from "./Cam.js";
  * @property {boolean} nonzero winding rule
 */
 
+const POPOVERS = [
+      { id: "opEnabled" },
+      { id: "opOperation" },
+      { id: "opCutDepth" },
+      { id: "opGenerate" },
+      { id: "opName" },
+      { id: "opRamp" },
+      { id: "opCombine" },
+      { id: "opDirection" },
+      { id: "opVMaxDepth" },
+      { id: "opMargin" },
+      { id: "opWidth" }
+];
+
 /**
  * ViewModel for an operation in the `Operations` card
  */
@@ -187,18 +201,7 @@ class OperationViewModel extends ViewModel {
    * @override
    */
   initialise(nodes) {
-    this.addPopovers([
-      { id: "opEnabled" },
-      { id: "opCutDepth" },
-      { id: "opGenerate" },
-      { id: "opName" },
-      { id: "opRamp" },
-      { id: "opCombine" },
-      { id: "opDirection" },
- //CPP     { id: "opVMaxDepth" },
-      { id: "opMargin" },
-      { id: "opWidth" }
-    ], nodes);
+    this.addPopovers(POPOVERS, nodes);
   }
 
   /**
@@ -348,9 +351,10 @@ class OperationViewModel extends ViewModel {
     if (this.operation() !== "Engrave" && off != 0)
       geometry = InternalPaths.offset(geometry, off);
 
-    const toolDiameter = App.Tool.diameter.toUnits("internal");
-    const stepover = App.Tool.stepover.toUnits("internal");
-    const passDepth = App.Tool.passDepth.toUnits("internal");
+    const toolModel = App.models.Tool;
+    const toolDiameter = toolModel.diameter.toUnits("internal");
+    const passDepth = toolModel.passDepth.toUnits("internal");
+    const stepover = toolModel.stepover();
 
     let paths, width;
     switch (this.operation()) {

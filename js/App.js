@@ -159,11 +159,6 @@ class App {
         });
         reader.readAsText(file);
       }
-      // SMELL: why? It's a clone, it should be identical, no? Maybe
-      // something to do with the change event handler only firing once?
-      // Seems to work fine without this.
-      //const control = $(event.target).clone(true);
-      //$(event.target).replaceWith(control);
     });
 
     this.addSVGEventHandlers();
@@ -443,9 +438,12 @@ class App {
   }
 
   /**
-   * @override
+   * Get a hierarchical object that reflects the application state
+   * in a form that can be safely serialised e.g to JSON
+   * @param {boolean} template true to save a template, but not the
+   * geometry
    */
-  toJson(template) {
+  getSaveable(template) {
     const container = { model: {}, svg: {}};
     for (const m in this.models) {
       const json = this.models[m].toJson(template);
@@ -463,15 +461,20 @@ class App {
   }
 
   /**
-   * @override
+   * Reload application state from a hierarchical object as saved
+   * by `getSaveable()`.
+   * @param {object} container application state
+   * @param {object[]} saveable.model mapping from model name to model state
+   * @param {string[]} saveable.svg mapping from svg group name to geometry
    */
-  fromJson(container) {
+  loadSaveable(container) {
     // Clean out SVG groups (also kills filters)
     for (const group of SVG_GROUPS)
       this.svgGroups[group].clear();
 
     // Reload models
     for (const m in this.models) {
+      this.models[m].reset();
       const json = container.model[this.models[m].jsonFieldName()];
       if (json)
         this.models[m].fromJson(json);

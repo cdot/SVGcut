@@ -129,14 +129,14 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
 export function engrave(geometry, climb) {
   const allPaths = [];
   for (const path of geometry) {
-    const path = path.slice(0); // take a copy
+    const copy = path.slice(0); // take a copy
     if (!climb)
-      path.reverse();
-    path.push(path[0]); // close the path
-    allPaths.push(path);
+      copy.reverse();
+    copy.push(copy[0]); // close the path
+    allPaths.push(copy);
   }
   const result = mergePaths(null, allPaths);
-  for (const path of result.length)
+  for (const path of result)
     path.safeToClose = true;
   return result;
 };

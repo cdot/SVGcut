@@ -235,11 +235,6 @@
                        data-bind="html: App.models.Misc.camCppError()"></div>
                 </div>
                 /CPP-->
-                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && operation()=='V Carve' && toolModel.angle() == 180">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
-                </div>
                 <div style="display:table-row" data-bind="visible: showDetail">
                   <div style="display: table-cell; width: 20px"></div>
                   <div style="display: table-cell">
@@ -806,7 +801,8 @@
     <span name="toolDiameter">Diameter of cutter</span>
     <span name="toolAngle">Angle of tapered cutter head. This is the angle
       at the tip of the tool, so 180 means a flat bottom tool, while 90
-      means a 45&deg; chamfer bit</span>
+      means a 45&deg; chamfer bit. This is only needed for V Carve, which
+      isn't currently supported.</span>
     <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
       Use a smaller pass depth for harder materials and better quality.
       Pass depth should never exceed the height of the cutting surface
@@ -854,6 +850,7 @@
       operation</span>
     <!-- material -->
     <span name="inputMatThickness">How thick is the material</span>
+    <span name="selectMatZOrigin">Where Z=0 is</span>
     <span name="inputMatClearance">How high the tool moves over the material.
       Increase this when using clamps or screws to fasten the material</span>
     <!-- operations -->
@@ -868,6 +865,7 @@
     <span name="opDirection">What direction the cutter should travel.
       See README for an explanation</span>
     <span name="opCutDepth">How deep this operation should cut in total</span>
+    <span name="opOperation">Operation to perform on the selected paths</span>
     <span name="opVMaxDepth">Maximum depth this operation should cut.
       <p class="bg-danger">not implemented yet; this is ignored</p></span>
     <div name="opMargin">

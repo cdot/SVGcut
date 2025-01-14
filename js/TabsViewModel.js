@@ -84,6 +84,15 @@ class TabsViewModel extends ViewModel {
   /**
    * @override
    */
+  reset() {
+    for (const tab of this.tabs())
+      tab.removeCombinedGeometry();
+    this.tabs.removeAll();
+  }
+
+  /**
+   * @override
+   */
   jsonFieldName() { return "tabs"; }
 
   /**
@@ -103,11 +112,6 @@ class TabsViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'maxCutDepth');
-
-    for (const tab of this.tabs())
-      tab.removeCombinedGeometry();
-    this.tabs.removeAll();
-
     if (json.tabs)
       for (const tabJson of json.tabs) {
         const tab = new TabViewModel(this.unitConverter, [], true);

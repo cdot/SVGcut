@@ -169,6 +169,17 @@ class OperationsViewModel extends ViewModel {
   /**
    * @override
    */
+  reset() {
+    for (const op of this.operations()) {
+      op.removeCombinedGeometry();
+      op.removeToolPaths();
+    }
+    this.operations.removeAll();
+  }
+
+  /**
+   * @override
+   */
   toJson(template) {
     if (template)
       return undefined;
@@ -181,13 +192,6 @@ class OperationsViewModel extends ViewModel {
    * @override
    */
   fromJson(json) {
-    for (const op of this.operations()) {
-      op.removeCombinedGeometry();
-      op.removeToolPaths();
-    }
-
-    this.operations.removeAll();
-
     if (json.operations) {
       for (const opJson of json.operations) {
         const op = new OperationViewModel(this.unitConverter, [], true);

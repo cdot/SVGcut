@@ -109,6 +109,13 @@ class ViewModel {
   }
 
   /**
+   * Reset, removing all geometry. Virtual, intended to be implemented
+   * by subclasses.
+   */
+  reset() {
+  }
+
+  /**
    * Get the field name to use for this model when serializing. It
    * must be unique for each view model.
    */
