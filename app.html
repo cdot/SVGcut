@@ -197,18 +197,19 @@
                       <option value="Inside">Inside</option>
                       <option value="Outside">Outside</option>
                       <option value="Engrave">Engrave</option>
-                      <!--CPP <option>V Pocket</option> /CPP-->
+                      <!--option value="V Carve">V Carve</option-->
                     </select>
                   </div>
                   <div
                     style="display: table-cell" class="entry-mid">
                     <input id="opCutDepth"
-                           class="number" type="number" step="any"
-                           data-bind="visible: operation()!='V Pocket', value: cutDepth">
+                           class="number" type="number"
+                           step="any" min="0"
+                           data-bind="visible: operation() != 'V Carve', value: cutDepth">
                   </div>
                   <div style="display: table-cell" class="entry-mid">
                     <label  class="control-label"
-                            data-bind="visible: operation()!='V Pocket'">
+                            data-bind="visible: operation() != 'V Carve'">
                       <span data-bind="text: App.models.Misc.units"></span>
                     </label>
                   </div>
@@ -221,24 +222,24 @@
                 </div>
                 <!--CPP
                 <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Pocket' && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
+                     data-bind="visible: enabled() && operation()=='V Carve' && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
                 </div>
                 <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Pocket' && App.models.Misc.camCppError().length != 0">
+                     data-bind="visible: enabled() && operation()=='V Carve' && App.models.Misc.camCppError().length != 0">
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell"
                        data-bind="html: App.models.Misc.camCppError()"></div>
                 </div>
-                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && operation()=='V Pocket' && toolModel.angle() == 180">
+                /CPP-->
+                <div style="display:table-row" class="alert alert-danger" data-bind="visible: enabled() && operation()=='V Carve' && toolModel.angle() == 180">
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell"></div>
                   <div style="display: table-cell">Set Tool Angle. This operation will not work until tool angle is set.</div>
                 </div>
-                /CPP-->
                 <div style="display:table-row" data-bind="visible: showDetail">
                   <div style="display: table-cell; width: 20px"></div>
                   <div style="display: table-cell">
@@ -251,7 +252,7 @@
                         </td><td>
                           <input id="opName" data-bind="value: name">
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Pocket'">
+                      </tr><tr data-bind="visible: operation()!='V Carve'">
                         <td>
                           <label class="control-label">
                             Ramp Plunge
@@ -273,7 +274,7 @@
                             <option value="Xor">Xor</option>
                           </select>
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Pocket'">
+                      </tr><tr data-bind="visible: operation()!='V Carve'">
                         <td>
                           <label class="control-label">
                             Direction
@@ -289,7 +290,8 @@
                         <td>
                           <label class="control-label">Margin</label>
                         </td><td>
-                          <input id="opMargin" type="number" step="any"
+                          <input id="opMargin" type="number"
+                                 step="any" min="0"
                                  data-bind="value: margin">
                         </td>
                       </tr>
@@ -297,7 +299,8 @@
                         <td>
                           <label class="control-label">Width</label>
                         </td><td>
-                          <input id="opWidth" type="number" step="any"
+                          <input id="opWidth" type="number"
+                                 step="any" min="0"
                                  data-bind="value: width">
                         </td>
                       </tr>
@@ -342,7 +345,8 @@
                   <td><label for="tabsMaxCutDepth" class="control-label">
                       Max Cut Depth</label></td>
                   <td>
-                    <input id="tabsMaxCutDepth" type="number" step="any"
+                    <input id="tabsMaxCutDepth" type="number"
+                           step="any" min="0"
                            data-bind="value: maxCutDepth">
                   </td>
                 </tr>
@@ -367,7 +371,8 @@
                   </div>
                   <div style="display: table-cell" class="entry-mid">
                     <input id="tabMargin" class="number" type="number"
-                           step="any" data-bind="value: margin">
+                           step="any" min="0"
+                           data-bind="value: margin">
                   </div>
                   <div style="display: table-cell">
                     <button class="btn btn-secondary btn-sm"
@@ -625,7 +630,8 @@
                     <label for="toolAngle" class="control-label">
                       Angle</label>
                   </td><td>
-                    <input id="toolAngle" type="number" step="any"
+                    <input id="toolAngle" type="number"
+                           step="any" min="1" max="180"
                            data-bind="value: angle"> &deg;
                   </td>
                 </tr>
@@ -633,7 +639,8 @@
                   <td><label for="toolPassDepth" class="control-label">
                       Pass Depth</label>
                   </td><td>
-                    <input id="toolPassDepth" type="number" step="any"
+                    <input id="toolPassDepth" type="number"
+                           step="any" min="0"
                            data-bind="value: passDepth">
                     <span data-bind="text: App.models.Misc.units"></span>
                   </td>
@@ -641,8 +648,8 @@
                   <td><label for="toolStepOver" class="control-label">
                       Step Over</label>
                   </td><td>
-                    <input id="toolStepOver" type="number" step="any"
-                           min="0" max="1"
+                    <input id="toolStepOver" type="number"
+                           step="any" min="0" max="1"
                            data-bind="value: stepover"> [0..1]
                   </td>
                 </tr>
@@ -650,7 +657,8 @@
                   <td><label for="toolRapidRate" class="control-label">
                       Rapid</label>
                   </td><td>
-                    <input id="toolRapidRate" type="number" step="any"
+                    <input id="toolRapidRate" type="number"
+                           step="any" min="0"
                            data-bind="value: rapidRate">
                     <span data-bind="text: App.models.Misc.units"></span>/min
                   </td>
@@ -658,7 +666,8 @@
                   <td><label for="toolPlungeRate" class="control-label">
                       Plunge</label>
                   </td><td>
-                    <input id="toolPlungeRate" type="number" step="any"
+                    <input id="toolPlungeRate" type="number"
+                           step="any" min="0"
                            data-bind="value: plungeRate">
                     <span data-bind="text: App.models.Misc.units"></span>/min
                   </td>
@@ -667,8 +676,9 @@
                   <td><label for="toolCutRate" class="control-label">
                       Cut</label>
                   </td><td>
-                    <input id="toolCutRate" type="number" step="any"
-                             data-bind="value: cutRate">
+                    <input id="toolCutRate" type="number"
+                           step="any" min="0"
+                           data-bind="value: cutRate">
                     <span data-bind="text: App.models.Misc.units"></span>/min
                   </td>
                 </tr>
@@ -793,17 +803,20 @@
     <span name="selectProject">Select a project stored in this browser</span>
     <!-- tool -->
     <span name="toolUnits">Display units, does not affect Gcode generation</span>
-    <span name="toolDiameter">Diameter of tool. The simulator ignores
-      this if Angle &lt;180&deg; <!--CPP V Pocket also ignores this.--></span>
-    <span name="toolAngle">Angle of V cutter. 180&deg; for normal (flat bottom)
-      tools. <!--CPP V Pocket is the only operation which uses this.--></span>
+    <span name="toolDiameter">Diameter of cutter</span>
+    <span name="toolAngle">Angle of tapered cutter head. This is the angle
+      at the tip of the tool, so 180 means a flat bottom tool, while 90
+      means a 45&deg; chamfer bit</span>
     <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
-      Use a smaller pass depth for harder materials and better quality</span>
+      Use a smaller pass depth for harder materials and better quality.
+      Pass depth should never exceed the height of the cutting surface
+      on the tool</span>
     <span name="toolStepOver">
       What fraction of the tool diameter the tool should step over each
       time around a loop. Smaller values produce better cuts and reduce
       tool wear, but take longer to complete</span>
-    <span name="toolRapidRate">The speed the tool moves while not cutting</span>
+    <span name="toolRapidRate">
+      The speed the tool moves while not cutting</span>
     <span name="toolPlungeRate">
       The speed the tool plunges downwards into the material</span>
     <span name="toolCutRate">
@@ -880,9 +893,6 @@
     <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0</span>
     <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0</span>
     <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter</span>
-    <span name="toolTooSmall">Tool diameter must be greater than 0</span>
-    <span name="stepoverTooSmall">Tool stepover must be geater than 0</span>
-    <span name="stepoverTooBig">Tool stepover must be less than or equal to 1</span>
     <span name="loadingSVG">Loading SVG from $1</span>
     <span name="loadedSVG">Loaded SVG from $1</span>
     <span name="svgLoadAbort">Aborted reading $1</span>
@@ -891,6 +901,8 @@
   </div>
   <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
   <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
+  </script>
+  <script src="node_modules/knockout.validation/dist/knockout.validation.js">
   </script>
   <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
   <script src="node_modules/bootstrap-slider/dist/bootstrap-slider.js"></script>

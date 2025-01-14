@@ -156,7 +156,7 @@ class OperationViewModel extends ViewModel {
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
-     * it will be rounded up.
+     * it will be rounded up (for operations other than V Carve).
      * @member {observable.<number>}
      */
     this.width = ko.observable(0);
@@ -292,9 +292,9 @@ class OperationViewModel extends ViewModel {
 
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("internal");
-      if (this.operation() == "Pocket"
-          //CPP || this.operation() == "V Pocket"
-          || this.operation() == "Inside")
+      if (this.operation() === "Pocket"
+          || this.operation() === "V Carve"
+          || this.operation() === "Inside")
         off = -off;
       if (this.operation() != "Engrave" && off != 0) {
         previewGeometry = InternalPaths.offset(previewGeometry, off);
@@ -332,8 +332,6 @@ class OperationViewModel extends ViewModel {
    * SMELL: why not do this whenever something changes?
    */
   generateToolPath() {
-    const toolCamArgs = App.models.Tool.getCamArgs();
-
     const startTime = Date.now();
     console.debug("generateToolPath...");
 
@@ -344,37 +342,49 @@ class OperationViewModel extends ViewModel {
 
     let off = this.margin.toUnits("internal");
     if (this.operation() == "Pocket"
-        //CPP || this.operation() == "V Pocket"
+        || this.operation() == "V Carve"
         || this.operation() == "Inside")
       off = -off;
     if (this.operation() !== "Engrave" && off != 0)
       geometry = InternalPaths.offset(geometry, off);
 
+    const toolDiameter = App.Tool.diameter.toUnits("internal");
+    const stepover = App.Tool.stepover.toUnits("internal");
+    const passDepth = App.Tool.passDepth.toUnits("internal");
+
     let paths, width;
     switch (this.operation()) {
+
     case "Pocket":
-      paths = Cam.pocket(geometry, toolCamArgs.diameter,
-                   1 - toolCamArgs.stepover,
-                   this.direction() == "Climb");
+      paths = Cam.pocket(
+        geometry, toolDiameter, 1 - stepover,
+        this.direction() == "Climb");
       break;
-    /* CPP
-    case "V Pocket":
-      paths = Cam.vPocket(geometry, App.models.Tool.angle(),
-        toolCamArgs.passDepthClipper, this.cutDepth.toUnits("internal"),
-        toolCamArgs.stepover, this.direction() == "Climb"));
+
+    case "V Carve":
+      paths = Cam.vCarve(
+        geometry,
+        App.models.Tool.angle(),
+        this.width.toUnits("internal"),
+        passDepth,
+        this.cutDepth.toUnits("internal"),
+        this.direction() === "Climb");
       break;
-    */
+
     case "Inside": case "Outside":
       width = this.width.toUnits("internal");
-      if (width < toolCamArgs.diameter)
-        width = toolCamArgs.diameter;
-      paths = Cam.outline(geometry, toolCamArgs.diameter,
-                          this.operation() == "Inside", width,
-                          1 - toolCamArgs.stepover,
-                          this.direction() == "Climb");
+      if (width < toolDiameter)
+        width = toolDiameter;
+      paths = Cam.outline(
+        geometry, toolDiameter,
+        this.operation() === "Inside", width,
+        1 - stepover,
+        this.direction() === "Climb");
       break;
+
     case "Engrave":
-      paths = Cam.engrave(geometry, this.direction() == "Climb");
+      paths = Cam.engrave(geometry, this.direction() === "Climb");
+      break;
     }
     this.toolPaths(paths);
 
@@ -408,16 +418,22 @@ class OperationViewModel extends ViewModel {
       combineOp: this.combineOp(),
       operation: this.operation()
     };
-    /* CPP
-    if (this.operation() != 'V Pocket') { */
+
+    if (this.operation() !== "V Carve") {
+      // direction and ramp ignored for V Carve
       result.direction = this.direction();
       result.cutDepth = this.cutDepth();
       result.ramp = this.ramp();
-    /*CPP }*/
-    if (this.operation() != 'Engrave')
+    }
+
+    if (this.operation() !== 'Engrave')
+      // Margin is a non-concept for engraving
       result.margin = this.margin();
-    if (this.operation() == 'Inside' || this.operation() == 'Outside')
+
+    if (this.operation() === 'Inside' || this.operation() === 'Outside')
+      // width only meaningful for these operations
       result.width = this.width();
+
     return result;
   };
 

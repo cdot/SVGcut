@@ -211,9 +211,9 @@ export function parse(gcode, verbose = false) {
  * @param {number} args.retractFeed Feedrate to retract cutter
  * @param {number} args.cutFeed Feedrate for horizontal cuts
  * @param {number} args.rapidFeed Feedrate for rapid moves
- *
- * @param {boolean} args.useZ Use Z coordinates in paths?
- * (optional, defaults to false)
+ * @param {boolean} args.useZ Use Z coordinates in paths. Some operations
+ * (such as V Carve) have pre-calculated Z coordinates. Use of these is
+ * enabled by this switch.
  * @param {number} args.tabGeometry Tab geometry (optional), will be
  * defined in internal units and require scaling.
  * @return {string[]} array of Gcode lines
@@ -318,8 +318,7 @@ export function generate(args) {
 
       let selectedPaths;
       if (nextZ >= tabZ || args.useZ)
-        // Cutting above tab depth, or useZ is defined (something to do
-        // with V Pocket?)
+        // Cutting above tab depth, or useZ is defined
         selectedPaths = [ origPath ];
       else
         // Cutting below tab depth, so need to exclude tabGeometry

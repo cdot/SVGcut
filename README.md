@@ -1,6 +1,6 @@
 # <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVGcut
 
-A simple Computer Aided Manufacturing (CAM) application that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine using an application such as [Candle](https://github.com/Denvi/Candle). It is primarily aimed at hobbyist milling machines (routers).
+A simple Computer Aided Manufacturing (CAM) application that runs in the browser. It takes SVG (Scalable Vector Graphics) files as inputs, and generates Gcode under interactive control. You can then save the Gcode for sending to your CNC machine using an application such as [Candle](https://github.com/Denvi/Candle). It is primarily aimed at hobbyist milling machines (routers), and doesn't support many of the capabilities of more sophisticated machines, such as tool swapping.
 
 No need to install anything, you can [run it in your browser](https://cdot.github.io/SVGcut/app.html).
 
@@ -8,7 +8,9 @@ SVGcut is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a SainSmart G
 
 ## Preparing your SVG
 
-To prepare your SVG, make sure draw it at the size that you want your final work to be. If you are using Inkscape, then set your units to whatever physical measure you feel most comfortable with (usually millimetres or inches) and simply draw at that scale. It is easiest, though not essential, to set your page size to the area that your CNC machine can handle. There are some limitations:
+To prepare your SVG, make sure draw it at the size that you want your final work to be. If you are using Inkscape, then set your units to whatever physical measure you feel most comfortable with (usually millimetres or inches) and simply draw at that scale. It is easiest, though not essential, to set your page size to the area that your CNC machine can handle. Make sure that the Scale (in Document Properties) is set to 1.
+
+There are some limitations:
 - SVGcut can only handle closed paths.
     - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
     - Simple unclosed paths (such as lines or arcs) aren't supported, so don't use them.
@@ -37,7 +39,8 @@ Use the mouse to select the paths you want to convert to Gcode (click a path aga
 + Pocket - the default, will carve out the interior of your selected paths
 + Inside - will cut around the inside of the selected paths
 + Outside - will cut around the outside of the selected paths
-+ Engrave - the tool will follow the selected paths
++ Engrave - the tool will follow the selected paths (basically what a pen plotter does)
++ Groove - the tool will cut a V-shaped groove of the requested width with a tapered bit. The depth of the groove is dictated by the angle of the cutter head
 
 The Toolpaths display will change to what has been selected for the operation.
 
@@ -112,14 +115,17 @@ SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). D
 + Extensive newbie documentation
 + Extensive in-code documentation and literate programming techniques
 + Pure Javascript
++ "V Pocket". V cutting is a complex process with many variables, and ther are many more powerful tools out there that can handle it.
 
 Some features of jscut have been disabled/removed. This may be because they are  deemed too esoteric, or the (undocumented) code was too complex to reverse engineer, for limited end-user value.
-- [V pockets](https://www.youtube.com/watch?v=fxSkk-J228Q&list=PLStJ_yoRd9Nb_tapyti_kjR8iSU4f16L_&ab_channel=LarsChristensen). Currently unsupported because the jscut implementation uses a call to external CPP, and the code is undocumented and obscure. If you want to do V pockets, use Fusion360. Or use a bigger bit.
 - [Chilipeppr](http://www.chilipeppr.com/)
 - [Google Drive](https://drive.google.com/)
 - [Dropbox](https://www.dropbox.com/)
 - [Github gists](https://gist.github.com/)
 - The undocumented API
+
+# Future Directions
+- Drill Paths - SVGcut is currently great for creating carvings in soft material, but lacks some capability for dealing with harder materials. One approach to this is to drill a sequence of holes along a cut line.
 
 # LICENSE & COPYRIGHT
 Tim Fleming is recognised as author of all his code, even where it has been extensively rewritten. Because jscut is GPL, so is SVGcut.

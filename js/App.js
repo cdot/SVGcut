@@ -34,7 +34,7 @@ const SVG_GROUPS = [
 
 /**
  * Singleton.
- * jscut makes extensive use of "knockout" to bind the various parts
+ * SVGcut makes extensive use of "knockout" to bind the various parts
  * of the UI together. You will need to understand the basics of
  * knockout to read this code.
  */

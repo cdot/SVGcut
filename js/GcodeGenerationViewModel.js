@@ -279,7 +279,9 @@ class GcodeGenerationViewModel extends ViewModel {
         zScale:         UnitConverter.from.internal.to[gunits],
         offsetX:        ox,
         offsetY:        oy,
-        //CPP useZ:           op.operation() == "V Pocket",
+        // V Carve generation calculates Z coordinates, so don't try to
+        // do anything clever with these.
+        useZ:           op.operation() === "V Carve",
         tabGeometry:    tabGeometry,
         tabZ:           tabZ,
         decimal:        2, // 100th mm

@@ -27,16 +27,17 @@ class ToolViewModel extends ViewModel {
     super(unitConverter);
 
     /**
-     * Fraction of the tool diameter.
+     * Fraction of the tool diameter, [0..1]
      * @member {observable.<number>}
      */
     this.stepover = ko.observable(0.4);
 
     /**
-     * Tool diameter mm
+     * Tool diameter mm, must be > 0
      * @member {observable.<number>}
      */
-    this.diameter = ko.observable(unitConverter.fromUnits(3, "mm"));
+    this.diameter = ko.observable(unitConverter.fromUnits(3, "mm"))
+    .extend({ min: unitConverter.fromUnits(0.01, "mm")});
     unitConverter.add(this.diameter);
 
     /**
@@ -84,32 +85,6 @@ class ToolViewModel extends ViewModel {
   initialise() {
     this.addPopovers(POPOVERS);
     ko.applyBindings(this, document.getElementById("ToolView"));
-  }
-
-  /**
-   * Retrieve arguments that are associated with CAM.
-   * @return {object} the current values of: diameter, passDepth,
-   * and stepover. Sizes are in jscut units.
-   */
-  getCamArgs() {
-    const result = {
-      diameter: this.diameter.toUnits("internal"),
-      passDepth: this.passDepth.toUnits("internal"),
-      stepover: Number(this.stepover())
-    };
-    if (result.diameter <= 0) {
-      App.showAlert("toolTooSmall", "alert-danger");
-      return null;
-    }
-    if (result.stepover <= 0) {
-      App.showAlert("stepoverTooSmall", "alert-danger");
-      return null;
-    }
-    if (result.stepover > 1) {
-      App.showAlert("stepoverTooBig", "alert-danger");
-      return null;
-    }
-    return result;
   }
 
   /**
