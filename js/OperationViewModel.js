@@ -29,6 +29,7 @@ const POPOVERS = [
       { id: "opDirection" },
       { id: "opVMaxDepth" },
       { id: "opMargin" },
+      { id: "opSpacing" },
       { id: "opWidth" }
 ];
 
@@ -80,7 +81,7 @@ class OperationViewModel extends ViewModel {
     this.combineOp.subscribe(() => this.recombine());
 
     /**
-     * The operation, one of "Pocket", "Inside", "Outside" or "Engrave".
+     * The operation name.
      * The default is "Pocket"
      * @member {observable.<string>}
      */
@@ -167,6 +168,14 @@ class OperationViewModel extends ViewModel {
     this.margin = ko.observable(0);
     unitConverter.add(this.margin);
     this.margin.subscribe(() => this.recombine());
+
+    /**
+     * Amount of material to leave between perforations.
+     * @member {observable.<number>}
+     */
+    this.spacing = ko.observable(0);
+    unitConverter.add(this.spacing);
+    this.spacing.subscribe(() => this.recombine());
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
@@ -303,12 +312,14 @@ class OperationViewModel extends ViewModel {
         previewGeometry = InternalPaths.offset(previewGeometry, off);
       }
 
-      if (this.operation() == "Inside" || this.operation() == "Outside") {
+      if (this.operation() === "Inside"
+          || this.operation() === "Outside"
+          || this.operation() === "Perforate") {
         const width = this.toolPathWidth();
         if (this.operation() == "Inside")
           previewGeometry = InternalPaths.diff(
             previewGeometry, InternalPaths.offset(previewGeometry, -width));
-        else
+        else // Outside or Perforate
           previewGeometry = InternalPaths.diff(
             InternalPaths.offset(previewGeometry, width), previewGeometry);
       }
@@ -371,7 +382,7 @@ class OperationViewModel extends ViewModel {
         App.models.Tool.angle(),
         this.width.toUnits("internal"),
         passDepth,
-        this.cutDepth.toUnits("internal"),
+        this.cutDepth(),
         this.direction() === "Climb");
       break;
 
@@ -381,9 +392,20 @@ class OperationViewModel extends ViewModel {
         width = toolDiameter;
       paths = Cam.outline(
         geometry, toolDiameter,
-        this.operation() === "Inside", width,
+        this.operation() === "Inside", // isInside
+        width,
         1 - stepover,
         this.direction() === "Climb");
+      break;
+
+    case "Perforate":
+      paths = Cam.perforate(
+        geometry, toolDiameter, this.spacing.toUnits("internal"),
+        App.models.Material.zOrigin() === "Top"
+        ? 0 : this.cutDepth(),
+        App.models.Material.zOrigin() === "Top"
+        ? -this.cutDepth() : 0
+      );
       break;
 
     case "Engrave":
@@ -401,7 +423,7 @@ class OperationViewModel extends ViewModel {
       .attr("style", "width:3px")
       .attr("class", "toolPath");
     } else {
-      App.showAlert("noToolPaths", "alert-warning", this.name);
+      App.showAlert("noToolPaths", "alert-warning", this.name());
     }
 
     console.debug(`generateToolPath for ${spaths.length} paths took ${Date.now() - startTime}`);

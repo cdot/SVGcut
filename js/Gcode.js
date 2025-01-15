@@ -212,8 +212,8 @@ export function parse(gcode, verbose = false) {
  * @param {number} args.cutFeed Feedrate for horizontal cuts
  * @param {number} args.rapidFeed Feedrate for rapid moves
  * @param {boolean} args.useZ Use Z coordinates in paths. Some operations
- * (such as V Carve) have pre-calculated Z coordinates. Use of these is
- * enabled by this switch.
+ * (such as Perforate and V Carve) have pre-calculated Z coordinates.
+ * Use of these is enabled by this switch.
  * @param {number} args.tabGeometry Tab geometry (optional), will be
  * defined in internal units and require scaling.
  * @return {string[]} array of Gcode lines
@@ -287,6 +287,7 @@ export function generate(args) {
     if (origPath.length == 0)
       continue;
 
+    // Spit paths where they enter/leave tab geometry
     const separatedPaths = (tabGeometry && tabGeometry.length > 0)
           ? Cam.separateTabs(origPath, tabGeometry)
           : [ origPath ];

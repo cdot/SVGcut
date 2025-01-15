@@ -22,7 +22,7 @@ const LOCAL_PROJECTS_AREA = "svgcut";
 const DEFAULT_PROJECT_NAME = "default";
 
 const POPOVERS = [
-  { id: "selectProject" } 
+  { id: "selectProject" }
 ];
 
 /**

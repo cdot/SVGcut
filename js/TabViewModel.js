@@ -32,7 +32,7 @@ export class TabViewModel extends ViewModel {
      * @private
      */
     this.disableRecombination = disableRecombination;
-    
+
     /**
      * The input to this operation.
      * @member {RawPath[]}

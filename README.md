@@ -35,14 +35,14 @@ Open the "Project" menu and select "Import SVG" to load your SVG file. If you ha
 
 ## Operations
 
-Use the mouse to select the paths you want to convert to Gcode (click a path again to deselect it; a double-click will select all paths). They will turn blue. In the "Operations" pane, click "Create Operation" to tell it what you want to do with the selected paths. There are four operations available:
-+ Pocket - the default, will carve out the interior of your selected paths
-+ Inside - will cut around the inside of the selected paths
+Use the mouse to select the paths you want to convert to Gcode (click a path again to deselect it; a double-click will select all paths). They will change colour. In the "Operations" pane, click "Create Operation" to tell it what you want to do with the selected paths. There are four operations available:
++ Pocket - the default, will carve out the interior of your selected paths.
++ Inside - will cut around the inside of your paths.
 + Outside - will cut around the outside of the selected paths
 + Engrave - the tool will follow the selected paths (basically what a pen plotter does)
-+ Groove - the tool will cut a V-shaped groove of the requested width with a tapered bit. The depth of the groove is dictated by the angle of the cutter head
++ Perforate - will drill a series of evenly-spaced holes outside the boundary of the selected paths. You can control the spacing of the holes.
 
-The Toolpaths display will change to what has been selected for the operation.
+The Toolpaths display will change to show what has been selected for the operation.
 
 Now you have to generate the actual tool paths. First set the depth to which you want the operation to cut (it won't necessarily cut to this depth immediately, it may do several passes in steps of the "Pass Depth" you set in the Tool pane). There are other options that can be set in the drop-down that opens when you click ▶.
 + Name - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
@@ -115,9 +115,9 @@ SVGcut is a fork of [Tim Fleming's jscut](https://github.com/tbfleming/jscut). D
 + Extensive newbie documentation
 + Extensive in-code documentation and literate programming techniques
 + Pure Javascript
-+ "V Pocket". V cutting is a complex process with many variables, and ther are many more powerful tools out there that can handle it.
 
 Some features of jscut have been disabled/removed. This may be because they are  deemed too esoteric, or the (undocumented) code was too complex to reverse engineer, for limited end-user value.
++ "V Pocket". V cutting is a complex process with many variables, and there are many more powerful tools out there that can handle it.
 - [Chilipeppr](http://www.chilipeppr.com/)
 - [Google Drive](https://drive.google.com/)
 - [Dropbox](https://www.dropbox.com/)

@@ -197,6 +197,7 @@
                       <option value="Inside">Inside</option>
                       <option value="Outside">Outside</option>
                       <option value="Engrave">Engrave</option>
+                      <option value="Perforate">Perforate</option>
                       <!--option value="V Carve">V Carve</option-->
                     </select>
                   </div>
@@ -247,7 +248,7 @@
                         </td><td>
                           <input id="opName" data-bind="value: name">
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Carve'">
+                      </tr><tr data-bind="visible: operation()!='V Carve'&&operation()!='Perforate'">
                         <td>
                           <label class="control-label">
                             Ramp Plunge
@@ -269,7 +270,7 @@
                             <option value="Xor">Xor</option>
                           </select>
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Carve'">
+                      </tr><tr data-bind="visible: operation()!='V Carve'&&operation()!='Perforate'">
                         <td>
                           <label class="control-label">
                             Direction
@@ -286,8 +287,18 @@
                           <label class="control-label">Margin</label>
                         </td><td>
                           <input id="opMargin" type="number"
-                                 step="any" min="0"
+                                 step="any"
                                  data-bind="value: margin">
+                          <span data-bind="text: App.models.Misc.units"></span>
+                        </td>
+                      </tr><tr data-bind="visible: operation()==='Perforate'">
+                        <td>
+                          <label class="control-label">Spacing</label>
+                        </td><td>
+                          <input id="opSpacing" type="number"
+                                 step="any" min="0"
+                                 data-bind="value: spacing">
+                          <span data-bind="text: App.models.Misc.units"></span>
                         </td>
                       </tr>
                       <tr data-bind="visible: operation()=='Inside' || operation()=='Outside'">
@@ -297,6 +308,7 @@
                           <input id="opWidth" type="number"
                                  step="any" min="0"
                                  data-bind="value: width">
+                          <span data-bind="text: App.models.Misc.units"></span>
                         </td>
                       </tr>
                       <tr>
@@ -343,6 +355,7 @@
                     <input id="tabsMaxCutDepth" type="number"
                            step="any" min="0"
                            data-bind="value: maxCutDepth">
+                    <span data-bind="text: App.models.Misc.units"></span>
                   </td>
                 </tr>
               </table>
@@ -871,6 +884,8 @@
     <div name="opMargin">
       <p>Positive: how much material to leave uncut</p>
       <p>Negative: how much extra material to cut</p></div>
+    <div name="opSpacing">
+      How much material to leave uncut between perforations</div>
     <span name="opWidth">How wide a path to cut. If this is less than the
       cutter width then it uses the cutter width</span>
     <!-- selection -->

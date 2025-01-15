@@ -118,6 +118,102 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
 };
 
 /**
+ * Calculate perforations along a path.
+ * @param {InternalPath} path
+ * @param {number} cutterDia in internal units
+ * @param {number} spacing is the gap to leave between perforations
+ * @param {number} topZ is the Z to which the tool is withdrawn
+ * @param {number} botZ is the depth of the perforations
+ * @return {CamPath}
+ * @private
+ * @memberof Cam
+ */
+function perforatePath(path, cutterDia, spacing, topZ, botZ) {
+  // Measure the path
+  let segStart = path[path.length - 1], segEnd, segLen, dx, dy;
+  let totalPathLength = 0;
+  for (segEnd of path) {
+    dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
+    segLen = Math.sqrt(dx * dx + dy * dy);
+    totalPathLength += segLen;
+    segStart = segEnd;
+  }
+
+  // Work out number of holes, and step between them, allowing spacing
+  // between adjacent holes
+  const numHoles = Math.floor(totalPathLength / (cutterDia + spacing));
+  const step = totalPathLength / numHoles;
+
+  // Walk round the path stopping at every hole, generating a new path
+  let newPath = [];
+  let gap = 0; // distance along the path from the last hole;
+  let segi = 0; // index of end of current segment
+  // Start of the current segment
+  segStart = path[path.length - 1], segEnd = path[0];
+  // dimensions of the current segment
+  dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
+  // Length of the current segment
+  segLen = Math.sqrt(dx * dx + dy * dy);
+  // Unit vector for the current segment
+  let segVec = { X: dx / segLen, Y : dy / segLen };
+  while (segi < path.length) {
+    // Place a hole here
+    console.debug(`Hole at ${segStart.X},${segStart.Y}`);
+    newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
+    newPath.push({ X: segStart.X, Y: segStart.Y, Z: botZ });
+    newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
+    gap = 0;
+    while (gap + segLen < step) {
+      if (++segi === path.length)
+        break; // no more segments, we're done
+      // Remaining segment isn't long enough for another hole.
+      // Walk the path until we get to the segment that it's in.
+      segStart = segEnd;
+      segEnd = path[segi];
+      dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
+      segLen = Math.sqrt(dx * dx + dy * dy);
+      segVec = { X: dx / segLen, Y : dy / segLen };
+      if (gap + segLen > step)
+        // hole is on this segment.
+        break;
+      gap += segLen;
+    }
+    // Next hole is on this segment. Move segStart up to the hole.
+    const where = step - gap;
+    segStart = {
+      X: segStart.X + segVec.X * where,
+      Y: segStart.Y + segVec.Y * where };
+    segLen -= where;
+    gap += where;
+  }
+  return { path: newPath, safeToClose: false };
+}
+
+/**
+ * Compute perforation tool path. This is an outline path, but it
+ * has a vertex at every tool diameter step along the path. Gcode generation
+ * will convert those vertices to drill holes.
+ * @param {InternalPath[]} geometry
+ * @param {number} cutterDia in internal units
+ * @param {number} spacing is the gap to leave between perforations
+ * @param {number} topZ is the Z to which the tool is withdrawn
+ * @param {number} botZ is the depth of the perforations
+ * @return {CamPath[]}
+ * @memberof Cam
+ */
+export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
+  const allPaths = [];
+
+  // Bloat the paths by half the cutter diameter
+  const bloated = InternalPaths.offset(geometry, cutterDia / 2);
+
+  for (const path of bloated) {
+    allPaths.push(perforatePath(path, cutterDia, spacing, topZ, botZ));
+  }
+  return allPaths;
+}
+
+/**
  * Compute paths for engraving. This simply generates a tool path
  * that follows the outline of the geometry, regardless of the tool
  * diameter.
@@ -153,9 +249,8 @@ export function engrave(geometry, climb) {
  * @param {number} passDepth maximum cut depth for each pass. Should not exceed
  * the height of the cutting surface
  * @param {boolean} climb reverse cutter direction
- * 
  */
-function vCarve(geometry, cutterAngle, width, depth, passDepth, climb) {
+export function vCarve(geometry, cutterAngle, width, depth, passDepth, climb) {
   // Formerly known as "vPocket"
   throw new Error("V Carve not currently supported");
 }
