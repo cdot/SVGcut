@@ -5,6 +5,7 @@
 	"license": "MIT",
 	"type": "module",
 	"devDependencies": {
+		"@node-loader/import-maps": "^1.1.0",
 		"chai": "^5.1.2",
 		"docdash": "^2.0.2",
 		"eslint": "^9.15.0",
@@ -18,7 +19,8 @@
 		"build": "webpack -c 2d-geometry-webpack.js",
 		"lint": "eslint js -f unix",
 		"lintlib": "eslint lib -f unix",
-		"doc": "jsdoc -c jsdoc_config.json js"
+	  "doc": "jsdoc -c jsdoc_config.json js",
+      "test": "mocha --experimental-loader=@node-loader/import-maps test"
 	},
 	"dependencies": {
 		"@flatten-js/core": "github:alexbol99/flatten-js",

@@ -3,6 +3,8 @@ import { assert } from "chai";
 
 import * as Gcode from "../js/Gcode.js";
 
+function UNit() {}
+
 describe("Gcode", () => {
   it("parser neutralises XYZ", () => {
     const res = Gcode.parse("G1");
@@ -115,37 +117,131 @@ describe("Gcode", () => {
     ]);
   });
 
+  const opJob = {
+    gunits:      "mm",
+    xScale:      1,
+    yScale:      1,
+    zScale:      1,
+    offsetX:     0,
+    offsetY:     0,
+    decimal:     0,
+    topZ:        0,
+    safeZ:       10,
+    passDepth:   1,
+    plungeFeed:  50,
+    cutFeed:     60,
+    retractFeed: 70,
+    rapidFeed:   80,
+    returnTo00:  true,
+    workWidth:   300,
+    workHeight:  180
+  };
+
   it("generates op", () => {
     const op = {
-      paths: [ {
-        path: [ { X: 1, Y: 2 }, { X: 3, Y: 4 } ],
-        safeToClose: false
-      }],
-      useZ: false,
+      paths: [
+        {
+          path: [ { X: 0, Y: 0 }, { X: 10, Y: 10 } ],
+          safeToClose: true
+        },
+        {
+          path: [ { X: 20, Y: 20 }, { X: 30, Y: 30 } ],
+          safeToClose: false
+        }],
       name: "Test",
       cutType: "Cut Type",
       passDepth: 1,
-      tabZ: 4,
       cutDepth: 3,
       direction: "Conventional"
     };
     const gcode = [];
-    Gcode.generateOperation(op, job, gcode);
+    Gcode.generateOperation(op, opJob, gcode);
     let i = 0;
-    assert.equal(gcode[i++], "; ** Operation \"Test\"");
-    assert.equal(gcode[i++], "; Type:        Cut Type");
-    assert.equal(gcode[i++], "; Paths:       1");
-    assert.equal(gcode[i++], "; Direction:   Conventional");
-    assert.equal(gcode[i++], "; Cut Depth:   3inch");
-    assert.equal(gcode[i++], "; Pass Depth:  1inch");
-    assert.equal(gcode[i++], "; Plunge rate: 50inch/min");
-    assert.equal(gcode[i++], "; Path 0");
-    assert.equal(gcode[i++], "G0 X110.0 Y-114.0 Z3.0 F1000");
-    assert.equal(gcode[i++], "M3 ; Start spindle",);
-    assert.equal(gcode[i++], "G1 Z0.0 F50 ; Plunge");
-    assert.equal(gcode[i++], "; cut");
-    assert.equal(gcode[i++], "G1 X130.0 Y-128.0 F80");
-    assert.equal(gcode[i++], "M5 ; Stop spindle");
-    assert.equal(gcode[i++], "G0 Z5.0 F1000 ; Retract");
+    const expected = [
+  '; ** Operation "Test"',
+  '; Type:        Cut Type',
+  '; Paths:       2',
+  '; Direction:   Conventional',
+  '; Cut Depth:   3 mm',
+  '; Pass Depth:  1 mm',
+  '; Plunge rate: 50 mm/min',
+  '; Path 1',
+  'G0 Z0 F80',
+  'G0 X0 Y0 ; Goto path',
+  'M3 ; Start spindle',
+  'G1 Z-1 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'G0 Z0 F80',
+  'G0 X0 Y0 ; Goto path',
+  'G1 Z-2 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'G0 Z0 F80',
+  'G0 X0 Y0 ; Goto path',
+  'G1 Z-3 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'M5 ; Stop spindle',
+  'G0 Z10 F80 ; Path done',
+  '; Path 2',
+  'G0 Z0',
+  'G0 X20 Y20 ; Goto path',
+  'M3 ; Start spindle',
+  'G1 Z-1 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'G0 Z10 F80 ; Z safe',
+  'G0 Z0',
+  'G0 X20 Y20 ; Goto path',
+  'G1 Z-2 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'G0 Z10 F80 ; Z safe',
+  'G0 Z0',
+  'G0 X20 Y20 ; Goto path',
+  'G1 Z-3 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'M5 ; Stop spindle',
+  'G0 Z10 F80 ; Path done'
+];
+    assert.equal(gcode.length, expected.length);
+    for (let i = 0; i < expected.length; i++)
+      assert.equal(gcode[i], expected[i]);
+  });
+
+  it("generates using Z", () => {
+    const op = {
+      paths: [
+        {
+          path: [
+            { X: 0, Y: 0, Z: -3 },
+            { X: 10, Y: 10, Z: 0 } ],
+        safeToClose: false
+      }],
+      precalculatedZ: true,
+      name: "Test",
+      cutType: "Cut Type",
+      passDepth: 1,
+      cutDepth: 3,
+      direction: "Conventional"
+    };
+    const gcode = [];
+    Gcode.generateOperation(op, opJob, gcode);
+    const expected = [
+      '; ** Operation "Test"',
+      '; Type:        Cut Type',
+      '; Paths:       1',
+      '; Direction:   Conventional',
+      '; Cut Depth:   3 mm',
+      '; Pass Depth:  1 mm',
+      '; Plunge rate: 50 mm/min',
+      '; Path 1',
+      'G0 Z0 F80',
+      'G0 X0 Y0 Z-3 ; Goto path',
+      'M3 ; Start spindle',
+      'G1 F60 ; Precalculated Z',
+      'G1 X10 Y10 Z0',
+      'M5 ; Stop spindle',
+      'G0 Z10 F80 ; Path done'
+    ];
+    assert.equal(gcode.length, expected.length);
+    for (let i = 0; i < expected.length; i++)
+      assert.equal(gcode[i], expected[i]);
   });
 });

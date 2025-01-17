@@ -73,7 +73,7 @@ class MaterialViewModel extends ViewModel {
       if (this.zOrigin() == "Bottom")
         return 0;
       else
-        return "-" + this.thickness();
+        return -this.thickness();
     });
     unitConverter.addComputed(this.botZ);
     this.botZ.subscribe(newValue => {

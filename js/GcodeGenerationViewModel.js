@@ -208,6 +208,7 @@ class GcodeGenerationViewModel extends ViewModel {
       zScale:         1,
       decimal:        2, // 100th mm
       topZ:           App.models.Material.topZ.toUnits(gunits),
+      botZ:           App.models.Material.botZ.toUnits(gunits),
       safeZ:          App.models.Material.zSafeMove.toUnits(gunits),
       passDepth:      App.models.Tool.passDepth.toUnits(gunits),
       plungeFeed:     App.models.Tool.plungeRate.toUnits(gunits),
@@ -215,8 +216,8 @@ class GcodeGenerationViewModel extends ViewModel {
       cutFeed:        App.models.Tool.cutRate.toUnits(gunits),
       rapidFeed:      App.models.Tool.rapidRate.toUnits(gunits),
       returnTo00:     this.returnTo00(),
-      workWidth:      this.bbWidth(),
-      workHeight:     this.bbHeight()
+      workWidth:      Number(this.bbWidth()),
+      workHeight:     Number(this.bbHeight())
     };
 
     // tabs
@@ -270,15 +271,15 @@ class GcodeGenerationViewModel extends ViewModel {
         cutType: op.operation(),
         paths: op.toolPaths(),
         ramp: op.ramp(),
-        cutDepth: op.cutDepth(),
+        cutDepth: Number(op.cutDepth()),
         direction: op.direction(),
-        // Perforation is always single-pass
+        // Perforation is always single-pass and cuts directly to the maximum
+        // operation cut depth
         passDepth: op.operation() === "Perforate"
-        ? op.cutDepth() : jobCard.passDepth,
-        // V Carve and Perforate calculate Z coordinates, so don't try to
+        ? Number(op.cutDepth()) : jobCard.passDepth,
+        // V Carve and Perforate precalculate Z coordinates, so don't try to
         // do anything clever with these.
-        useZ: op.operation() === "V Carve"
-        || op.operation() === "Perforate"
+        precalculatedZ: op.operation() === "V Carve" || op.operation() === "Perforate"
       };
       if (opCard.cutDepth < 0) {
         App.showAlert("cutDepthTooSmall", "alert-warning");
