@@ -66,8 +66,9 @@ class TabsViewModel extends ViewModel {
     });
     App.models.Selection.clearSelection();
 
-    const tab = new TabViewModel(this.unitConverter, rawPaths, false);
+    const tab = new TabViewModel(this.unitConverter, rawPaths);
     this.tabs.push(tab);
+    tab.recombine();
 
     document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   };
@@ -114,9 +115,10 @@ class TabsViewModel extends ViewModel {
     this.updateObservable(json, 'maxCutDepth');
     if (json.tabs)
       for (const tabJson of json.tabs) {
-        const tab = new TabViewModel(this.unitConverter, [], true);
+        const tab = new TabViewModel(this.unitConverter, []);
         tab.fromJson(tabJson);
         this.tabs.push(tab);
+        // No need to tab.recombine(), it's already in the json
       }
   };
 }

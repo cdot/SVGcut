@@ -124,23 +124,27 @@ class OperationsViewModel extends ViewModel {
     App.models.Selection.getSelection().forEach(element => {
       // see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d
       const ps = element.attr('d');
-      // SMELL: this should be a CamPath, shouldn't it?
-      rawPaths.push({ // @see OperationViewModel.RawPath
-        path: Snap.parsePathString(ps),
-        nonzero: element.attr("fill-rule") != "evenodd"
-      });
+      const rawPath = Snap.parsePathString(ps);
+      if (rawPath) {
+        rawPaths.push({ // @see OperationViewModel.RawPath
+          path: rawPath,
+          nonzero: element.attr("fill-rule") != "evenodd"
+        });
+      } else
+        console.debug(`${ps} didn't yield a path`);
     });
     App.models.Selection.clearSelection();
 
     // Construct the operation view model
     const op = new OperationViewModel(this.unitConverter, rawPaths);
+    op.recombine();
     this.operations.push(op);
     // Give it a random name
     op.name(`Op${this.operations.length + 1}`);
     op.enabled.subscribe(() => this.updateBB());
     op.toolPaths.subscribe(() => this.updateBB());
 
-    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
+    op.generateToolPaths();
 
     App.tutorial(4);
   };
@@ -154,6 +158,15 @@ class OperationsViewModel extends ViewModel {
     op.removeToolPaths();
     this.operations.remove(op);
   };
+
+  /**
+   * Regenerate tool paths in all operations. This will normally be
+   * in response to a parameter change.
+   */
+  generateToolPaths() {
+    for (const op of this.operations())
+      op.generateToolPaths();
+  }
 
   /**
    * Used in data-bind for enabling Create Operation button
@@ -196,8 +209,9 @@ class OperationsViewModel extends ViewModel {
   fromJson(json) {
     if (json.operations) {
       for (const opJson of json.operations) {
-        const op = new OperationViewModel(this.unitConverter, [], true);
+        const op = new OperationViewModel(this.unitConverter, []);
         op.fromJson(opJson);
+        // Don't need to op.recombine(), it's already in the json
         this.operations.push(op);
         op.enabled.subscribe(() => this.updateBB());
         op.toolPaths.subscribe(() => this.updateBB());

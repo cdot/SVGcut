@@ -19,11 +19,8 @@ export class TabViewModel extends ViewModel {
   /**
    * @param {UnitConverter} unit converter to use
    * @param {RawPath[]} rawPaths input paths to the operation
-   * @param {boolean} disableRecombination true to stop recombination,
-   * usually because we are in a sequence of steps and recombination can
-   * wait.
    */
-  constructor(unitConverter, rawPaths, disableRecombination) {
+  constructor(unitConverter, rawPaths) {
     super(unitConverter);
 
     /**
@@ -31,7 +28,7 @@ export class TabViewModel extends ViewModel {
      * @member {boolean}
      * @private
      */
-    this.disableRecombination = disableRecombination;
+    this.disableRecombination = false;
 
     /**
      * The input to this operation.
@@ -154,6 +151,8 @@ export class TabViewModel extends ViewModel {
     }
 
     console.debug("Tab recombine took " + (Date.now() - startTime));
+
+    App.models.Operations.generateToolPaths();
   };
 
   /**
@@ -183,4 +182,3 @@ export class TabViewModel extends ViewModel {
     this.recombine();
   };
 }
-

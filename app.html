@@ -16,7 +16,7 @@
     {
       "imports": {
         "gl-matrix/": "./node_modules/gl-matrix/esm/",
-        "2d-geometry": "./lib/2d-geometry/index.js"
+        "flatten-js": "./node_modules/@flatten-js/core/dist/main.mjs"
       }
     }
   </script>
@@ -193,10 +193,10 @@
                   </div>
                   <div style="display: table-cell" class="entry-mid">
                     <select id="opOperation" data-bind="value: operation">
-                      <option value="Pocket">Pocket</option>
-                      <option value="Inside">Inside</option>
-                      <option value="Outside">Outside</option>
                       <option value="Engrave">Engrave</option>
+                      <option value="Outside">Outside</option>
+                      <option value="Inside">Inside</option>
+                      <option value="Pocket">Pocket</option>
                       <option value="Perforate">Perforate</option>
                       <!--option value="V Carve">V Carve</option-->
                     </select>
@@ -213,12 +213,6 @@
                             data-bind="visible: operation() != 'V Carve'">
                       <span data-bind="text: App.models.Misc.units"></span>
                     </label>
-                  </div>
-                  <div style="display: table-cell">
-                    <button id="opGenerate" class="btn btn-secondary btn-sm"
-                       data-bind="click: generateToolPath">
-                      Generate
-                    </button>
                   </div>
                 </div>
                 <!--CPP

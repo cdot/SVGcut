@@ -196,22 +196,37 @@ class GcodeGenerationViewModel extends ViewModel {
     const startTime = Date.now();
     console.debug("generateGcode...");
 
-    // Get control values in gcode units
     const gunits = this.unitConverter.units();
-    const safeZ = App.models.Material.zSafeMove.toUnits(gunits);
-    const rapidRate = App.models.Tool.rapidRate.toUnits(gunits);
-    const plungeRate = App.models.Tool.plungeRate.toUnits(gunits);
-    let cutRate = App.models.Tool.cutRate.toUnits(gunits);
-    let passDepth = App.models.Tool.passDepth.toUnits(gunits);
-    const topZ = App.models.Material.topZ.toUnits(gunits);
+
+    // Get control values in gcode units and build gcode generator
+    // arguments
+    const jobCard = {
+      gunits:         gunits,
+      // Scaling to apply to internal units in paths, to generate Gcode units.
+      xScale:         UnitConverter.from.internal.to[gunits],
+      yScale:         -UnitConverter.from.internal.to[gunits],
+      zScale:         1,
+      decimal:        2, // 100th mm
+      topZ:           App.models.Material.topZ.toUnits(gunits),
+      safeZ:          App.models.Material.zSafeMove.toUnits(gunits),
+      passDepth:      App.models.Tool.passDepth.toUnits(gunits),
+      plungeFeed:     App.models.Tool.plungeRate.toUnits(gunits),
+      retractFeed:    App.models.Tool.rapidRate.toUnits(gunits),
+      cutFeed:        App.models.Tool.cutRate.toUnits(gunits),
+      rapidFeed:      App.models.Tool.rapidRate.toUnits(gunits),
+      returnTo00:     this.returnTo00(),
+      workWidth:      this.bbWidth(),
+      workHeight:     this.bbHeight()
+    };
+
     // tabs
     const tabCutDepth = App.models.Tabs.maxCutDepth.toUnits(gunits);
-    const tabZ = topZ - tabCutDepth;
+    jobCard.tabZ = jobCard.topZ - tabCutDepth;
 
-    if (passDepth < 0) {
-      App.showAlert("passDepthTooSmall", "alert-warning", passDepth);
+    if (jobCard.passDepth < 0) {
+      App.showAlert("passDepthTooSmall", "alert-warning", jobCard.passDepth);
       // Plough on; we might be behaving as a plotter
-      passDepth = 0;
+      jobCard.passDepth = 0;
     }
 
     let tabGeometry = [];
@@ -225,6 +240,7 @@ class GcodeGenerationViewModel extends ViewModel {
           tabGeometry, tg, ClipperLib.ClipType.ctUnion);
       }
     }
+    jobCard.tabGeometry = tabGeometry;
 
     // Work out origin offset
     const svgBB = this.unitConverter.fromUnits(App.getMainSvgBBox(), "px");
@@ -240,68 +256,41 @@ class GcodeGenerationViewModel extends ViewModel {
         oy += tpBB.height / 2;
       }
     }
-    const gcode = [
-      `; Work area:(${Number(this.bbWidth()).toFixed(2)},${Number(this.bbHeight()).toFixed(2)})${gunits}`,
-      `; Offset:      (${Number(ox).toFixed(2)},${Number(oy).toFixed(2)})${gunits}`
-    ];
 
-    switch (gunits) {
-    case "inch": gcode.push("G20 ; Set units to inches"); break;
-    case "mm": gcode.push("G21 ; Set units to mm"); break;
-    default: throw new Error(`${gunits} units not supported by gcode`);
-    }
-    gcode.push("G90 ; Absolute positioning");
-    gcode.push(`G0 Z${safeZ} F${rapidRate} ; Move to clearance level`);
+    jobCard.offsetX = ox;
+    jobCard.offsetY = oy;
+
+    const gcode = [];
+
+    Gcode.startJob(jobCard, gcode);
 
     for (const op of ops) {
-      let cutDepth = op.cutDepth();
-      if (cutDepth < 0) {
-        App.showAlert("cutDepthTooSmall", "alert-warning");
-        // 0 cut depth might be right for plotting
-        cutDepth = 0;
-      }
-
-      gcode.push(`; ** Operation **`);
-      gcode.push(`; Name:        ${op.name()}`);
-      gcode.push(`; Type:        ${op.operation()}`);
-      gcode.push(`; Paths:       ${op.toolPaths().length}`);
-      gcode.push(`; Direction:   ${op.direction()}`);
-      gcode.push(`; Cut Depth:   ${cutDepth}${gunits}`);
-      gcode.push(`; Pass Depth:  ${passDepth}${gunits}`);
-      gcode.push(`; Plunge rate: ${plungeRate}${gunits}/min`);
-
-      gcode.push(...Gcode.generate({
-        paths:          op.toolPaths(),
-        ramp:           op.ramp(),
-        // Scaling to apply to internal units in paths, to generate Gcode units.
-        xScale:         UnitConverter.from.internal.to[gunits],
-        yScale:         -UnitConverter.from.internal.to[gunits],
-        zScale:         1,
-        offsetX:        ox,
-        offsetY:        oy,
+      const opCard = {
+        name: op.name(),
+        cutType: op.operation(),
+        paths: op.toolPaths(),
+        ramp: op.ramp(),
+        cutDepth: op.cutDepth(),
+        direction: op.direction(),
+        // Perforation is always single-pass
+        passDepth: op.operation() === "Perforate"
+        ? op.cutDepth() : jobCard.passDepth,
         // V Carve and Perforate calculate Z coordinates, so don't try to
         // do anything clever with these.
-        useZ:           op.operation() === "V Carve" ||
-                        op.operation() === "Perforate",
-        tabGeometry:    tabGeometry,
-        tabZ:           tabZ,
-        decimal:        2, // 100th mm
-        topZ:           topZ,
-        botZ:           topZ - cutDepth,
-        safeZ:          safeZ,
-        // Perforation is always single-pass
-        passDepth:      op.operation() === "Perforate" ? cutDepth : passDepth,
-        plungeFeed:     plungeRate,
-        retractFeed:    rapidRate,
-        cutFeed:        cutRate,
-        rapidFeed:      rapidRate
-      }));
+        useZ: op.operation() === "V Carve"
+        || op.operation() === "Perforate"
+      };
+      if (opCard.cutDepth < 0) {
+        App.showAlert("cutDepthTooSmall", "alert-warning");
+        // 0 cut depth might be right for plotting
+        opCard.cutDepth = 0;
+      }
+
+      Gcode.generateOperation(opCard, jobCard, gcode);
     }
+    Gcode.endJob(jobCard, gcode);
 
-    if (this.returnTo00())
-      gcode.push(`G0 X0 Y0 F${rapidRate} ; Return to 0,0`);
-      gcode.push("M2 ; end program");
-
+    // Save the gcode to the observable
     this.gcode(gcode.join("\n"));
 
     console.debug(`generateGcode took ${Date.now() - startTime}`);

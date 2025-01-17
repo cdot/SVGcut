@@ -1,10 +1,12 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 //CPP /* global Module */ // from Emscripten
+
 /* global App */
 
+import { Point, Segment, Polygon } from 'flatten-js';
 import * as InternalPaths from "./InternalPaths.js";
-import { Point, Segment, Polygon } from '2d-geometry';
+import { convexPartition } from "./Partition.js";
 
 /**
  * Support for different CAM operations
@@ -19,32 +21,35 @@ import { Point, Segment, Polygon } from '2d-geometry';
  */
 
 /**
- * Merge a set of internal paths to generate a set of CamPath.
- * A merged path doesn't cross outside of the clip poly.
- * @param {InternalPath} clipPoly
- * @param {InternalPath[]} paths
+ * Convert a set of internal paths to CamPath.
+ * @param {InternalPath[]} paths paths to convert
+ * @param {InternalPath?} clipPoly used for closable test. if not given,
+ * path is assumed to be closable.
  * @return {CamPath[]} merged paths
+ * @private
  */
-function mergePaths(clipPoly, paths) {
-  return InternalPaths.mergePaths(clipPoly, paths).map(path => {
+function internalToCamPaths(paths, clipPoly) {
+  return paths.map(path => {
     // convert to CamPath
     return {
       path: path,
       // It's safe to close if the closing segment doesn't cross the clip poly
-      safeToClose: !InternalPaths.crosses(
+      safeToClose: clipPoly ? !InternalPaths.crosses(
         clipPoly, path[0], path[path.length - 1])
-    };});
+      : true
+    };
+  });
 }
 
 /**
- * Compute pocket tool path. The pocket is cleared using a spiral,
+ * Compute pocket tool path. The pocket is cleared using concentric passes,
  * starting from the outside and working towards the centre.
  * @param {number} cutterDia is in internal units
  * @param {number} overlap is in the range [0, 1)
  * @return {CamPath[]}
  * @memberof Cam
  */
-export function pocket(geometry, cutterDia, overlap, climb) {
+export function concentricPocket(geometry, cutterDia, overlap, climb) {
   // Shrink by half the cutter diameter
   let current = InternalPaths.offset(geometry, -cutterDia / 2);
   // take a copy of the shrunk pocket to clip against
@@ -58,8 +63,60 @@ export function pocket(geometry, cutterDia, overlap, climb) {
     allPaths = current.concat(allPaths);
     current = InternalPaths.offset(current, -cutterDia * (1 - overlap));
   }
-  return mergePaths(clipPoly, allPaths);
-};
+  return internalToCamPaths(
+    InternalPaths.mergePaths(allPaths, clipPoly), clipPoly);
+}
+
+/**
+ * Compute tool pockets using rasters. The geometry is decomposed into
+ * convex areas and each is rasterised with horizontal tool sweeps.
+ * @return {InternalPath} rasters
+ */
+function rasteriseConvexPocket(pocket, step) {
+  // Get the min Y
+  const bb = pocket.box;
+  let y = bb.ymin + step;
+  let direction = 1;
+  let path = [];
+  while (y < bb.ymax) {
+    const ray = new Segment(bb.xmin - step, y, bb.xmax + step, y);
+    const intersections = ray.intersect(pocket);
+    if (direction === 1)
+      intersections.sort((a, b) => a.x - b.x);
+    else
+      intersections.sort((a, b) => b.x - a.x);
+    let up = true;
+    for (const intersection of intersections)
+        path.push({ X: intersection.x, Y: intersection.y });
+    y += step;
+    // boustrophedonically
+    direction = -direction;
+  }
+  return path;
+}
+
+export function rasterPocket(geometry, cutterDia, overlap, climb) {
+  const step = cutterDia * (1 - overlap);
+  // Shrink first path by half the cutter diameter
+  let iPockets = InternalPaths.offset(geometry, -cutterDia / 2);
+
+  const pockets = [];
+  for (const poly of iPockets) {
+    const pocket = new Polygon(poly.map(pt => new Point(pt.X, pt.Y)));
+    // outline first
+    const outline = pocket.vertices.map(v => { return { X: v.x, Y: v.y }; } );
+    pockets.push(outline);
+    // now rasterise interior
+    const convexPockets = convexPartition(pocket);
+    for (const convexPocket of convexPockets) {
+      const rasters = rasteriseConvexPocket(convexPocket, step);
+      if (rasters.length > 0)
+        pockets.push(rasters);
+    }
+  }
+
+  return internalToCamPaths(pockets);
+}
 
 /**
  * Compute outline tool path.
@@ -78,19 +135,19 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   const eachWidth = cutterDia * (1 - overlap);
 
   let current;
-  let bounds;
+  let clipPoly;
   let eachOffset;
   let needReverse;
 
   if (isInside) {
     current = InternalPaths.offset(geometry, -cutterDia / 2);
-    bounds = InternalPaths.diff(
+    clipPoly = InternalPaths.diff(
       current, InternalPaths.offset(geometry, -(width - cutterDia / 2)));
     eachOffset = -eachWidth;
     needReverse = climb;
   } else { // is outside
     current = InternalPaths.offset(geometry, cutterDia / 2);
-    bounds = InternalPaths.diff(
+    clipPoly = InternalPaths.diff(
       InternalPaths.offset(geometry, width - cutterDia / 2), current);
     eachOffset = eachWidth;
     needReverse = !climb;
@@ -114,7 +171,8 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     currentWidth = nextWidth;
     current = InternalPaths.offset(current, eachOffset);
   }
-  return mergePaths(bounds, allPaths);
+  return internalToCamPaths(
+    InternalPaths.mergePaths(allPaths, clipPoly), clipPoly);
 };
 
 /**
@@ -158,7 +216,7 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   let segVec = { X: dx / segLen, Y : dy / segLen };
   while (segi < path.length) {
     // Place a hole here
-    console.debug(`Hole at ${segStart.X},${segStart.Y}`);
+    //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
     newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
     newPath.push({ X: segStart.X, Y: segStart.Y, Z: botZ });
     newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
@@ -231,9 +289,7 @@ export function engrave(geometry, climb) {
     copy.push(copy[0]); // close the path
     allPaths.push(copy);
   }
-  const result = mergePaths(null, allPaths);
-  for (const path of result)
-    path.safeToClose = true;
+  const result = internalToCamPaths(InternalPaths.mergePaths(allPaths));
   return result;
 };
 

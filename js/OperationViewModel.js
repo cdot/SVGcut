@@ -41,11 +41,8 @@ class OperationViewModel extends ViewModel {
   /**
    * @param {UnitConverter} unit converter to use
    * @param {RawPath[]} rawPaths input paths to the operation
-   * @param {boolean} disableRecombination true to stop recombination,
-   * usually because we are in a sequence of steps and recombination can
-   * wait.
    */
-  constructor(unitConverter, rawPaths, disableRecombination = false) {
+  constructor(unitConverter, rawPaths) {
     super(unitConverter);
 
     /**
@@ -81,11 +78,10 @@ class OperationViewModel extends ViewModel {
     this.combineOp.subscribe(() => this.recombine());
 
     /**
-     * The operation name.
-     * The default is "Pocket"
+     * The operation type. Default is "Engrave" as it's simplest.
      * @member {observable.<string>}
      */
-    this.operation = ko.observable("Pocket");
+    this.operation = ko.observable("Engrave");
     this.operation.subscribe(() => this.recombine());
 
     /**
@@ -95,7 +91,7 @@ class OperationViewModel extends ViewModel {
     this.showDetail = ko.observable(false);
 
     /**
-     * The (optional, user provided) name of ths operation
+     * The (optional, user provided) name of this operation
      * @member {observable.<string>}
      */
     this.name = ko.observable("");
@@ -193,7 +189,7 @@ class OperationViewModel extends ViewModel {
      * @member {boolean}
      * @private
      */
-    this.disableRecombination = disableRecombination;
+    this.disableRecombination = false;
 
     /**
      * Flag to lock out toolpath generation.
@@ -201,9 +197,6 @@ class OperationViewModel extends ViewModel {
      * @private
      */
     this.generatingToolpath = false;
-
-    if (!disableRecombination)
-      this.recombine();
   }
 
   /**
@@ -262,7 +255,7 @@ class OperationViewModel extends ViewModel {
 
   /**
    * (Re)generate combinedGeometry from the paths associated with this
-   * operation (this.rawPaths)
+   * operation (this.rawPaths) and trigger gCode recompilation
    * @return {boolean} true if recombination was successful
    */
   recombine() {
@@ -270,7 +263,8 @@ class OperationViewModel extends ViewModel {
       return;
 
     const startTime = Date.now();
-    console.debug(`Operation ${this.name} recombine...`);
+    const opName = this.operation();
+    console.debug(`Operation ${this.name()} ${opName} recombine...`);
 
     this.removeCombinedGeometry();
     this.removeToolPaths();
@@ -304,19 +298,19 @@ class OperationViewModel extends ViewModel {
 
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("internal");
-      if (this.operation() === "Pocket"
-          || this.operation() === "V Carve"
-          || this.operation() === "Inside")
+      if (opName === "Pocket"
+          || opName === "V Carve"
+          || opName === "Inside")
         off = -off;
-      if (this.operation() != "Engrave" && off != 0) {
+      if (opName != "Engrave" && off != 0) {
         previewGeometry = InternalPaths.offset(previewGeometry, off);
       }
 
-      if (this.operation() === "Inside"
-          || this.operation() === "Outside"
-          || this.operation() === "Perforate") {
+      if (opName === "Inside"
+          || opName === "Outside"
+          || opName === "Perforate") {
         const width = this.toolPathWidth();
-        if (this.operation() == "Inside")
+        if (opName == "Inside")
           previewGeometry = InternalPaths.diff(
             previewGeometry, InternalPaths.offset(previewGeometry, -width));
         else // Outside or Perforate
@@ -336,30 +330,33 @@ class OperationViewModel extends ViewModel {
       }
     }
 
-    console.debug(`Operation ${this.name} recombine took ${Date.now() - startTime}`);
+    console.debug(`Operation ${this.name()} recombine took ${Date.now() - startTime}`);
+
+    this.generateToolPaths();
   }
 
   /**
-   * Generate the tool path(s) for this operation in response to
-   * the "Generate" button. The tool paths are type CamPath and are
-   * written to `this.toolPaths`.
-   * SMELL: why not do this whenever something changes?
+   * Generate the tool path(s) for this operation. The tool paths are
+   * type CamPath and are written to `this.toolPaths`. Generating toolpaths
+   * invalidates Gcode, among other things. An event `TOOL_PATHS_CHANGED` is
+   * raised to signal this to the rest of the app.
    */
-  generateToolPath() {
+  generateToolPaths() {
     const startTime = Date.now();
-    console.debug("generateToolPath...");
+    console.debug(`generateToolPaths for "${this.name()}"...`);
 
     this.generatingToolpath = true;
     this.removeToolPaths();
 
     let geometry = this.combinedGeometry;
+    const opName = this.operation();
 
     let off = this.margin.toUnits("internal");
-    if (this.operation() == "Pocket"
-        || this.operation() == "V Carve"
-        || this.operation() == "Inside")
+    if (opName == "Pocket"
+        || opName == "V Carve"
+        || opName == "Inside")
       off = -off;
-    if (this.operation() !== "Engrave" && off != 0)
+    if (opName !== "Engrave" && off != 0)
       geometry = InternalPaths.offset(geometry, off);
 
     const toolModel = App.models.Tool;
@@ -368,15 +365,21 @@ class OperationViewModel extends ViewModel {
     const stepover = toolModel.stepover();
 
     let paths, width;
-    switch (this.operation()) {
+    switch (opName) {
 
     case "Pocket":
-      paths = Cam.pocket(
-        geometry, toolDiameter, 1 - stepover,
-        this.direction() == "Climb");
+      paths = Cam.concentricPocket(geometry, toolDiameter, 1 - stepover,
+                               this.direction() == "Climb");
+      break;
+
+    case "Raster Pocket":
+      // Implemented, but not currently used
+      paths = Cam.rasterPocket(geometry, toolDiameter, 1 - stepover,
+                               this.direction() == "Climb");
       break;
 
     case "V Carve":
+      // Not currently implemented
       paths = Cam.vCarve(
         geometry,
         App.models.Tool.angle(),
@@ -392,7 +395,7 @@ class OperationViewModel extends ViewModel {
         width = toolDiameter;
       paths = Cam.outline(
         geometry, toolDiameter,
-        this.operation() === "Inside", // isInside
+        opName === "Inside", // isInside
         width,
         1 - stepover,
         this.direction() === "Climb");
@@ -420,16 +423,17 @@ class OperationViewModel extends ViewModel {
     if (spaths && spaths.length > 0) {
       this.toolPathSvg = App.svgGroups.toolPaths
       .path(spaths)
-      .attr("style", "width:3px")
       .attr("class", "toolPath");
     } else {
       App.showAlert("noToolPaths", "alert-warning", this.name());
     }
 
-    console.debug(`generateToolPath for ${spaths.length} paths took ${Date.now() - startTime}`);
+    console.debug(`generateToolPaths for "${this.name()}" took ${Date.now() - startTime} and generated ${spaths.length} paths`);
 
     this.enabled(true);
     this.generatingToolpath = false;
+
+    // Signal this change to other listeners
     document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   }
 
@@ -437,26 +441,27 @@ class OperationViewModel extends ViewModel {
    * @override
    */
   toJson() {
+    const opName = this.operation();
     const result = {
       rawPaths: this.rawPaths,
       name: this.name(),
       enabled: this.enabled(),
       combineOp: this.combineOp(),
-      operation: this.operation()
+      operation: opName
     };
 
-    if (this.operation() !== "V Carve") {
+    if (opName !== "V Carve") {
       // direction and ramp ignored for V Carve
       result.direction = this.direction();
       result.cutDepth = this.cutDepth();
       result.ramp = this.ramp();
     }
 
-    if (this.operation() !== 'Engrave')
+    if (opName !== 'Engrave')
       // Margin is a non-concept for engraving
       result.margin = this.margin();
 
-    if (this.operation() === 'Inside' || this.operation() === 'Outside')
+    if (opName === 'Inside' || opName === 'Outside')
       // width only meaningful for these operations
       result.width = this.width();
 

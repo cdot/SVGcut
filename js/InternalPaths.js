@@ -79,14 +79,8 @@ export function diff(paths1, paths2) {
  */
 export function offset(
   paths, amount,
-  joinType = ClipperLib.JoinType.jtRound,
+  joinType = ClipperLib.JoinType.jtMiter,
   endType = ClipperLib.EndType.etClosedPolygon) {
-
-  // bug workaround: join types are swapped in ClipperLib 6.1.3.2
-  if (joinType == ClipperLib.JoinType.jtSquare)
-    joinType = ClipperLib.JoinType.jtMiter;
-  else if (joinType == ClipperLib.JoinType.jtMiter)
-    joinType = ClipperLib.JoinType.jtSquare;
 
   const co = new ClipperLib.ClipperOffset(2, ARC_TOLERANCE);
   co.AddPaths(paths, joinType, endType);
@@ -193,7 +187,7 @@ export function fromCpp(memoryBlocks, cPathsRef, cNumPathsRef, cPathSizesRef) {
 /CPP*/
 
 /**
- * Does the line from p1 to p2 cross the bounds
+ * Does the line from p1 to p2 cross the poly?
  * @param {InternalPath} bounds the bounds path
  * @param {InternalPoint} p1 line endpoint
  * @param {InternalPoint} p2 line endpoint
@@ -218,9 +212,15 @@ export function crosses(bounds, p1, p2) {
     const child = result.Childs()[0];
     const points = child.Contour();
     if (points.length == 2) {
-      if (points[0].X == p1.X && points[1].X == p2.X && points[0].Y == p1.Y && points[1].Y == p2.Y)
+      if (points[0].X == p1.X
+          && points[1].X == p2.X
+          && points[0].Y == p1.Y
+          && points[1].Y == p2.Y)
         return false;
-      if (points[0].X == p2.X && points[1].X == p1.X && points[0].Y == p2.Y && points[1].Y == p1.Y)
+      if (points[0].X == p2.X
+          && points[1].X == p1.X
+          && points[0].Y == p2.Y
+          && points[1].Y == p1.Y)
         return false;
     }
   }
@@ -228,15 +228,20 @@ export function crosses(bounds, p1, p2) {
 }
 
 /**
- * Try to merge paths. A merged path doesn't cross outside of bounds.
- * @param {InternalPath} bounds
- * @param {InternalPath[]} paths
+ * Try to merge poly paths by linking them with an edge that doesn't
+ * cross the boundingGeometry (if specified). Paths are considered in
+ * order, by looking for the shortest edge between the last point on poly[N]
+ * to all points on all polys[>N] that doesn't cross the bounding poly
+ * (if specified). This is very inefficient, try to avoid calling it with
+ * more than 2 polys.
+ * @param {InternalPath[]} paths list of paths to merge
+ * @param {InternalPath?} boundingGeometry poly not to cross
  * @return {InternalPath[]} merged paths
  * @memberof InternalPaths
  */
-export function mergePaths(bounds, paths) {
-  if (paths.length == 0)
-    return [];
+export function mergePaths(paths, boundingGeometry) {
+  if (paths.length < 2)
+    return paths; // nothing to do
 
   let currentPath = paths[0];
   currentPath.push(currentPath[0]);
@@ -244,11 +249,15 @@ export function mergePaths(bounds, paths) {
   paths[0] = [];
 
   const mergedPaths = [];
+  // While there are paths left to consider
   let numLeft = paths.length - 1;
   while (numLeft > 0) {
     let closestPathIndex = null;
     let closestPointIndex = null;
     let closestPointDist2 = Number.MAX_VALUE;
+
+    // Find the closest point on the remaining paths to the last
+    // point on the current path
     for (let pathIndex = 0; pathIndex < paths.length; ++pathIndex) {
       const path = paths[pathIndex];
       for (let pointIndex = 0; pointIndex < path.length; ++pointIndex) {
@@ -262,11 +271,14 @@ export function mergePaths(bounds, paths) {
         }
       }
     }
-
     let path = paths[closestPathIndex];
+    if (!path)
+      debugger;
     paths[closestPathIndex] = [];
     numLeft -= 1;
-    const needNew = crosses(bounds, currentPoint, path[closestPointIndex]);
+    const needNew = crosses(
+      boundingGeometry, currentPoint, path[closestPointIndex]);
+    // Merge the two paths at the closest approach
     path = path.slice(closestPointIndex, path.length)
     .concat(path.slice(0, closestPointIndex));
     path.push(path[0]);
@@ -281,5 +293,6 @@ export function mergePaths(bounds, paths) {
     }
   }
   mergedPaths.push(currentPath);
+
   return mergedPaths;
 }

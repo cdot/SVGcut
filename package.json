@@ -17,10 +17,11 @@
 	"scripts": {
 		"build": "webpack -c 2d-geometry-webpack.js",
 		"lint": "eslint js -f unix",
+		"lintlib": "eslint lib -f unix",
 		"doc": "jsdoc -c jsdoc_config.json js"
 	},
 	"dependencies": {
-		"2d-geometry": "^3.0.0",
+		"@flatten-js/core": "github:alexbol99/flatten-js",
 		"bootstrap": "^5.3.3",
 		"bootstrap-slider": "^11.0.2",
 		"clipper-lib": "^6.4.2",
