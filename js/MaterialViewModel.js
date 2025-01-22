@@ -51,7 +51,7 @@ class MaterialViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.topZ = ko.computed(() => {
-      if (this.zOrigin() == "Top")
+      if (this.zOrigin() === "Top")
         return 0;
       else
         return this.thickness();
@@ -70,7 +70,7 @@ class MaterialViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.botZ = ko.computed(() => {
-      if (this.zOrigin() == "Bottom")
+      if (this.zOrigin() === "Bottom")
         return 0;
       else
         return -this.thickness();
@@ -88,7 +88,7 @@ class MaterialViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.zSafeMove = ko.computed(() => {
-      if (this.zOrigin() == "Top")
+      if (this.zOrigin() === "Top")
         return parseFloat(this.clearance());
       else
         return parseFloat(this.thickness()) + parseFloat(this.clearance());

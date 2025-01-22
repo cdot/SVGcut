@@ -194,10 +194,12 @@
                   <div style="display: table-cell" class="entry-mid">
                     <select id="opOperation" data-bind="value: operation">
                       <option value="Engrave">Engrave</option>
-                      <option value="Outside">Outside</option>
                       <option value="Inside">Inside</option>
-                      <option value="Pocket">Pocket</option>
+                      <option value="Outside">Outside</option>
                       <option value="Perforate">Perforate</option>
+                      <option value="ConcentricPocket">Pocket (concentric)</option>
+                      <option value="RasterPocket">Pocket (raster)</option>
+                      <option value="VPocket">V Pocket</option>
                       <!--option value="V Carve">V Carve</option-->
                     </select>
                   </div>
@@ -808,8 +810,7 @@
     <span name="toolDiameter">Diameter of cutter</span>
     <span name="toolAngle">Angle of tapered cutter head. This is the angle
       at the tip of the tool, so 180 means a flat bottom tool, while 90
-      means a 45&deg; chamfer bit. This is only needed for V Carve, which
-      isn't currently supported.</span>
+      means a 45&deg; chamfer bit.</span>
     <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
       Use a smaller pass depth for harder materials and better quality.
       Pass depth should never exceed the height of the cutting surface
@@ -872,7 +873,17 @@
     <span name="opDirection">What direction the cutter should travel.
       See README for an explanation</span>
     <span name="opCutDepth">How deep this operation should cut in total</span>
-    <span name="opOperation">Operation to perform on the selected paths</span>
+    <div name="opOperation">Operation to perform on the selected paths.
+      <ul>
+        <li><em>Engrave</em> - middle of the tool follows the paths</li>
+        <li><em>Inside</em> - cuts around the inside</li>
+        <li><em>Outside</em> - cuts around the outside</li>
+        <li><em>Perforate</em> - drills holes around the outside</li>
+        <li><em>Pocket (concentric</em>) - makes a pocket using ever-decreasing circles</li>
+        <li><em>Pocket (raster</em>) - makes a pocket using side-to-side movement</li>
+        <li><em>V Pocket</em> - makes a pocket leaving a chamfered edge</li>
+      </ul>
+    </div>
     <span name="opVMaxDepth">Maximum depth this operation should cut.
       <p class="bg-danger">not implemented yet; this is ignored</p></span>
     <div name="opMargin">

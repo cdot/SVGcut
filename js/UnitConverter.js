@@ -2,18 +2,18 @@
 
 import { Rect } from "./Rect.js";
 
-// Define transformations for different unit types to internal units.
-const INTERNAL_PER_MM   = 100000; // millimetres
-const INTERNAL_PER_INCH = 25.4 * INTERNAL_PER_MM; // inches
+// Define transformations for different unit types to integer units.
+const INTEGER_PER_MM   = 100000; // millimetres
+const INTEGER_PER_INCH = 25.4 * INTEGER_PER_MM; // inches
 // Browsers assume a fixed conversion of pixels to mm of
 // 25.4/96 (96 dpi).
-const INTERNAL_PER_PX = INTERNAL_PER_INCH / 96;
+const INTEGER_PER_PX = INTEGER_PER_INCH / 96;
 
 /**
  * Instances of this class maintain a set of inputs that show a value
  * in user-selected units. The class attaches observables that support
  * the conversion of these values into other units. Unit systems supported
- * are: mm, inch, px and internal. Internal units are designed to
+ * are: `mm`, `inch`, `px` and `integer`. Integer units are designed to
  * scale up numbers for more accurate operations with ClipperLib.
  */
 class UnitConverter {
@@ -23,32 +23,32 @@ class UnitConverter {
     mm: {
       to: {
         mm: 1,
-        internal: INTERNAL_PER_MM,
-        inch: INTERNAL_PER_MM / INTERNAL_PER_INCH,
-        px: INTERNAL_PER_MM / INTERNAL_PER_PX
+        integer: INTEGER_PER_MM,
+        inch: INTEGER_PER_MM / INTEGER_PER_INCH,
+        px: INTEGER_PER_MM / INTEGER_PER_PX
       }
     },
-    internal: {
+    integer: {
       to: {
-        mm: 1 / INTERNAL_PER_MM,
-        internal: 1,
-        inch: 1 / INTERNAL_PER_INCH,
-        px: 1 / INTERNAL_PER_PX
+        mm: 1 / INTEGER_PER_MM,
+        integer: 1,
+        inch: 1 / INTEGER_PER_INCH,
+        px: 1 / INTEGER_PER_PX
       }
     },
     inch: {
       to: {
-        mm: INTERNAL_PER_INCH / INTERNAL_PER_MM,
-        internal: INTERNAL_PER_INCH,
+        mm: INTEGER_PER_INCH / INTEGER_PER_MM,
+        integer: INTEGER_PER_INCH,
         inch: 1,
-        px: INTERNAL_PER_INCH / INTERNAL_PER_PX
+        px: INTEGER_PER_INCH / INTEGER_PER_PX
       }
     },
     px: {
       to: {
-        mm: INTERNAL_PER_PX / INTERNAL_PER_MM,
-        internal: INTERNAL_PER_PX,
-        inch: INTERNAL_PER_PX / INTERNAL_PER_INCH,
+        mm: INTEGER_PER_PX / INTEGER_PER_MM,
+        integer: INTEGER_PER_PX,
+        inch: INTEGER_PER_PX / INTEGER_PER_INCH,
         px: 1
       }
     }

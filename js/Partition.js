@@ -28,7 +28,7 @@ class PartitionVertex {
     this.p = p;
     this.isConvex = false;
   }
-  
+
   update(vertices) {
     this.isConvex = isConvex(this.previous.p, this.p, this.next.p);
 
@@ -42,9 +42,9 @@ class PartitionVertex {
     if (this.isConvex) {
       this.isEar = true;
       for (let i = 0; i < vertices.length; i++) {
-        if ((vertices[i].p.x == v2.x) && (vertices[i].p.y == v2.y)
-            || ((vertices[i].p.x == v1.x) && (vertices[i].p.y == v1.y))
-            || ((vertices[i].p.x == v3.x) && (vertices[i].p.y == v3.y)))
+        if ((vertices[i].p.x === v2.x) && (vertices[i].p.y === v2.y)
+            || ((vertices[i].p.x === v1.x) && (vertices[i].p.y === v1.y))
+            || ((vertices[i].p.x === v3.x) && (vertices[i].p.y === v3.y)))
           continue;
         if (isInside(v1, v2, v3, vertices[i].p)) {
           this.isEar = false;
@@ -66,7 +66,7 @@ export function triangulate(poly) {
   const pv = poly.vertices;
   if (pv.length < 3)
     throw new Error("Poly has too few vertices");
-  if (pv.length === 3) 
+  if (pv.length === 3)
     return [ poly ];
 
   // Triangulation by ear removal.
@@ -106,7 +106,7 @@ export function triangulate(poly) {
     ear.isActive = false;
     ear.previous.next = ear.next;
     ear.next.previous = ear.previous;
-    
+
     if (i === nV - 4)
       break;
 
@@ -182,22 +182,22 @@ export function convexPartition(poly) {
         continue; // i11
 
       let p2 = poly1.vertices[i11];
-      let i13 = (i11 == 0) ? poly1.vertices.length - 1 : i11 - 1;
+      let i13 = (i11 === 0) ? poly1.vertices.length - 1 : i11 - 1;
       let p1 = poly1.vertices[i13];
-      let i23 = (i22 == (poly2.vertices.length - 1)) ? 0 : i22 + 1;
+      let i23 = (i22 === (poly2.vertices.length - 1)) ? 0 : i22 + 1;
       let p3 = poly2.vertices[i23];
 
       if (!isConvex(p1, p2, p3))
         continue; // i11
 
       p2 = poly1.vertices[i12];
-      if (i12 == (poly1.vertices.length - 1)) {
+      if (i12 === (poly1.vertices.length - 1)) {
         i13 = 0;
       } else {
         i13 = i12 + 1;
       }
       p3 = poly1.vertices[i13];
-      i23 = (i21 == 0) ? poly2.vertices.length - 1 :i21 - 1;
+      i23 = (i21 === 0) ? poly2.vertices.length - 1 :i21 - 1;
       p1 = poly2.vertices[i23];
 
       if (!isConvex(p1, p2, p3))

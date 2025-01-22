@@ -23,7 +23,7 @@ describe("Partition", () => {
     const triangles = triangulate(poly);
     assert.equal(triangles.length, 10);
     for (const t of triangles) {
-      console.log(t.vertices);
+      //console.log(t.vertices);
     }
   });
 

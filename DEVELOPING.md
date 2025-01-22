@@ -24,10 +24,10 @@ The simulation is done in a canvas using WebGL. See `js/Simulation.js`.
 There are three coordinate systems at play.
 - The first is "user" units, which are selectable using the "Units" dropdown. These are the units used to display measures to the user in all panes except Gcode Generation, which has it's own set of user units.
 - When an SVG is imported, the units used in the SVG are automatically converted into "px" units by `snapsvg`, assuming a conversion of 96 pixels per inch.
-- Once SVG manipulation is complete, px units are converted to "internal" units. This conversion is designed to help reduce rounding errors in floating point calculations performed on polygons. Tool paths are internally represented using internal units.
-- Finally internal units are mapped back to px units for generating SVG elements, and to whatever physical units were requested for Gcode Generation.
+- Once SVG import is complete, px units are converted to "integer" units. This conversion is a simple scaling, designed for use with ClipperLib which uses integer calculations for boolean and offset operations on polygons. Tool paths are internally represented using integer units.
+- Finally integer units are mapped back to px units for generating SVG elements, and to whatever user units were requested for Gcode Generation.
 
-Note that the conversion to Gcode units isn't as simple as the others, because px and internal units assume 0,0 at the top left with Y incresing downwards, but Gcode is generated assuming 0,0 at the lower left (or centre) with Y increasing upwards.
+Note that the conversion to Gcode units isn't as simple as the others, because px and integer units assume 0,0 at the top left with Y increasing downwards, but Gcode is generated assuming 0,0 at the lower left (or centre) with Y increasing upwards.
 
 # Coding Standards
 + Literate coding. All names should be expressive of their purpose.

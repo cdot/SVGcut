@@ -105,7 +105,7 @@ class MiscViewModel extends ViewModel {
 
       const files = event.target.files;
       for (const file of files) {
-        console.log(file);
+        //console.log(file);
         const lert = App.showAlert("loadingProject", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {

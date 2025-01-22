@@ -62,11 +62,13 @@ Use the mouse to select the paths (the _geometry_) you want to convert
 to Gcode (click a path again to deselect it; a double-click will
 select all paths). They will change colour. In the `Operations` pane,
 click `Create Operation` to tell it what you want to do with the
-selected paths. There are four operations available:
-+ `Engrave` - the tool will follow the selected paths (basically what a pen plotter does)
-+ `Outside` - will cut around the outside of the selected paths
+selected paths. There are a number of operations available:
++ `Engrave` - the tool will follow the selected paths (basically what a pen plotter does).
++ `Outside` - will cut around the outside of the selected paths.
 + `Inside` - will cut around the inside of your paths.
-+ `Pocket` - the default, will carve out the interior of your selected paths.
++ `Pocket (concentric)` - will carve out the interior of your selected paths using ever-decreasing circles.
++ `Pocket (raster)` - will carve out the interior of your selected paths using side-to-side tool movements.
++ `V Pocket` - will carve out the interior of your pocket with a V-bit using concentric tool movements. This will deliver a chamfered edge to the pocket, but the bottom of the pocket will be a bit rocky.
 + `Perforate` - will drill a series of evenly-spaced holes outside the boundary of the selected paths. You can control the spacing of the holes.
 
 The `Toolpaths` pane will change to show what has been selected for

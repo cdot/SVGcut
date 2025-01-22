@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global App */
 
@@ -11,7 +11,10 @@ const CYL_STRIDE = 6;
 const HALF_CIRCLE_SEGMENTS = 5;
 
 /**
- * Simulation of a tool path using WebGL.
+ * Singleton that supports animation of a tool path using WebGL. This
+ * module is virtually stand-alone - once the simulation has been
+ * started, the `setPath` method is used to load the path to be
+ * simulated.
  */
 class Simulation {
 
@@ -265,10 +268,10 @@ class Simulation {
             bufferContent[pos++] = y;
             bufferContent[pos++] = right;
             bufferContent[pos++] = y + 1;
-            if (i == 0) {
+            if (i === 0) {
               bufferContent[pos++] = left;
               bufferContent[pos++] = y + 1;
-            } else if (i == 1) {
+            } else if (i === 1) {
               bufferContent[pos++] = x;
               bufferContent[pos++] = y;
             }
@@ -286,10 +289,10 @@ class Simulation {
             bufferContent[pos++] = y;
             bufferContent[pos++] = x;
             bufferContent[pos++] = y + 1;
-            if (i == 0) {
+            if (i === 0) {
               bufferContent[pos++] = left;
               bufferContent[pos++] = y;
-            } else if (i == 1) {
+            } else if (i === 1) {
               bufferContent[pos++] = right;
               bufferContent[pos++] = y;
             }
@@ -339,7 +342,7 @@ class Simulation {
     let lastY = .5 * Math.sin(0);
     for (let i = 0; i < numDivisions; ++i) {
       let j = i + 1;
-      if (j == numDivisions)
+      if (j === numDivisions)
         j = 0;
       const x = .5 * Math.cos(j * 2 * Math.PI / numDivisions);
       const y = .5 * Math.sin(j * 2 * Math.PI / numDivisions);
@@ -473,7 +476,7 @@ class Simulation {
           / Math.cos(this.cutterAngleRad / 2);
 
     let rotAngle;
-    if (curr.x == prev.x && curr.y == prev.y)
+    if (curr.x === prev.x && curr.y === prev.y)
       rotAngle = 0;
     else
       rotAngle = Math.atan2(curr.y - prev.y, curr.x - prev.x);
@@ -609,98 +612,6 @@ class Simulation {
       bufferContent[base + 7] = time;
       bufferContent[base + 8] = virtex;
     }
-  }
-
-  /**
-   * Set the path that is being simulated. All parameters use
-   * gcode units.
-   * @param {object[]} path array of path points, each an object { x, y, z, f}
-   * @param {number} topZ top of the material
-   * @param {number} cutterDiameter
-   * @param {number} cutterAngle angle of V-cutter head, in degrees.
-   * Flat heads use 180 (the default).
-   * @param {number} cutterHeight height of cutter cylinder, default 1
-   */
-  setPath(path, topZ,
-          cutterDiameter, cutterAngle = 180, cutterHeight = 1) {
-    const startTime = Date.now();
-
-    console.debug(`setPath...${path.length} vertices`);
-
-    this.pathTopZ = topZ;
-    this.cutterDia = cutterDiameter;
-    if (cutterAngle <= 0 || cutterAngle > 180)
-      cutterAngle = 180;
-    this.cutterAngleRad = cutterAngle * Math.PI / 180;
-    this.isVBit = cutterAngle < 180;
-    this.cutterH = cutterHeight;
-    this.needToCreatePathTexture = true;
-    this.requestFrame();
-    this.pathNumPoints = path.length;
-
-    if (this.isVBit) {
-      this.pathStride = 12;
-      this.pathVerticesPerLine = 12 + HALF_CIRCLE_SEGMENTS * 6;
-    } else {
-      this.pathStride = 9;
-      this.pathVerticesPerLine = 18;
-    }
-
-    this.pathNumVertices = this.pathNumPoints * this.pathVerticesPerLine;
-    const bufferContent = new Float32Array(
-      this.pathNumPoints * this.pathStride * this.pathVerticesPerLine);
-    this.pathBufferContent = bufferContent;
-
-    const startPoint = path[0];
-    const min = {
-      x: Number.POSITIVE_INFINITY,
-      y: Number.POSITIVE_INFINITY,
-      z: Number.POSITIVE_INFINITY };
-    const max =  {
-      x: Number.NEGATIVE_INFINITY,
-      y: Number.NEGATIVE_INFINITY,
-      z: Number.NEGATIVE_INFINITY };
-
-    let time = 0;
-    let prev = startPoint, idx = -1;
-    for (const curr of path) {
-      idx++;
-      const dist = Math.sqrt((curr.x - prev.x) * (curr.x - prev.x)
-                             + (curr.y - prev.y) * (curr.y - prev.y)
-                             + (curr.z - prev.z) * (curr.z - prev.z));
-      const beginTime = time;
-      time = time + dist / curr.f * 60;
-
-      min.x = Math.min(min.x, curr.x);
-      min.y = Math.min(min.y, curr.y);
-      min.z = Math.min(min.z, curr.z);
-
-      max.x = Math.max(max.x, curr.x);
-      max.y = Math.max(max.y, curr.y);
-      max.z = Math.max(max.z, curr.z);
-
-      if (this.isVBit)
-        this.vBit(idx, prev, curr, bufferContent, beginTime, time);
-      else
-        this.flatBit(idx, prev, curr, bufferContent, beginTime, time);
-
-      prev = curr;
-    }
-    this.totalTime = time;
-
-    this.pathXOffset = -(min.x + max.x) / 2;
-    this.pathYOffset = -(min.y + max.y) / 2;
-    const size = Math.max(max.x - min.x + 4 * this.cutterDia,
-                          max.y - min.y + 4 * this.cutterDia);
-    this.pathScale = 2 / size;
-    this.pathMinZ = min.z;
-
-    console.debug(
-      `...setPath took ${Date.now() - startTime}`,
-      `bufferContent (MB): ${bufferContent.length * 4 / 1024 / 1024}`);
-
-    this.setStopAtTime(this.totalTime);
-    this.requestFrame();
   }
 
   /**
@@ -921,7 +832,7 @@ class Simulation {
       return v0 + (v1 - v0) * a;
     }
 
-    if (this.pathNumPoints == 0) {
+    if (this.pathNumPoints === 0) {
       console.debug("Simulation.drawCutter: no points");
       return;
     }
@@ -935,7 +846,7 @@ class Simulation {
       const beginTime = this.pathBufferContent[offset + 6];
       const endTime = this.pathBufferContent[offset + 7];
       let ratio;
-      if (endTime == beginTime)
+      if (endTime === beginTime)
         ratio = 0;
       else
         ratio = (this.stopAtTime - beginTime) / (endTime - beginTime);
@@ -1138,6 +1049,98 @@ class Simulation {
 
       this.addEventListeners();
     });
+  }
+
+  /**
+   * Set the path that is being simulated. All parameters use
+   * gcode units.
+   * @param {object[]} path array of path points, each an object { x, y, z, f}
+   * @param {number} topZ top of the material
+   * @param {number} cutterDiameter
+   * @param {number} cutterAngle angle of V-cutter head, in degrees.
+   * Flat heads use 180 (the default).
+   * @param {number} cutterHeight height of cutter cylinder, default 1
+   */
+  setPath(path, topZ,
+          cutterDiameter, cutterAngle = 180, cutterHeight = 1) {
+    const startTime = Date.now();
+
+    console.debug(`setPath...${path.length} vertices`);
+
+    this.pathTopZ = topZ;
+    this.cutterDia = cutterDiameter;
+    if (cutterAngle <= 0 || cutterAngle > 180)
+      cutterAngle = 180;
+    this.cutterAngleRad = cutterAngle * Math.PI / 180;
+    this.isVBit = cutterAngle < 180;
+    this.cutterH = cutterHeight;
+    this.needToCreatePathTexture = true;
+    this.requestFrame();
+    this.pathNumPoints = path.length;
+
+    if (this.isVBit) {
+      this.pathStride = 12;
+      this.pathVerticesPerLine = 12 + HALF_CIRCLE_SEGMENTS * 6;
+    } else {
+      this.pathStride = 9;
+      this.pathVerticesPerLine = 18;
+    }
+
+    this.pathNumVertices = this.pathNumPoints * this.pathVerticesPerLine;
+    const bufferContent = new Float32Array(
+      this.pathNumPoints * this.pathStride * this.pathVerticesPerLine);
+    this.pathBufferContent = bufferContent;
+
+    const startPoint = path[0];
+    const min = {
+      x: Number.POSITIVE_INFINITY,
+      y: Number.POSITIVE_INFINITY,
+      z: Number.POSITIVE_INFINITY };
+    const max =  {
+      x: Number.NEGATIVE_INFINITY,
+      y: Number.NEGATIVE_INFINITY,
+      z: Number.NEGATIVE_INFINITY };
+
+    let time = 0;
+    let prev = startPoint, idx = -1;
+    for (const curr of path) {
+      idx++;
+      const dist = Math.sqrt((curr.x - prev.x) * (curr.x - prev.x)
+                             + (curr.y - prev.y) * (curr.y - prev.y)
+                             + (curr.z - prev.z) * (curr.z - prev.z));
+      const beginTime = time;
+      time = time + dist / curr.f * 60;
+
+      min.x = Math.min(min.x, curr.x);
+      min.y = Math.min(min.y, curr.y);
+      min.z = Math.min(min.z, curr.z);
+
+      max.x = Math.max(max.x, curr.x);
+      max.y = Math.max(max.y, curr.y);
+      max.z = Math.max(max.z, curr.z);
+
+      if (this.isVBit)
+        this.vBit(idx, prev, curr, bufferContent, beginTime, time);
+      else
+        this.flatBit(idx, prev, curr, bufferContent, beginTime, time);
+
+      prev = curr;
+    }
+    this.totalTime = time;
+
+    this.pathXOffset = -(min.x + max.x) / 2;
+    this.pathYOffset = -(min.y + max.y) / 2;
+    const size = Math.max(max.x - min.x + 4 * this.cutterDia,
+                          max.y - min.y + 4 * this.cutterDia);
+    this.pathScale = 2 / size;
+    this.pathMinZ = min.z;
+
+    console.debug(
+      `...setPath took ${Date.now() - startTime}`,
+      `bufferContent (MB): ${bufferContent.length * 4 / 1024 / 1024}`);
+
+    this.setStopAtTime(this.totalTime);
+    this.requestFrame();
   }
 }
 

@@ -4,6 +4,9 @@
 //import "snapsvg";
 /* global Snap */
 
+//import "clipper-lib";
+/* global ClipperLib */
+
 /* global App */
 
 import { ViewModel } from "./ViewModel.js";
@@ -55,20 +58,11 @@ class TabsViewModel extends ViewModel {
    * Invoked from #TabsViewPane
    */
   addTab() {
-    const rawPaths = [];
-
-    App.models.Selection.getSelection().forEach(element => {
-      // rawPaths.pus(new RawPath({...
-      rawPaths.push({
-        path: Snap.parsePathString(element.attr('d')),
-        nonzero: element.attr("fill-rule") != "evenodd"
-      });
-    });
-    App.models.Selection.clearSelection();
-
-    const tab = new TabViewModel(this.unitConverter, rawPaths);
-    this.tabs.push(tab);
+    // Get integer paths from the current selection
+    const operands = App.models.Selection.getSelectedPaths();
+    const tab = new TabViewModel(this.unitConverter, operands);
     tab.recombine();
+    this.tabs.push(tab);
 
     document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
   };

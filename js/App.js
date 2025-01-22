@@ -43,6 +43,19 @@ class App {
   constructor(config) {
 
     /**
+     * Enumeration for supported operations on polygons
+     * @member {object.<name,string>}
+     */
+    this.PolyOps = {
+      Engrave: "Engrave",
+      Inside: "Inside",
+      Outside: "Outside",
+      ConcentricPocket: "ConcentricPocket",
+      RasterPocket: "RasterPocket",
+      Perforate: "Perforate"
+    };
+
+    /**
      * Map from model name (e.g. "Operations") to the view model
      * for the relevant card. Note that all tool models share the Tool
      * UnitConverter except GcodeGenerationViewModel which has it's own,
@@ -263,32 +276,6 @@ class App {
       }
     });
   }
-
-  /*CPP*
-   * Asynchronously find and load cpp interface
-   *
-  downloadCpp() {
-    if (this.tryCppPaths.length == 0) {
-      const e = "cam-cpp.js is unavailable; tried the following paths:<ul>"
-            + this.options.camCppPaths.map(path => `<li>${path}</li>`).join("")
-            + "</ul>";
-      console.error(`Error: ${e}`);
-      this.models.Misc.camCppError(e);
-      return;
-    }
-    const nextLocation = this.tryCppPaths.shift();
-    const script = `${nextLocation}/cam-cpp.js`;
-    let element = document.createElement('script');
-    element.setAttribute("src", script);
-    document.head.appendChild(element);
-    getScript(script)
-    .then(() => {
-      console.debug(`cam-cpp.js found at: ${script}`);
-      this.models.Misc.loadedCamCpp(true);
-    })
-    .catch(() => this.downloadCpp());
-  }
-  /CPP*/
 
   /**
    * Show an alert

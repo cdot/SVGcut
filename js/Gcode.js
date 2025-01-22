@@ -99,7 +99,7 @@ export function parse(gcode, verbose = false) {
 
       case 'm': // M-code (miscellaneous function)
         // M2 and M30 terminate the program
-        if (value == 2 || value == 30)
+        if (value === 2 || value === 30)
           terminated = true;
         break;
 
@@ -208,23 +208,23 @@ export function endJob(job, gcode) {
  * position is safe. Parameters are in gcode units unless specified
  * otherwise.
  * @param {object} opCard
- * @param {CamPath[]} opCard.paths Paths to convert. These paths are
- * in internal units, and will be transformed to Gcode units using the
+ * @param {CamPaths} opCard.paths Paths to convert. These paths are
+ * in "integer" units, and will be transformed to Gcode units using the
  * `Scale` parameters.
  * @param {boolean} opCard.ramp Ramp plunge. Default is to drill plunge.
- * @param {boolean} opCard.precalculatedZ Use Z coordinates in paths. Some operations
- * (such as Perforate and V Carve) have pre-calculated Z coordinates.
- * Use of these is enabled by this switch.
- * @param {number} opCard.tabGeometry Tab geometry (optional), will be
- * defined in internal units and require scaling.
+ * @param {boolean} opCard.precalculatedZ Use Z coordinates in paths.
+ * Some operations (such as Perforate and V Carve) have pre-calculated
+ * Z coordinates.  Use of these is enabled by this switch.
+ * @param {ClipperLib.Paths} opCard.tabGeometry Tab geometry (optional),
+ * defined in "integer" units and require scaling.
  * @param {string[]} gcode array of Gcode lines to be added to
  *
  * @param {object} job
- * @param {number} job.xScale Factor to convert internal units to
+ * @param {number} job.xScale Factor to convert "integer" units to
  * gcode units
- * @param {number} job.yScale Factor to convert internal units to
+ * @param {number} job.yScale Factor to convert "integer" units to
  * gcode units
- * @param {number} job.zScale Factor to convert internal units to
+ * @param {number} job.zScale Factor to convert "integer" units to
  * gcode units
  * @param {number} job.offsetX Origin offset X
  * @param {number} job.offsetY Origin offset Y
@@ -363,9 +363,9 @@ export function generateOperation(op, job, gcode) {
 
   let pathIndex = 0;
   for (const path of op.paths) {
-    // paths are CamPath
+    // paths are CamPaths
     const origPath = path.path;
-    if (origPath.length == 0)
+    if (origPath.length === 0)
       continue;
 
     // If necessary, split path where it enters/leaves tab geometry
@@ -413,7 +413,7 @@ export function generateOperation(op, job, gcode) {
       for (const cutPath of cutPaths) {
         overTab = !overTab;
 
-        if (cutPath.length == 0)
+        if (cutPath.length === 0)
           continue;
 
         if (op.precalculatedZ) {

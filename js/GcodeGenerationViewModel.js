@@ -13,8 +13,9 @@
 
 import { UnitConverter } from "./UnitConverter.js";
 import * as Gcode from "./Gcode.js";
-import * as InternalPaths from "./InternalPaths.js";
+import * as Clipper from "./Clipper.js";
 import { ViewModel } from "./ViewModel.js";
+import { Rect } from "./Rect.js";
 
 const POPOVERS = [
   { id: "gcodeUnits" },
@@ -132,9 +133,9 @@ class GcodeGenerationViewModel extends ViewModel {
     App.models.Operations.boundingBox.subscribe(
       bb => {
         this.bbWidth(
-          this.unitConverter.fromUnits(bb.width, "internal").toFixed(2));
+          this.unitConverter.fromUnits(bb.width, "integer").toFixed(2));
         this.bbHeight(
-          this.unitConverter.fromUnits(bb.height, "internal").toFixed(2));
+          this.unitConverter.fromUnits(bb.height, "integer").toFixed(2));
       });
 
     document.addEventListener("TOOL_PATHS_CHANGED", () => this.generateGcode());
@@ -165,12 +166,12 @@ class GcodeGenerationViewModel extends ViewModel {
    */
   getSVGBB() {
     const pxBB = App.getMainSvgBBox();
-    const gcodeBB = {
-      left:   this.unitConverter.fromUnits(pxBB.x, "px"),
-      top:    this.unitConverter.fromUnits(pxBB.y, "px"),
-      width:  this.unitConverter.fromUnits(pxBB.width, "px"),
-      height: this.unitConverter.fromUnits(pxBB.height, "px")
-    };
+    const gcodeBB = new Rect(
+      this.unitConverter.fromUnits(pxBB.x, "px"),
+      this.unitConverter.fromUnits(pxBB.y, "px"),
+      this.unitConverter.fromUnits(pxBB.width, "px"),
+      this.unitConverter.fromUnits(pxBB.height, "px")
+    );
     return gcodeBB;
   }
 
@@ -190,7 +191,7 @@ class GcodeGenerationViewModel extends ViewModel {
           ops.push(op);
       }
     }
-    if (ops.length == 0)
+    if (ops.length === 0)
       return;
 
     const startTime = Date.now();
@@ -203,8 +204,8 @@ class GcodeGenerationViewModel extends ViewModel {
     const jobCard = {
       gunits:         gunits,
       // Scaling to apply to internal units in paths, to generate Gcode units.
-      xScale:         UnitConverter.from.internal.to[gunits],
-      yScale:         -UnitConverter.from.internal.to[gunits],
+      xScale:         UnitConverter.from.integer.to[gunits],
+      yScale:         -UnitConverter.from.integer.to[gunits],
       zScale:         1,
       decimal:        2, // 100th mm
       topZ:           App.models.Material.topZ.toUnits(gunits),
@@ -230,26 +231,26 @@ class GcodeGenerationViewModel extends ViewModel {
       jobCard.passDepth = 0;
     }
 
-    let tabGeometry = [];
+    let tabGeometry = new ClipperLib.Paths();
     const tabs = App.models.Tabs.tabs();
     for (const tab of tabs) {
       if (tab.enabled()) {
         // Bloat tab geometry by the cutter radius
-        const bloat = App.models.Tool.diameter.toUnits("internal") / 2;
-        const tg = InternalPaths.offset(tab.combinedGeometry, bloat);
-        tabGeometry = InternalPaths.clip(
+        const bloat = App.models.Tool.diameter.toUnits("integer") / 2;
+        const tg = Clipper.offset(tab.combinedGeometry, bloat);
+        tabGeometry = Clipper.clip(
           tabGeometry, tg, ClipperLib.ClipType.ctUnion);
       }
     }
     jobCard.tabGeometry = tabGeometry;
 
     // Work out origin offset
-    const svgBB = this.unitConverter.fromUnits(App.getMainSvgBBox(), "px");
+    const svgBB = this.getSVGBB();
     let ox = svgBB.left + this.extraOffsetX();
     let oy = svgBB.bottom + this.extraOffsetY();
     if (this.origin() === "Bounding box" || this.origin() === "Centre") {
       const tpBB = this.unitConverter.fromUnits(
-        App.models.Operations.getBBox(), "internal");
+        App.models.Operations.getBBox(), "integer");
       ox += tpBB.left - svgBB.left;
       oy += svgBB.bottom - tpBB.bottom;
       if (this.origin() === "Centre") {
@@ -318,7 +319,7 @@ class GcodeGenerationViewModel extends ViewModel {
     App.hideModals();
 
     const gcode = this.gcode();
-    if (gcode == "")
+    if (gcode === "")
       alert('Click "Generate Gcode" first', "alert-danger");
     else {
       const blob = new Blob([gcode], {type: 'text/plain'});

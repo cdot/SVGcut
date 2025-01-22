@@ -2,8 +2,13 @@
 
 // import "snapsvg";
 /* global Snap */
+
+//import "clipper-lib";
+/* global ClipperLib */
+
 // import "knockout";
 /* global ko */
+
 // import "bootstrap";
 /* global bootstrap */
 
@@ -74,8 +79,8 @@ class OperationsViewModel extends ViewModel {
   /**
    * Get the bounding box for all operations. The bounding box wraps
    * the entire cut path, not just the tool path, so all removed
-   * material should be encompassed. Units are "internal".
-   * @return {Rect}
+   * material should be encompassed.
+   * @return {ClipperLib.IntRect}
    */
   getBBox() {
     return this.boundingBox();
@@ -91,15 +96,14 @@ class OperationsViewModel extends ViewModel {
       if (op.enabled() && op.toolPaths() != null) {
         let overlap = 0;
         // Expand the BB if necessary to account for the radius of the
-        // tool cutting outside the tool path, "Inside" and "Pocket"
+        // tool cutting outside the tool path, Inside and Pocket
         // should already have accounted for it.
-        if (op.operation() === "Engrave"
-            || op.operation() === "Outside"
-            || op.operation() === "Perforate")
+        if (op.operation() === App.PolyOps.Engrave
+            || op.operation() === App.PolyOps.Outside
+            || op.operation() === App.PolyOps.Perforate)
           overlap = op.toolPathWidth() / 2;
-        for (const tp of op.toolPaths()) {
-          const toolPath = tp.path; // toolPaths are CamPaths
-          for (const point of toolPath) {
+        for (const camPath of op.toolPaths()) {
+          for (const point of camPath.path) {
             if (!newBB)
               newBB = new Rect(point.X - overlap, point.Y - overlap,
                                      2 * overlap, 2 * overlap);
@@ -119,26 +123,12 @@ class OperationsViewModel extends ViewModel {
    * Invoked from #OperationsViewPane
    */
   addOperation() {
-    // Get the paths from the current selection
-    const rawPaths = [];
-    App.models.Selection.getSelection().forEach(element => {
-      // see https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/d
-      const ps = element.attr('d');
-      const rawPath = Snap.parsePathString(ps);
-      if (rawPath) {
-        rawPaths.push({ // @see OperationViewModel.RawPath
-          path: rawPath,
-          nonzero: element.attr("fill-rule") != "evenodd"
-        });
-      } else
-        console.debug(`${ps} didn't yield a path`);
-    });
-    App.models.Selection.clearSelection();
-
-    // Construct the operation view model
-    const op = new OperationViewModel(this.unitConverter, rawPaths);
+    // Get integer paths from the current selection
+    const operands = App.models.Selection.getSelectedPaths();
+    const op = new OperationViewModel(this.unitConverter, operands);
     op.recombine();
     this.operations.push(op);
+
     // Give it a random name
     op.name(`Op${this.operations.length + 1}`);
     op.enabled.subscribe(() => this.updateBB());
