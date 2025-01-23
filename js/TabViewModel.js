@@ -114,9 +114,6 @@ export class TabViewModel extends ViewModel {
     if (this.disableRecombination)
       return;
 
-    const startTime = Date.now();
-    console.debug("Tab recombine...");
-
     this.removeCombinedGeometry();
 
     this.combinedGeometry = undefined;
@@ -141,8 +138,6 @@ export class TabViewModel extends ViewModel {
         this.enabled(true);
       }
     }
-
-    console.debug("Tab recombine took " + (Date.now() - startTime));
 
     App.models.Operations.generateToolPaths();
   };

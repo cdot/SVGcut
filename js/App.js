@@ -47,12 +47,12 @@ class App {
      * @member {object.<name,string>}
      */
     this.PolyOps = {
+      ConcentricPocket: "ConcentricPocket",
       Engrave: "Engrave",
       Inside: "Inside",
       Outside: "Outside",
-      ConcentricPocket: "ConcentricPocket",
-      RasterPocket: "RasterPocket",
-      Perforate: "Perforate"
+      Perforate: "Perforate",
+      RasterPocket: "RasterPocket"
     };
 
     /**
@@ -183,7 +183,6 @@ class App {
     });
 
     document.addEventListener("UPDATE_SIMULATION", () => {
-      console.debug("Update simulation");
       if (this.simulation) {
         // Set the simulation path from the Gcode
         const uc = this.models.GcodeGeneration.unitConverter;

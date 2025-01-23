@@ -85,6 +85,7 @@ export class CamPaths extends Array {
  * @memberof Cam
  */
 export function concentricPocket(geometry, cutterDia, overlap, climb) {
+  console.debug("Cam.concentricPocket");
   // Shrink by half the cutter diameter
   let current = Clipper.offset(geometry, -cutterDia / 2);
   // take a copy of the shrunk pocket to clip against
@@ -142,22 +143,39 @@ function rasteriseConvexPocket(pocket, step) {
  * @return {ClipperLib.Path} rasters
  */
 export function rasterPocket(geometry, cutterDia, overlap, climb) {
+  console.debug("Cam.rasterPocket");
   const step = cutterDia * (1 - overlap);
   // Shrink first path by half the cutter diameter
   let iPockets = Clipper.offset(geometry, -cutterDia / 2);
 
   const pockets = new ClipperLib.Paths();
-  for (const poly of iPockets) {
-    // outline first
-    pockets.push(poly);
-    // now rasterise interior
+  for (let poly of iPockets) {
+    // Rasterise interior
     const pocket = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));
     const convexPockets = convexPartition(pocket);
+    let firstPoint;
     for (const convexPocket of convexPockets) {
       const rasters = rasteriseConvexPocket(convexPocket, step);
+      if (!firstPoint)
+        firstPoint = rasters[0];
       if (rasters.length > 0)
         pockets.push(rasters);
     }
+    // Find the point on the outline closest to the first point of
+    // the rasters, and reshape the bounding poly
+    let fpd = Clipper.dist2(poly[0], firstPoint);
+    let idx = 0;
+    for (let fp = 1; fp < poly.length; fp++) {
+      const d2 = Clipper.dist2(poly[fp], firstPoint);
+      if (d2 < fpd) {
+        fpd = d2;
+        idx = fp;
+      }
+    }
+    if (idx > 0)
+      poly = poly.slice(idx, poly.length).concat(poly.slice(0, idx));
+    poly.push(poly[0]);
+    pockets.unshift(poly);
   }
 
   return new CamPaths(pockets);
@@ -175,6 +193,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
  * @memberof Cam
  */
 export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
+  console.debug(`Cam.${isInside ? "in" : "out"}line`);
   let currentWidth = cutterDia;
   let allPaths = new ClipperLib.Paths();
   const eachWidth = cutterDia * (1 - overlap);
@@ -298,7 +317,8 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
  * @memberof Cam
  */
 export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
-  const allPaths = new ClipperLib.Paths();
+  console.debug("Cam.perforate");
+  const allPaths = new CamPaths();
 
   // Bloat the paths by half the cutter diameter
   const bloated = Clipper.offset(geometry, cutterDia / 2);
@@ -319,6 +339,7 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
  * @memberof Cam
  */
 export function engrave(geometry, climb) {
+  console.debug("Cam.engrave");
   const allPaths = new ClipperLib.Paths();
   for (const path of geometry) {
     const copy = path.slice(0); // take a copy
@@ -332,24 +353,6 @@ export function engrave(geometry, climb) {
 };
 
 /**
- * Geometry paths define the centre of a groove being cut by an angled
- * bit. The depth of the groove is limited by the `depth` parameter.
- * The tool will cut no deeper than that, but will always cut a groove
- * `width` wide.
- * @param {ClipperLib.Paths} geometry the engraving
- * @param {number} cutterAngle angle of the cutter head
- * @param {number} width desired path width
- * @param {number} depth desired depth not to be exceeded
- * @param {number} passDepth maximum cut depth for each pass. Should not exceed
- * the height of the cutting surface
- * @param {boolean} climb reverse cutter direction
- */
-export function vCarve(geometry, cutterAngle, width, depth, passDepth, climb) {
-  // Formerly known as "vPocket"
-  throw new Error("V Carve not currently supported");
-}
-
-/**
  * Given a tool path and an array of paths representing a set of
  * disjoint polygons, split the toolpath into a sequence of paths such
  * that where a path enters or leaves one of the polygons it gets
@@ -361,6 +364,7 @@ export function vCarve(geometry, cutterAngle, width, depth, passDepth, climb) {
  * @author Crawford Currie
  */
 export function separateTabs(toolPath, tabGeometry) {
+  console.debug("Cam.separateTabs");
   const tabPolys = new ClipperLib.Paths();
   for (const poly of tabGeometry) {
     const poly2d = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));

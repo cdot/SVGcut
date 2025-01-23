@@ -96,12 +96,13 @@ class OperationsViewModel extends ViewModel {
       if (op.enabled() && op.toolPaths() != null) {
         let overlap = 0;
         // Expand the BB if necessary to account for the radius of the
-        // tool cutting outside the tool path, Inside and Pocket
+        // tool cutting outside the tool path, Inside and Pocket ops
         // should already have accounted for it.
-        if (op.operation() === App.PolyOps.Engrave
-            || op.operation() === App.PolyOps.Outside
-            || op.operation() === App.PolyOps.Perforate)
-          overlap = op.toolPathWidth() / 2;
+        if (op.operation() === App.PolyOps.Engrave)
+            overlap = op.toolPathWidth() / 2;
+        else if (op.operation() === App.PolyOps.Outside
+                 || op.operation() === App.PolyOps.Perforate)
+          overlap = op.toolPathWidth();
         for (const camPath of op.toolPaths()) {
           for (const point of camPath.path) {
             if (!newBB)

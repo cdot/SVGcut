@@ -33,6 +33,9 @@ const POPOVERS = [
       { id: "opWidth" }
 ];
 
+const FIELDS = [ "name", "enabled", "combineOp", "operation", "cutDepth",
+                 "width", "direction", "spacing", "ramp", "margin" ];
+
 /**
  * ViewModel for an operation in the `Operations` card
  */
@@ -150,7 +153,7 @@ class OperationViewModel extends ViewModel {
     this.toolPathSvg = null;
 
     /**
-     * Depth to cut on each pass. Mirrors passDepth in the Tool model.
+     * Maximum depth to cut to.
      * @member {observable.<number>}
      */
     this.cutDepth = ko.observable(0);
@@ -175,7 +178,7 @@ class OperationViewModel extends ViewModel {
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
-     * it will be rounded up (for operations other than V Carve).
+     * it will be rounded up.
      * @member {observable.<number>}
      */
     this.width = ko.observable(0);
@@ -262,9 +265,7 @@ class OperationViewModel extends ViewModel {
     if (this.disableRecombination)
       return;
 
-    const startTime = Date.now();
     const opName = this.operation();
-    console.debug(`Operation ${this.name()} ${opName} recombine...`);
 
     this.removeCombinedGeometry();
     this.removeToolPaths();
@@ -290,8 +291,11 @@ class OperationViewModel extends ViewModel {
 
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("integer");
-      if (opName === App.PolyOps.ConcentricPocket || opName === App.PolyOps.Inside)
+
+      if (opName === App.PolyOps.ConcentricPocket
+          || opName === App.PolyOps.Inside)
         off = -off;
+
       if (opName !== App.PolyOps.Engrave && off !== 0) {
         previewGeometry = Clipper.offset(previewGeometry, off);
       }
@@ -320,8 +324,6 @@ class OperationViewModel extends ViewModel {
       }
     }
 
-    console.debug(`Operation ${this.name()} recombine took ${Date.now() - startTime}`);
-
     this.generateToolPaths();
   }
 
@@ -334,24 +336,25 @@ class OperationViewModel extends ViewModel {
   generateToolPaths() {
     this.generatingToolpath = true;
 
-    const startTime = Date.now();
-    console.debug(`generateToolPaths for "${this.name()}"...`);
-
     let geometry = this.combinedGeometry;
     const opName = this.operation();
     const toolModel = App.models.Tool;
     const toolDiameter = toolModel.diameter.toUnits("integer");
+    const bitAngle = toolModel.angle();
     const passDepth = toolModel.passDepth.toUnits("integer");
     const stepover = toolModel.stepover();
     const climb = (this.direction() === "Climb");
     const zOnTop = App.models.Material.zOrigin() === "Top";
-    let off = this.margin.toUnits("integer");
+    const cutDepth = this.cutDepth();
+    const topZ = zOnTop ? 0 : cutDepth;
+    const botZ = zOnTop ? -cutDepth : 0;
 
+    // inset/outset the geometry as dictated by the margin
+    let off = this.margin.toUnits("integer");
     if (opName === App.PolyOps.ConcentricPocket
         || opName === App.PolyOps.RasterPocket
         || opName === App.PolyOps.Inside)
       off = -off; // inset
-
     if (opName !== App.PolyOps.Engrave && off !== 0)
       geometry = Clipper.offset(geometry, off);
 
@@ -366,7 +369,8 @@ class OperationViewModel extends ViewModel {
       paths = Cam.rasterPocket(geometry, toolDiameter, 1 - stepover, climb);
       break;
 
-    case App.PolyOps.Inside: case App.PolyOps.Outside:
+    case App.PolyOps.Inside:
+    case App.PolyOps.Outside:
       width = this.width.toUnits("integer");
       if (width < toolDiameter)
         width = toolDiameter;
@@ -381,9 +385,7 @@ class OperationViewModel extends ViewModel {
     case App.PolyOps.Perforate:
       paths = Cam.perforate(
         geometry, toolDiameter, this.spacing.toUnits("integer"),
-        zOnTop ? 0 : this.cutDepth(),
-        zOnTop ? -this.cutDepth() : 0
-      );
+        topZ, botZ);
       break;
 
     case App.PolyOps.Engrave:
@@ -404,8 +406,6 @@ class OperationViewModel extends ViewModel {
       App.showAlert("noToolPaths", "alert-warning", this.name());
     }
 
-    console.debug(`generateToolPaths for "${this.name()}" took ${Date.now() - startTime} and generated ${spaths.length} paths`);
-
     this.enabled(true);
     this.generatingToolpath = false;
 
@@ -414,34 +414,42 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
+   * Determine which of the operation fields needs to be enabled for this
+   * operation.
+   * @param {string} what which field e.g. "width"
+   * @return {boolean} true if the field is needed for the current op.
+   * @private
+   */
+  needs(what) {
+    const op = this.operation();
+    switch (what) {
+    case "width": return op === App.PolyOps.Inside
+      || op === App.PolyOps.Outside;
+
+    case "direction":
+    case "ramp":  return op !== App.PolyOps.Perforate;
+
+    case "margin":  return op !== App.PolyOps.Perforate
+      && op !== App.PolyOps.Engrave;
+
+    case "spacing": return op === App.PolyOps.Perforate;
+    }
+    return true;
+  }
+
+  /**
    * @override
    */
   toJson() {
-    const opName = this.operation();
-    const result = {
-      operandPaths: this.operandPaths,
-      name: this.name(),
-      enabled: this.enabled(),
-      combineOp: this.combineOp(),
-      operation: opName
+    const json = {
+      operandPaths: this.operandPaths
     };
 
-    if (opName !== "V Carve") {
-      // direction and ramp ignored for V Carve
-      result.direction = this.direction();
-      result.cutDepth = this.cutDepth();
-      result.ramp = this.ramp();
-    }
+    for (const f of FIELDS)
+      if (this.needs(f))
+        json[f] = this[f]();
 
-    if (opName !== 'Engrave')
-      // Margin is a non-concept for engraving
-      result.margin = this.margin();
-
-    if (opName === 'Inside' || opName === 'Outside')
-      // width only meaningful for these operations
-      result.width = this.width();
-
-    return result;
+    return json;
   };
 
   /**
@@ -452,15 +460,8 @@ class OperationViewModel extends ViewModel {
     this.disableRecombination = true;
 
     this.operandPaths = json.operandPaths;
-    this.updateObservable(json, 'name');
-    this.updateObservable(json, 'ramp');
-    this.updateObservable(json, 'combineOp');
-    this.updateObservable(json, 'operation');
-    this.updateObservable(json, 'direction');
-    this.updateObservable(json, 'cutDepth');
-    this.updateObservable(json, 'margin');
-    this.updateObservable(json, 'width');
-    this.updateObservable(json, 'enabled');
+    for (const f of FIELDS)
+      this.updateObservable(json, f);
 
     this.disableRecombination = false;
     this.recombine();

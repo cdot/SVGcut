@@ -199,8 +199,6 @@
                       <option value="Perforate">Perforate</option>
                       <option value="ConcentricPocket">Pocket (concentric)</option>
                       <option value="RasterPocket">Pocket (raster)</option>
-                      <option value="VPocket">V Pocket</option>
-                      <!--option value="V Carve">V Carve</option-->
                     </select>
                   </div>
                   <div
@@ -208,30 +206,14 @@
                     <input id="opCutDepth"
                            class="number" type="number"
                            step="any" min="0"
-                           data-bind="visible: operation() != 'V Carve', value: cutDepth">
+                           data-bind="value: cutDepth">
                   </div>
                   <div style="display: table-cell" class="entry-mid">
-                    <label  class="control-label"
-                            data-bind="visible: operation() != 'V Carve'">
+                    <label class="control-label">
                       <span data-bind="text: App.models.Misc.units"></span>
                     </label>
                   </div>
                 </div>
-                <!--CPP
-                <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Carve' && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell">Waiting for cam-cpp.js to load.</div>
-                </div>
-                <div style="display:table-row" class="alert alert-danger"
-                     data-bind="visible: enabled() && operation()=='V Carve' && App.models.Misc.camCppError().length != 0">
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"></div>
-                  <div style="display: table-cell"
-                       data-bind="html: App.models.Misc.camCppError()"></div>
-                </div>
-                /CPP-->
                 <div style="display:table-row" data-bind="visible: showDetail">
                   <div style="display: table-cell; width: 20px"></div>
                   <div style="display: table-cell">
@@ -244,7 +226,7 @@
                         </td><td>
                           <input id="opName" data-bind="value: name">
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Carve'&&operation()!='Perforate'">
+                      </tr><tr data-bind="visible:needs('ramp')">
                         <td>
                           <label class="control-label">
                             Ramp
@@ -266,7 +248,7 @@
                             <option value="Xor">Xor</option>
                           </select>
                         </td>
-                      </tr><tr data-bind="visible: operation()!='V Carve'&&operation()!='Perforate'">
+                      </tr><tr data-bind="visible:needs('direction')">
                         <td>
                           <label class="control-label">
                             Direction
@@ -278,7 +260,7 @@
                             <option value="Climb">Climb</option>
                           </select>
                         </td>
-                      </tr><tr data-bind="visible: operation()!='Engrave'">
+                      </tr><tr data-bind="visible:needs('margin')">
                         <td>
                           <label class="control-label">Margin</label>
                         </td><td>
@@ -287,7 +269,7 @@
                                  data-bind="value: margin">
                           <span data-bind="text: App.models.Misc.units"></span>
                         </td>
-                      </tr><tr data-bind="visible: operation()==='Perforate'">
+                      </tr><tr data-bind="visible:needs('spacing')">
                         <td>
                           <label class="control-label">Spacing</label>
                         </td><td>
@@ -297,7 +279,7 @@
                           <span data-bind="text: App.models.Misc.units"></span>
                         </td>
                       </tr>
-                      <tr data-bind="visible: operation()=='Inside' || operation()=='Outside'">
+                      <tr data-bind="visible:needs('width')">
                         <td>
                           <label class="control-label">Width</label>
                         </td><td>
@@ -807,7 +789,7 @@
     <span name="selectProject">Select a project stored in this browser</span>
     <!-- tool -->
     <span name="toolUnits">Display units, does not affect Gcode generation</span>
-    <span name="toolDiameter">Diameter of cutter</span>
+    <span name="toolDiameter">Diameter of cutter. For a V cutter, diameter of the widest part of the bit.</span>
     <span name="toolAngle">Angle of tapered cutter head. This is the angle
       at the tip of the tool, so 180 means a flat bottom tool, while 90
       means a 45&deg; chamfer bit.</span>
@@ -881,7 +863,6 @@
         <li><em>Perforate</em> - drills holes around the outside</li>
         <li><em>Pocket (concentric</em>) - makes a pocket using ever-decreasing circles</li>
         <li><em>Pocket (raster</em>) - makes a pocket using side-to-side movement</li>
-        <li><em>V Pocket</em> - makes a pocket leaving a chamfered edge</li>
       </ul>
     </div>
     <span name="opVMaxDepth">Maximum depth this operation should cut.

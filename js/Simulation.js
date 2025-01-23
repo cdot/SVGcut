@@ -1063,9 +1063,6 @@ class Simulation {
    */
   setPath(path, topZ,
           cutterDiameter, cutterAngle = 180, cutterHeight = 1) {
-    const startTime = Date.now();
-
-    console.debug(`setPath...${path.length} vertices`);
 
     this.pathTopZ = topZ;
     this.cutterDia = cutterDiameter;
@@ -1134,10 +1131,6 @@ class Simulation {
                           max.y - min.y + 4 * this.cutterDia);
     this.pathScale = 2 / size;
     this.pathMinZ = min.z;
-
-    console.debug(
-      `...setPath took ${Date.now() - startTime}`,
-      `bufferContent (MB): ${bufferContent.length * 4 / 1024 / 1024}`);
 
     this.setStopAtTime(this.totalTime);
     this.requestFrame();

@@ -194,9 +194,6 @@ class GcodeGenerationViewModel extends ViewModel {
     if (ops.length === 0)
       return;
 
-    const startTime = Date.now();
-    console.debug("generateGcode...");
-
     const gunits = this.unitConverter.units();
 
     // Get control values in gcode units and build gcode generator
@@ -278,9 +275,9 @@ class GcodeGenerationViewModel extends ViewModel {
         // operation cut depth
         passDepth: op.operation() === "Perforate"
         ? Number(op.cutDepth()) : jobCard.passDepth,
-        // V Carve and Perforate precalculate Z coordinates, so don't try to
+        // Perforate precalculates Z coordinates, so don't try to
         // do anything clever with these.
-        precalculatedZ: op.operation() === "V Carve" || op.operation() === "Perforate"
+        precalculatedZ: op.operation() === App.PolyOps.Perforate
       };
       if (opCard.cutDepth < 0) {
         App.showAlert("cutDepthTooSmall", "alert-warning");
@@ -294,8 +291,6 @@ class GcodeGenerationViewModel extends ViewModel {
 
     // Save the gcode to the observable
     this.gcode(gcode.join("\n"));
-
-    console.debug(`generateGcode took ${Date.now() - startTime}`);
 
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
 

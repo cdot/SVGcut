@@ -27,17 +27,10 @@ import * as Cam from "./Cam.js";
  *
  * @see {@link https://linuxcnc.org/docs/stable/html/nb/gcode/overview.html}
  * @param {Gcode} gcode the gcode to parse
- * @param {boolean} verbose true to enable verbose logging
  * @return {CNCPoint[]} path in machine units (no scaling is performed).
  * @memberof Gcode
  */
-export function parse(gcode, verbose = false) {
-  let startTime;
-  if (verbose) {
-    startTime = Date.now();
-    console.debug("Gcode.parse...");
-  }
-
+export function parse(gcode) {
   const path = [];
   const lines = gcode
         .replace(/\(.*?\)/g, "") // remarks
@@ -82,7 +75,7 @@ export function parse(gcode, verbose = false) {
         case 0: case 1:
           pending = { x: last.x, y: last.y, z: last.z, f: last.f }; break;
         default:
-          if (verbose) console.debug(`Gcode:${lineNo} ignored g${value}`);
+          console.debug(`Gcode:${lineNo} ignored g${value}`);
           pending = undefined;
         }
         break;
@@ -93,7 +86,7 @@ export function parse(gcode, verbose = false) {
       case 'z': // Z axis of machine
         if (pending)
           pending[code] = value;
-        else if (verbose)
+        else
           console.debug(`Gcode:${lineNo} lost ${code}`);
         break;
 
@@ -128,12 +121,10 @@ export function parse(gcode, verbose = false) {
       case 'u': // U axis of machine
       case 'v': // V axis of machine
       case 'w': // W axis of machine
-        if (verbose)
-          console.debug(`Gcode:${lineNo} ignored ${code}${value}`);
+        console.debug(`Gcode:${lineNo} ignored ${code}${value}`);
         break;
       default:
-        if (verbose)
-          console.debug(`Gcode:${lineNo} unsupported ${code}${value}`);
+        console.debug(`Gcode:${lineNo} unsupported ${code}${value}`);
       }
     }
     if (pending) {
@@ -144,7 +135,7 @@ export function parse(gcode, verbose = false) {
     lineNo++;
   }
 
-  if (percents === 1 && verbose) // error, see remark above
+  if (percents === 1) // error, see remark above
     // Warn about it, but plough on regardless.
     console.debug("Gcode: malformed, no terminating %");
 
@@ -162,7 +153,7 @@ export function parse(gcode, verbose = false) {
       }
     }
     if (typeof readBack === "undefined") {
-      if (verbose) console.debug(`Gcode: ${field} never gets a value`);
+      console.debug(`Gcode: ${field} never gets a value`);
       readBack = 0;
     }
     for (const pt of path) {
@@ -171,11 +162,6 @@ export function parse(gcode, verbose = false) {
       else
         break;
     }
-  }
-
-  if (verbose) {
-    console.debug(
-      `Gcode.parse: ${path.length} commands in ${Date.now() - startTime}`);
   }
 
   return path;
@@ -213,7 +199,7 @@ export function endJob(job, gcode) {
  * `Scale` parameters.
  * @param {boolean} opCard.ramp Ramp plunge. Default is to drill plunge.
  * @param {boolean} opCard.precalculatedZ Use Z coordinates in paths.
- * Some operations (such as Perforate and V Carve) have pre-calculated
+ * Some operations (such as Perforate) have pre-calculated
  * Z coordinates.  Use of these is enabled by this switch.
  * @param {ClipperLib.Paths} opCard.tabGeometry Tab geometry (optional),
  * defined in "integer" units and require scaling.

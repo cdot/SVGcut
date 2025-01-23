@@ -68,7 +68,6 @@ selected paths. There are a number of operations available:
 + `Inside` - will cut around the inside of your paths.
 + `Pocket (concentric)` - will carve out the interior of your selected paths using ever-decreasing circles.
 + `Pocket (raster)` - will carve out the interior of your selected paths using side-to-side tool movements.
-+ `V Pocket` - will carve out the interior of your pocket with a V-bit using concentric tool movements. This will deliver a chamfered edge to the pocket, but the bottom of the pocket will be a bit rocky.
 + `Perforate` - will drill a series of evenly-spaced holes outside the boundary of the selected paths. You can control the spacing of the holes.
 
 The `Toolpaths` pane will change to show what has been selected for
@@ -193,11 +192,11 @@ SVGcut, select these paths and use `Create Tabs` on the Tabs pane to
 specify them as tabs. When the cutter passes over these areas, it will
 be limited to cutting to the depth you specify.
 
-# Relationship to jscut
+# Relationship to `jscut`
 
 SVGcut is a fork of
-[Tim Fleming's jscut](https://github.com/tbfleming/jscut).
-Development of jscut was abandoned over 10 years ago, leaving a number
+[Tim Fleming's `jscut`](https://github.com/tbfleming/jscut).
+Development of `jscut` was abandoned over 10 years ago, leaving a number
 of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
@@ -211,10 +210,10 @@ these, and more.
 + Clean ES6 Javascript
 + Updated third-party dependencies
 
-Some features of jscut have been disabled/removed. This may be because
+Some features of `jscut` have been disabled/removed. This may be because
 they are deemed too esoteric, or the (undocumented) code was too
 complex to reverse engineer, for limited end-user value.
-+ "V Pocket". V cutting is a complex process with many variables, and there are many more powerful tools out there that can handle it.
++ `V Pocket` operation. V cutting is a complex process with many variables, and there are many more powerful tools out there that can handle it.
 - [Chilipeppr](http://www.chilipeppr.com/)
 - [Google Drive](https://drive.google.com/)
 - [Dropbox](https://www.dropbox.com/)
@@ -224,7 +223,7 @@ complex to reverse engineer, for limited end-user value.
 # LICENSE & COPYRIGHT
 
 Tim Fleming is recognised as author of all his code, even where it has
-been extensively rewritten. Because jscut is GPL, so is SVGcut.
+been extensively rewritten. Because `jscut` is GPL, so is SVGcut.
 
 + Copyright 2014 Todd Fleming
 + Copyright 2024-2025 Crawford Currie

@@ -6,6 +6,12 @@
 
 import { UnitConverter } from "./UnitConverter.js";
 
+/**
+ * @typedef {object} ClipperPoint
+ * @property {number} ClipperPoint.X
+ * @property {number} ClipperPoint.Y
+ */
+
 const CLEAN_POLY_DIST = 1;
 const ARC_TOLERANCE = 2.5;
 
@@ -13,6 +19,17 @@ const ARC_TOLERANCE = 2.5;
  * Support for operations using Clipper (integer) points
  * @namespace Clipper
  */
+
+/**
+ * Get the square of the distance between two Clipper points
+ * @param {ClipperPoint} a
+ * @param {ClipperPoint} b
+ */
+export function dist2(a, b) {
+  const dx = a.X - b.X;
+  const dy = a.Y - b.Y;
+  return dx * dx + dy + dy;
+}
 
 /**
  * Simplify and clean up Clipper geometry.
@@ -154,8 +171,7 @@ export function joinPaths(paths, boundingGeometry) {
       const path = paths[pathIndex];
       for (let pointIndex = 0; pointIndex < path.length; ++pointIndex) {
         const point = path[pointIndex];
-        const dist2 = (currentPoint.X - point.X) * (currentPoint.X - point.X)
-              + (currentPoint.Y - point.Y) * (currentPoint.Y - point.Y);
+        const dist2 = dist2(currentPoint, point);
         if (dist2 < closestPointDist2) {
           closestPathIndex = pathIndex;
           closestPointIndex = pointIndex;
