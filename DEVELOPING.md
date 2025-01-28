@@ -20,6 +20,16 @@ The display of imported SVG is handled in an SVG-enabled canvas, making use of `
 
 The simulation is done in a canvas using WebGL. See `js/Simulation.js`.
 
+## Selection
+When an SVG file is loaded, it is added to the DOM as written. That means all
+complex path operations - such as circle, quadratic curves etc. - are retained
+in the master drawing.
+
+When the user clicks a path on the SVG picture, a new path is constructed that
+uses only straight line segments. It is this copy that is added to the
+Selection SVG. The copy is then converted to Clipper coordinates for toolpath
+generation.
+
 ## Units
 There are three coordinate systems at play.
 - The first is "user" units, which are selectable using the "Units" dropdown. These are the units used to display measures to the user in all panes except Gcode Generation, which has it's own set of user units.

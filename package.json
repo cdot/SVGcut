@@ -12,18 +12,22 @@
 		"eslint-formatter-unix": "^8.40.0",
 		"eslint-plugin-import": "^2.31.0",
 		"jsdoc": "^4.0.4",
+		"jsdom": "^26.0.0",
 		"mocha": "^11.0.1",
-		"webpack-cli": "^6.0.1"
+		"webpack-cli": "^6.0.1",
+		"why-is-node-running": "^2.3.0"
 	},
 	"scripts": {
 		"build": "webpack -c 2d-geometry-webpack.js",
 		"lint": "eslint js -f unix",
 		"lintlib": "eslint lib -f unix",
-	  "doc": "jsdoc -c jsdoc_config.json js",
-      "test": "mocha --experimental-loader=@node-loader/import-maps test"
+		"doc": "jsdoc -c jsdoc_config.json js",
+		"test": "mocha --experimental-loader=@node-loader/import-maps test"
 	},
 	"dependencies": {
 		"@flatten-js/core": "github:alexbol99/flatten-js",
+		"assert": "^2.1.0",
+		"bezier-js": "^6.1.4",
 		"bootstrap": "^5.3.3",
 		"bootstrap-slider": "^11.0.2",
 		"clipper-lib": "^6.4.2",

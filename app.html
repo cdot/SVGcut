@@ -16,7 +16,9 @@
     {
       "imports": {
         "gl-matrix/": "./node_modules/gl-matrix/esm/",
-        "flatten-js": "./node_modules/@flatten-js/core/dist/main.mjs"
+        "flatten-js": "./node_modules/@flatten-js/core/dist/main.mjs",
+        "clipper-lib": "./node_modules/clipper-lib/clipper.js",
+        "bezier-js": "./node_modules/bezier-js/src/bezier.js"
       }
     }
   </script>
@@ -898,13 +900,16 @@
     <span name="svgLoadError">Error reading $1</span>
     <span name="tutorialStep">Step $1: $2</span>
   </div>
-  <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
+  <script>
+    window.assert = console.assert;
+  </script>
   <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
   </script>
   <script src="node_modules/knockout.validation/dist/knockout.validation.js">
   </script>
   <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
   <script src="node_modules/bootstrap-slider/dist/bootstrap-slider.js"></script>
+  <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
   <script src="node_modules/clipper-lib/clipper.js"></script>
   <script src="node_modules/file-saver/dist/FileSaver.js"></script>
   <script type="module" src="js/app.js"></script>

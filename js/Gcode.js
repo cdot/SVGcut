@@ -1,8 +1,11 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/* global assert */
 
 /* global App */
 
 import * as Cam from "./Cam.js";
+import { CutPath } from "./CutPath.js";
+import { CutPaths } from "./CutPaths.js";
 
 /**
  * Gcode utilities
@@ -193,15 +196,15 @@ export function endJob(job, gcode) {
  * Generate gcode for a set of paths. Assumes that the current Z
  * position is safe. Parameters are in gcode units unless specified
  * otherwise.
- * @param {object} opCard
- * @param {CamPaths} opCard.paths Paths to convert. These paths are
+ * @param {object} op
+ * @param {CutPaths} op.paths Paths to convert. These paths are
  * in "integer" units, and will be transformed to Gcode units using the
  * `Scale` parameters.
- * @param {boolean} opCard.ramp Ramp plunge. Default is to drill plunge.
- * @param {boolean} opCard.precalculatedZ Use Z coordinates in paths.
+ * @param {boolean} op.ramp Ramp plunge. Default is to drill plunge.
+ * @param {boolean} op.precalculatedZ Use Z coordinates in paths.
  * Some operations (such as Perforate) have pre-calculated
  * Z coordinates.  Use of these is enabled by this switch.
- * @param {ClipperLib.Paths} opCard.tabGeometry Tab geometry (optional),
+ * @param {CutPaths} op.tabGeometry Tab geometry (optional),
  * defined in "integer" units and require scaling.
  * @param {string[]} gcode array of Gcode lines to be added to
  *
@@ -348,16 +351,17 @@ export function generateOperation(op, job, gcode) {
   }
 
   let pathIndex = 0;
+  assert(op.paths instanceof CutPaths);
+  console.log(op.paths);
   for (const path of op.paths) {
-    // paths are CamPaths
-    const origPath = path.path;
-    if (origPath.length === 0)
+
+    if (path.length === 0)
       continue;
 
     // If necessary, split path where it enters/leaves tab geometry
     const separatedPaths = (tabGeometry && tabGeometry.length > 0)
-          ? Cam.separateTabs(origPath, tabGeometry)
-          : [ origPath ];
+          ? Cam.separateTabs(path, tabGeometry)
+          : [ path ];
 
     gcode.push(`; Path ${++pathIndex}`);
 
@@ -369,16 +373,18 @@ export function generateOperation(op, job, gcode) {
       const nextZ = Math.max(finishedZ - job.passDepth, botZ);
 
       // The current Z is deeper than the safe Z and the path isn't
-      // safe to close (perhaps because of tab geometry), retract to
+      // safe to close or there is tab geometry, retract to
       // a safe depth
-      if (lastZ < job.safeZ && (!path.safeToClose || tabGeometry))
-        gcode.push(G(0, job.rapidFeed, undefined,
-                     job.safeZ, "Z safe"));
+      //if (lastZ < job.safeZ && (!path.safeToClose || tabGeometry))
+      //  gcode.push(G(0, job.rapidFeed, undefined,
+      //               job.safeZ, "Z safe"));
 
-      // If the tool isn't over the next cut, move it there
-      if (lastX !== origPath[0].X || lastY !== origPath[0].Y) {
-        gcode.push(G(0, job.rapidFeed, undefined, job.topZ));
-        gcode.push(G(0, job.rapidFeed, origPath[0], undefined, "Goto path"));
+      // If the tool isn't over the next cut, lift it and move it there
+      if (lastX !== path[0].X || lastY !== path[0].Y) {
+        stopSpindle();
+        if (lastZ < job.safeZ)
+          gcode.push(G(0, job.rapidFeed, undefined, job.safeZ));
+        gcode.push(G(0, job.rapidFeed, path[0], undefined, "Goto path"));
       }
 
       startSpindle();
@@ -386,7 +392,7 @@ export function generateOperation(op, job, gcode) {
       let cutPaths;
       if (nextZ >= tabZ || op.precalculatedZ)
         // Cutting above tab depth, or useZ is defined
-        cutPaths = [ origPath ];
+        cutPaths = [ path ];
       else
         // Cutting below tab depth, so need to exclude tabGeometry
         cutPaths = separatedPaths;
@@ -433,8 +439,7 @@ export function generateOperation(op, job, gcode) {
       finishedZ = nextZ;
     } // while (finishedZ > botZ)
 
-    stopSpindle();
-
     gcode.push(G(0, job.rapidFeed, undefined, job.safeZ, "Path done"));
-  } // pathIndex
+  } // each path
+  stopSpindle();
 }

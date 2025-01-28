@@ -248,7 +248,7 @@ class App {
       const element = e.target;
       if (e.target != null) {
         // Ignore clicks that are not on SVG elements
-        if (this.models.Selection.clickOnSvg(Snap(e.target))) {
+        if (this.models.Selection.clickOnSVG(Snap(e.target))) {
           if (this.models.Selection.isSomethingSelected()) {
             this.tutorial(3);
             return true;
@@ -269,7 +269,7 @@ class App {
       const selectedPaths = this.mainSnap.selectAll('path');
       if (selectedPaths.length > 0) {
         selectedPaths.forEach(element =>
-          this.models.Selection.clickOnSvg(element));
+          this.models.Selection.clickOnSVG(element));
         if (this.models.Selection.isSomethingSelected())
           this.tutorial(3);
       }

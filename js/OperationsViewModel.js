@@ -3,9 +3,6 @@
 // import "snapsvg";
 /* global Snap */
 
-//import "clipper-lib";
-/* global ClipperLib */
-
 // import "knockout";
 /* global ko */
 
@@ -104,7 +101,7 @@ class OperationsViewModel extends ViewModel {
                  || op.operation() === App.PolyOps.Perforate)
           overlap = op.toolPathWidth();
         for (const camPath of op.toolPaths()) {
-          for (const point of camPath.path) {
+          for (const point of camPath) {
             if (!newBB)
               newBB = new Rect(point.X - overlap, point.Y - overlap,
                                      2 * overlap, 2 * overlap);

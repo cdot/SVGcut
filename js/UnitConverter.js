@@ -14,7 +14,7 @@ const INTEGER_PER_PX = INTEGER_PER_INCH / 96;
  * in user-selected units. The class attaches observables that support
  * the conversion of these values into other units. Unit systems supported
  * are: `mm`, `inch`, `px` and `integer`. Integer units are designed to
- * scale up numbers for more accurate operations with ClipperLib.
+ * scale up numbers for more accurate integer operations.
  */
 class UnitConverter {
 

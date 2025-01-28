@@ -1,12 +1,13 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-// import "ClipperLib"
 /* global ClipperLib */
 
 /* global App */
+/* global assert */
 
 import { Point as FPoint, Segment as FSegment, Polygon as FPolygon } from 'flatten-js';
-import * as Clipper from "./Clipper.js";
+import { CutPath } from "./CutPath.js";
+import { CutPaths } from "./CutPaths.js";
 import { convexPartition } from "./Partition.js";
 
 /**
@@ -15,107 +16,52 @@ import { convexPartition } from "./Partition.js";
  */
 
 /**
- * A path in integer units that either represents an open path
- * (safeToClose=false) or a polygon (safeToClose=true)
- */
-export class CamPath {
-  // SMELL: extends ClipperLib.Path would be more sensible
-
-  /**
-   * @param {ClipperLib.Path} path path
-   * @param {ClipperLib.Path?} clipPoly used for closable test. If not given,
-   * path is assumed to be closable. Default is true.
-   */
-  constructor(path, clipPoly) {
-    /**
-     * The actual path, in "integer" units
-     * @member {ClipperLib.Path} path path
-     */
-    this.path = path;
-
-    /**
-     * Is it safe to close the path without
-     * retracting?
-     * @member {boolean} safeToClose
-     */
-    this.safeToClose = clipPoly ? !Clipper.crosses(
-      clipPoly, path[0], path[path.length - 1]) : true;
-  }
-}
-
-/**
- * A set of polygons and/or open paths
- */
-export class CamPaths extends Array {
-
-  /**
-   * Convert a set of internal paths to CamPath.
-   * @param {ClipperLib.Paths} intPaths paths to convert
-   * @param {ClipperLib.Path?} clipPoly used for closable test. if not given,
-   * path is assumed to be closable.
-   * @return {CamPaths} converted paths
-   * @private
-   */
-  constructor(intPaths, clipPoly) {
-    super();
-    if (intPaths)
-      for (const p of intPaths)
-        this.push(new CamPath(p, clipPoly));
-  }
-
-  /**
-   * Convert array of CamPath to integer paths
-   * @return {ClipperLib.Paths} converted paths
-   */
-  integerPaths() {
-    const intPaths = new ClipperLib.Paths();
-    for (const p of this)
-      intPaths.push(p.path);
-    return intPaths;
-  }
-}
-
-/**
  * Compute pocket tool path. The pocket is cleared using concentric passes,
  * starting from the outside and working towards the centre.
+ * @param {CutPaths} geometry the geometry to compute for
  * @param {number} cutterDia in "integer" units
  * @param {number} overlap is in the range [0, 1)
  * @param {boolean} climb true to reverse cutter direction
- * @return {CamPaths}
+ * @return {CutPaths}
  * @memberof Cam
  */
 export function concentricPocket(geometry, cutterDia, overlap, climb) {
+  assert(geometry instanceof CutPaths);
+  geometry = geometry.closedOnly();
+  if (geometry.length === 0)
+    return geometry;
+
   console.debug("Cam.concentricPocket");
   // Shrink by half the cutter diameter
-  let current = Clipper.offset(geometry, -cutterDia / 2);
+  let current = geometry.offset(-cutterDia / 2);
   // take a copy of the shrunk pocket to clip against
   const clipPoly = current.slice(0);
   // Iterate, shrinking the pocket for each pass
-  let allPaths = new ClipperLib.Paths();
+  let allPaths = new CutPaths();
   while (current.length != 0) {
     if (climb)
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
-    allPaths = current.concat(allPaths);
-    current = Clipper.offset(current, -cutterDia * (1 - overlap));
+    allPaths.mergePaths(current, clipPoly);
+    current = current.offset(-cutterDia * (1 - overlap));
   }
-  return new CamPaths(
-    Clipper.joinPaths(allPaths, clipPoly), clipPoly);
+  return allPaths;
 }
 
 /**
  * Compute tool pocket using rasters.
- * @param {ClipperLib.Path} pocket the pocket being resterised
+ * @param {CutPath} pocket the pocket being resterised
  * @param {number} step the gap between rasters
- * @return {ClipperLib.Path} rasters
+ * @return {CutPath} rasters
  * @private
  */
 function rasteriseConvexPocket(pocket, step) {
+  assert(pocket instanceof CutPath);
   // Get the min Y
   const bb = pocket.box;
   let y = bb.ymin + step;
   let direction = 1;
-  let path = new ClipperLib.Path();
+  let path = new CutPath();
   while (y < bb.ymax) {
     const ray = new FSegment(bb.xmin - step, y, bb.xmax + step, y);
     const intersections = ray.intersect(pocket);
@@ -136,20 +82,27 @@ function rasteriseConvexPocket(pocket, step) {
 /**
  * Compute tool pockets using rasters. The geometry is decomposed into
  * convex areas and each is rasterised with horizontal tool sweeps.
- * @param {ClipperLib.Paths} geometry
+ * @param {CutPaths} geometry
  * @param {number} cutterDia is in "integer" units
  * @param {number} overlap is in the range [0, 1)
  * @param {boolean} climb true to reverse cutter direction
- * @return {ClipperLib.Path} rasters
+ * @return {CutPaths} rasters
  */
 export function rasterPocket(geometry, cutterDia, overlap, climb) {
+  assert(geometry instanceof CutPaths);
+  geometry = geometry.closedOnly();
+  if (geometry.length === 0)
+    return geometry;
+
   console.debug("Cam.rasterPocket");
   const step = cutterDia * (1 - overlap);
   // Shrink first path by half the cutter diameter
-  let iPockets = Clipper.offset(geometry, -cutterDia / 2);
+  let iPockets = geometry.offset(-cutterDia / 2);
 
-  const pockets = new ClipperLib.Paths();
+  const pockets = new CutPaths();
   for (let poly of iPockets) {
+    if (!poly.isClosed)
+      continue; // ignore this poly for rasterisation
     // Rasterise interior
     const pocket = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));
     const convexPockets = convexPartition(pocket);
@@ -163,39 +116,35 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     }
     // Find the point on the outline closest to the first point of
     // the rasters, and reshape the bounding poly
-    let fpd = Clipper.dist2(poly[0], firstPoint);
-    let idx = 0;
-    for (let fp = 1; fp < poly.length; fp++) {
-      const d2 = Clipper.dist2(poly[fp], firstPoint);
-      if (d2 < fpd) {
-        fpd = d2;
-        idx = fp;
-      }
-    }
-    if (idx > 0)
-      poly = poly.slice(idx, poly.length).concat(poly.slice(0, idx));
-    poly.push(poly[0]);
+    let cp = poly.closestVertex(firstPoint);
+    if (cp)
+      poly.makeLast(cp.point);
     pockets.unshift(poly);
   }
 
-  return new CamPaths(pockets);
+  return pockets;
 }
 
 /**
  * Compute outline tool path.
- * @param {ClipperLib.Paths} geometry
+ * @param {CutPaths} geometry
  * @param {number} cutterDia is in "integer" units
  * @param {boolean} isInside true to cut inside the path, false to cut outside
  * @param {number} width desired path width (may be wider than the cutter)
  * @param {number} overlap is in the range [0, 1)
  * @param {boolean} climb true to reverse cutter direction
- * @return {CamPaths}
+ * @return {CutPaths}
  * @memberof Cam
  */
 export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
+  assert(geometry instanceof CutPaths);
+  geometry = geometry.closedOnly();
+  if (geometry.length === 0)
+    return geometry;
+
   console.debug(`Cam.${isInside ? "in" : "out"}line`);
   let currentWidth = cutterDia;
-  let allPaths = new ClipperLib.Paths();
+  let allPaths = new CutPaths();
   const eachWidth = cutterDia * (1 - overlap);
 
   let current;
@@ -204,15 +153,13 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   let needReverse;
 
   if (isInside) {
-    current = Clipper.offset(geometry, -cutterDia / 2);
-    clipPoly = Clipper.diff(
-      current, Clipper.offset(geometry, -(width - cutterDia / 2)));
+    current = geometry.offset(-cutterDia / 2);
+    clipPoly = current.diff(geometry.offset(-(width - cutterDia / 2)));
     eachOffset = -eachWidth;
     needReverse = climb;
   } else { // is outside
-    current = Clipper.offset(geometry, cutterDia / 2);
-    clipPoly = Clipper.diff(
-      Clipper.offset(geometry, width - cutterDia / 2), current);
+    current = geometry.offset(cutterDia / 2);
+    clipPoly = geometry.offset(width - cutterDia / 2).diff(current);
     eachOffset = eachWidth;
     needReverse = !climb;
   }
@@ -222,37 +169,55 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     if (needReverse)
       for (i = 0; i < current.length; ++i)
         current[i].reverse();
-    allPaths = current.concat(allPaths);
+    allPaths.mergePaths(current, clipPoly);
     const nextWidth = currentWidth + eachWidth;
     if (nextWidth > width && width - currentWidth > 0) {
-      current = Clipper.offset(current, width - currentWidth);
+      current = current.offset(width - currentWidth);
       if (needReverse)
         for (i = 0; i < current.length; ++i)
           current[i].reverse();
-      allPaths = current.concat(allPaths);
+      allPaths.mergePaths(current, clipPoly);
       break;
     }
     currentWidth = nextWidth;
-    current = Clipper.offset(current, eachOffset);
+    current = current.offset(eachOffset);
   }
-  return new CamPaths(
-    Clipper.joinPaths(allPaths, clipPoly), clipPoly);
+  return allPaths;
 };
 
 /**
+ * Generate path step to create a hole
+ * @param {ClipperLib.IntPoint} pt where to drill the hole
+ * @param {number} topZ
+ * @param {number} topZ is the top of the hole
+ * @param {number} botZ is the bottom of the hole
+ * @return {CutPath}
+ * @private
+ */
+function drillHole(pt, topZ, botZ) {
+  return new CutPath([
+    { X: pt.X, Y: pt.Y, Z: topZ },
+    { X: pt.X, Y: pt.Y, Z: botZ },
+    { X: pt.X, Y: pt.Y, Z: topZ }
+  ], false);
+}
+
+/**
  * Calculate perforations along a path.
- * @param {ClipperLib.Path} path
+ * @param {CutPath} path
  * @param {number} cutterDia in "integer" units
  * @param {number} spacing is the gap to leave between perforations
  * @param {number} topZ is the Z to which the tool is withdrawn
  * @param {number} botZ is the depth of the perforations
- * @return {CamPath}
+ * @return {CutPath}
  * @private
  * @memberof Cam
  */
 function perforatePath(path, cutterDia, spacing, topZ, botZ) {
+  assert(path instanceof CutPath);
+
   // Measure the path
-  let totalPathLength = ClipperLib.JS.PerimeterOfPath(path, true, 1);
+  let totalPathLength = path.perimeter();
 
   // Work out number of holes, and step between them, allowing spacing
   // between adjacent holes
@@ -260,7 +225,7 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   const step = totalPathLength / numHoles;
 
   // Walk round the path stopping at every hole, generating a new path
-  let newPath = new ClipperLib.Path();
+  let newPath = new CutPath();
   let gap = 0; // distance along the path from the last hole;
   let segi = 0; // index of end of current segment
   // Start of the current segment
@@ -270,13 +235,11 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   // Length of the current segment
   let segLen = Math.sqrt(dx * dx + dy * dy);
   // Unit vector for the current segment
-  let segVec = { X: dx / segLen, Y : dy / segLen };
+  let segVec = new ClipperLib.IntPoint(dx / segLen, dy / segLen);
   while (segi < path.length) {
     // Place a hole here
     //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
-    newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
-    newPath.push({ X: segStart.X, Y: segStart.Y, Z: botZ });
-    newPath.push({ X: segStart.X, Y: segStart.Y, Z: topZ });
+    newPath.push(...drillHole(segStart, topZ, botZ));
     gap = 0;
     while (gap + segLen < step) {
       if (++segi === path.length)
@@ -295,61 +258,87 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
     }
     // Next hole is on this segment. Move segStart up to the hole.
     const where = step - gap;
-    segStart = {
-      X: segStart.X + segVec.X * where,
-      Y: segStart.Y + segVec.Y * where };
+    segStart = new ClipperLib.IntPoint(segStart.X + segVec.X * where,
+                                       segStart.Y + segVec.Y * where);
     segLen -= where;
     gap += where;
   }
-  return { path: newPath, safeToClose: false };
+  return newPath;
 }
 
 /**
  * Compute perforation tool path. This is an outline path, but it
  * has a vertex at every tool diameter step along the path. Gcode generation
  * will convert those vertices to drill holes.
- * @param {ClipperLib.Paths} geometry
+ * @param {CutPaths} geometry
  * @param {number} cutterDia in "integer" units
  * @param {number} spacing is the gap to leave between perforations
  * @param {number} topZ is the Z to which the tool is withdrawn
  * @param {number} botZ is the depth of the perforations
- * @return {CamPaths}
+ * @return {CutPaths}
  * @memberof Cam
  */
 export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
+  assert(geometry instanceof CutPaths);
   console.debug("Cam.perforate");
-  const allPaths = new CamPaths();
+  const allPaths = new CutPaths();
 
-  // Bloat the paths by half the cutter diameter
-  const bloated = Clipper.offset(geometry, cutterDia / 2);
-
-  for (const path of bloated) {
-    allPaths.push(perforatePath(path, cutterDia, spacing, topZ, botZ));
+  // Bloat the closed paths by half the cutter diameter
+  const bloated = new CutPaths();
+  for (const path of geometry) {
+    if (path.isClosed)
+      bloated.push(path.offset(cutterDia / 2));
+    else // just follow open paths
+      bloated.push(path);
   }
+
+  for (const path of bloated)
+    allPaths.mergePath(perforatePath(path, cutterDia, spacing, topZ, botZ));
+
   return allPaths;
+}
+
+/**
+ * Compute a drill path. This is a path where each vertex is a site
+ * for a drill hole. The holes are drilled in the order of the edges.
+ * @param {CutPaths} geometry
+ * @param {number} topZ is the Z to which the tool is withdrawn
+ * @param {number} botZ is the depth of the perforations
+ * @return {CutPaths}
+ * @private
+ */
+function drill(geometry, topZ, botZ) {
+  const drillPath = new CutPath();
+  for (const path of geometry) {
+    for (const hole of path) {
+      drillPath.push(...drillHole(hole, topZ, botZ));
+    }
+  }
+  const paths = new CutPaths();
+  paths.mergePath(new CutPath(drillPath, false));
+  return paths;
 }
 
 /**
  * Compute paths for engraving. This simply generates a tool path
  * that follows the outline of the geometry, regardless of the tool
  * diameter.
- * @param {ClipperLib.Paths} geometry the engraving
+ * @param {CutPaths} geometry the engraving
  * @param {boolean} climb reverse cutter direction
- * @return {CamPaths}
+ * @return {CutPaths}
  * @memberof Cam
  */
 export function engrave(geometry, climb) {
+  assert(geometry instanceof CutPaths);
   console.debug("Cam.engrave");
-  const allPaths = new ClipperLib.Paths();
+  const allPaths = new CutPaths();
   for (const path of geometry) {
-    const copy = path.slice(0); // take a copy
+    const copy = new CutPaths(path); // take a copy
     if (!climb)
       copy.reverse();
-    copy.push(copy[0]); // close the path
-    allPaths.push(copy);
+    allPaths.mergePaths(copy, path.isClosed);
   }
-  const result = new CamPaths(Clipper.joinPaths(allPaths));
-  return result;
+  return allPaths;
 };
 
 /**
@@ -359,13 +348,15 @@ export function engrave(geometry, climb) {
  * split into two paths. In this way it generates a new array of paths
  * where the odd-numbered paths are outside the polygons, while the
  * even numbered paths are inside the polygons.
- * @param {ClipperLib.Path} toolPath path being followed by the cutter
- * @param {ClipperLib.Paths} tabGeometry polygons representing tabs
+ * @param {CutPath} toolPath path being followed by the cutter
+ * @param {CutPaths} tabGeometry polygons representing tabs
  * @author Crawford Currie
  */
 export function separateTabs(toolPath, tabGeometry) {
+  assert(toolPath instanceof CutPath);
+  assert(tabGeometry instanceof CutPaths);
   console.debug("Cam.separateTabs");
-  const tabPolys = new ClipperLib.Paths();
+  const tabPolys = new CutPaths();
   for (const poly of tabGeometry) {
     const poly2d = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));
     tabPolys.push(poly2d);
@@ -384,7 +375,7 @@ export function separateTabs(toolPath, tabGeometry) {
     }
   }
 
-  const paths = new ClipperLib.Paths();
+  const paths = new CutPaths();
   let currPath = [ ip0 ];
   //console.debug("Path starts at ", ip0);
   for (const ip1 of toolPath) {

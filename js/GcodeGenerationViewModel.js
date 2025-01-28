@@ -6,14 +6,12 @@
 // import "knockout"
 /* global ko */
 
-// import "ClipperLib"
-/* global ClipperLib */
-
 /* global App */
 
 import { UnitConverter } from "./UnitConverter.js";
 import * as Gcode from "./Gcode.js";
-import * as Clipper from "./Clipper.js";
+import { CutPath } from "./CutPath.js";
+import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
 import { Rect } from "./Rect.js";
 
@@ -228,15 +226,14 @@ class GcodeGenerationViewModel extends ViewModel {
       jobCard.passDepth = 0;
     }
 
-    let tabGeometry = new ClipperLib.Paths();
+    let tabGeometry = new CutPaths();
     const tabs = App.models.Tabs.tabs();
     for (const tab of tabs) {
       if (tab.enabled()) {
         // Bloat tab geometry by the cutter radius
         const bloat = App.models.Tool.diameter.toUnits("integer") / 2;
-        const tg = Clipper.offset(tab.combinedGeometry, bloat);
-        tabGeometry = Clipper.clip(
-          tabGeometry, tg, ClipperLib.ClipType.ctUnion);
+        const tg = tab.combinedGeometry.offset(bloat);
+        tabGeometry = tabGeometry.union(tg);
       }
     }
     jobCard.tabGeometry = tabGeometry;

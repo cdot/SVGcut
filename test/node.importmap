@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "flatten-js": "../node_modules/@flatten-js/core/dist/main.mjs"
+  }
+}
