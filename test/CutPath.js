@@ -5,18 +5,22 @@ global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
 import { UNit } from "./TestSupport.js";
-import { CutPath } from "../js/CutPath.js";
-import { UnitConverter } from "../js/UnitConverter.js";
+import { UnitConverter } from "../src/UnitConverter.js";
+let CutPath;
 
 describe("CutPath", () => {
-  UNit("empty", () => {
+  // CutPath depends on ClipperLib
+  before(() => import("../src/CutPath.js")
+         .then(mod => CutPath = mod.CutPath));
+
+  it("empty", () => {
     const cp = new CutPath();
     assert(cp instanceof CutPath);
     assert(Array.isArray(cp));
     assert.equal(cp.isClosed, false);
   });
 
-  UNit("from 2D array", () => {
+  it("from 2D array", () => {
     const cp = new CutPath([ { x: 1, y: 2 }, { x: 3, y: 4 } ]);
     assert(cp instanceof CutPath);
     assert(Array.isArray(cp));
@@ -25,7 +29,7 @@ describe("CutPath", () => {
     assert.equal(cp.length, 2);
   });
 
-  UNit("from 2D CutPath", () => {
+  it("from 2D CutPath", () => {
     const old = new CutPath([ { x: 1, y: 2 }, { x: 3, y: 4 } ], true);
     assert(old.isClosed);
     const cp = new CutPath(old);
@@ -36,7 +40,7 @@ describe("CutPath", () => {
     assert.equal(cp[0].Y, 2);
   });
 
-  UNit("from 3D CutPath", () => {
+  it("from 3D CutPath", () => {
     const old = new CutPath([ { X: 1, Y: 2, Z:100 }, { x: 3, y: 4, Z: 102 } ]);
     const cp = new CutPath(old);
     assert.deepEqual(cp, old);
@@ -54,7 +58,7 @@ describe("CutPath", () => {
     assert.equal(cp[1].Z, 102);
   });
 
-  UNit("toSegments", () => {
+  it("toSegments", () => {
     const d = UnitConverter.from.px.to.integer;
     const cp = new CutPath([{X: 0,Y:0}, {x:d, y:0}, {x:0, y:d} ], false);
     const s = cp.toSegments();
@@ -72,7 +76,7 @@ describe("CutPath", () => {
     ]);
   });
 
-  UNit("perimeter", () => {
+  it("perimeter", () => {
     const d = UnitConverter.from.px.to.integer;
     const cp = new CutPath([{X: 0,Y:0}, {x:d, y:0}, {x:0, y:d} ], true);
     assert.almost(cp.perimeter() * UnitConverter.from.integer.to.px,
@@ -109,7 +113,7 @@ describe("CutPath", () => {
     assert.deepEqual(cp, mf);
   });
 
-  UNit("closestVertex", () => {
+  it("closestVertex", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
     let p = path.closestVertex(new ClipperLib.IntPoint(-1, -1));
     assert.equal(p.point, 0);
@@ -124,7 +128,7 @@ describe("CutPath", () => {
     assert.almost(p.dist2, 200*200+200*200);
   });
 
-  UNit("inside", () => {
+  it("inside", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
     assert.equal(path.inside(new ClipperLib.IntPoint(0, 0)), 0);
     assert.equal(path.inside(new ClipperLib.IntPoint(-1, -1)), -1);

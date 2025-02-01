@@ -2,7 +2,7 @@
 /* global describe, it */
 
 import { Vector } from "flatten-js";
-import * as EllipticalArc from "../js/EllipticalArc.js";
+import * as EllipticalArc from "../src/EllipticalArc.js";
 
 import { UNit } from "./TestSupport.js";
 

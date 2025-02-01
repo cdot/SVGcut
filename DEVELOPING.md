@@ -49,7 +49,10 @@ left (or centre) with Y increasing upwards.
 There is a suite of unit tests in the `test` directory, implemented
 using `mocha`. Run them using `npm run test`. They are far from
 comprehensive, as most testing has been done interactively in the
-browser.
+browser. Note that some of the tests have to be run with the `--experimental-loader` switch e.g.
+```
+mocha --experimental-loader=@node-loader/import-maps SVG.js
+```
 
 # Coding Standards
 + Literate coding. All names should be expressive (in English) of their purpose.

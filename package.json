@@ -19,9 +19,8 @@
 	},
 	"scripts": {
 		"build": "webpack -c 2d-geometry-webpack.js",
-		"lint": "eslint js -f unix",
-		"lintlib": "eslint lib -f unix",
-		"doc": "jsdoc -c jsdoc_config.json js",
+		"lint": "eslint src -f unix",
+		"doc": "jsdoc -c jsdoc_config.json src",
 		"test": "mocha --experimental-loader=@node-loader/import-maps test"
 	},
 	"dependencies": {
@@ -34,7 +33,6 @@
 		"file-saver": "^2.0.5",
 		"gl-matrix": "^3.4.3",
 		"knockout": "^3.5.1",
-		"knockout.validation": "^2.0.4",
-		"snapsvg": "^0.5.1"
+		"knockout.validation": "^2.0.4"
 	}
 }

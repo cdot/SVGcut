@@ -1,7 +1,7 @@
 import { assert } from "chai";
 /* global describe, it */
 
-import { Rect } from "../js/Rect.js";
+import { Rect } from "../src/Rect.js";
 
 describe("Rect", () => {
   it("construct", () => {

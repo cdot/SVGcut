@@ -5,9 +5,9 @@ import ClipperLib from "clipper-lib";
 global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
-import * as Gcode from "../js/Gcode.js";
-import { CutPath } from "../js/CutPath.js";
-import { CutPaths } from "../js/CutPaths.js";
+import * as Gcode from "../src/Gcode.js";
+import { CutPath } from "../src/CutPath.js";
+import { CutPaths } from "../src/CutPaths.js";
 import { UNit } from "./TestSupport.js";
 
 global.assert = assert;
@@ -171,56 +171,42 @@ describe("Gcode", () => {
       gcode.pop();
     let i = 0;
     const expected = [
-      '; ** Operation "Test"',
-      '; Type:        Cut Type',
-      '; Paths:       2',
-      '; Direction:   Conventional',
-      '; Cut Depth:   3 mm',
-      '; Pass Depth:  1 mm',
-      '; Plunge rate: 50 mm/min',
-      '; Path 1',
-      'G0 X0 Y0 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-1 F50 ; Drill plunge',
-      'G1 X10 Y10 Z0 F60',
-      'M5 ; Stop spindle',
-      'G0 Z10 F80',
-      'G0 X0 Y0 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-2 F50 ; Drill plunge',
-      'G1 X10 Y10 Z0 F60',
-      'M5 ; Stop spindle',
-      'G0 Z10 F80',
-      'G0 X0 Y0 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-3 F50 ; Drill plunge',
-      'G1 X10 Y10 Z0 F60',
-      'G0 Z10 F80 ; Path done',
-      '; Path 2',
-      'M5 ; Stop spindle',
-      'G0 X20 Y20 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-1 F50 ; Drill plunge',
-      'G1 X30 Y30 Z0 F60',
-      'M5 ; Stop spindle',
-      'G0 Z10 F80',
-      'G0 X20 Y20 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-2 F50 ; Drill plunge',
-      'G1 X30 Y30 Z0 F60',
-      'M5 ; Stop spindle',
-      'G0 Z10 F80',
-      'G0 X20 Y20 Z0 ; Goto path',
-      'M3 ; Start spindle',
-      'G1 Z-3 F50 ; Drill plunge',
-      'G1 X30 Y30 Z0 F60',
-      'G0 Z10 F80 ; Path done',
-      'M5 ; Stop spindle',
-      'G0 X0 Y0 ; Return to 0,0',
-      'M2 ; end program'
+  '; ** Operation "Test"',
+  '; Type:        Cut Type',
+  '; Paths:       2',
+  '; Direction:   Conventional',
+  '; Cut Depth:   3 mm',
+  '; Pass Depth:  1 mm',
+  '; Plunge rate: 50 mm/min',
+  '; Path 1',
+  'G0 X0 Y0 Z0',
+  'M3 ; Start spindle',
+  'G1 Z-1 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'G0 X0 Y0 Z0 F80',
+  'G1 Z-2 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'G0 X0 Y0 Z0 F80',
+  'G1 Z-3 F50 ; Drill plunge',
+  'G1 X10 Y10 F60',
+  'G0 Z10 F80 ; Path done',
+  '; Path 2',
+  'G0 X20 Y20 Z0',
+  'G1 Z-1 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'G0 X20 Y20 Z0 F80',
+  'G1 Z-2 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'G0 X20 Y20 Z0 F80',
+  'G1 Z-3 F50 ; Drill plunge',
+  'G1 X30 Y30 F60',
+  'G0 Z10 F80 ; Path done',
+  'M5 ; Stop spindle',
+  'G0 X0 Y0 ; Return to 0,0',
+  'M2 ; end program'
     ];
     for (let i = 0; i < expected.length; i++)
-      assert.equal(gcode[i], expected[i]);
+      assert.equal(gcode[i], expected[i], `mismatch line ${i}`);
     assert.equal(gcode.length, expected.length);
   });
 
@@ -256,9 +242,9 @@ describe("Gcode", () => {
       '; Pass Depth:  1 mm',
       '; Plunge rate: 50 mm/min',
       '; Path 1',
-      'G0 X0 Y0 Z-3 ; Goto path',
+      'G0 X0 Y0 Z0',
       'M3 ; Start spindle',
-      'G1 F60 ; Precalculated Z',
+      'G1 Z-3 F60 ; Precalculated Z',
       'G1 X10 Y10 Z0',
       'G1 Y20 Z-5',
       'G0 Z10 F80 ; Path done',

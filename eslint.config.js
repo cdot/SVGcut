@@ -9,7 +9,7 @@ export default [
       'import/resolver': {
         node: {
           extensions: ['.js'],
-          moduleDirectory: ['node_modules', 'js/']
+          moduleDirectory: ['node_modules', 'src/']
         }
       }
     },

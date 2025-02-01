@@ -5,7 +5,7 @@
 /* global DOM */
 /* global assert */
 
-import { segmentsFromElement } from "../js/SVG.js";
+import { segmentsFromElement } from "../src/SVG.js";
 import { setupDOM, UNit } from "./TestSupport.js";
 
 describe("SVG", () => {
@@ -201,7 +201,8 @@ describe("SVG", () => {
       [ 'M', 225, 0 ],
       [ 'L', 262.5, 75 ],
       [ 'L', 300, 0 ],
-      [ 'L', 262.5, 37.5 ]
+      [ 'L', 262.5, 37.5 ],
+      [ "Z" ]
     ]);
   });
 

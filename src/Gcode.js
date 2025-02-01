@@ -544,6 +544,6 @@ export class Generator {
       this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Path done" });
     } // each path
     this.stopSpindle();
-    console.debug("Gcode generated");
+    console.debug(`${this.gcode.length} lines of Gcode generated`);
   }
 }

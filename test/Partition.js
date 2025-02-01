@@ -2,7 +2,7 @@ import { assert } from "chai";
 /* global describe, it */
 
 import { Point, Polygon } from "flatten-js";
-import * as Partition from "../js/Partition.js";
+import * as Partition from "../src/Partition.js";
 
 describe("Partition", () => {
   it("triangulate", () => {

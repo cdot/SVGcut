@@ -5,9 +5,9 @@ global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
 import { UNit } from "./TestSupport.js";
-import { CutPath } from "../js/CutPath.js";
-import { CutPaths } from "../js/CutPaths.js";
-import { UnitConverter } from "../js/UnitConverter.js";
+import { CutPath } from "../src/CutPath.js";
+import { CutPaths } from "../src/CutPaths.js";
+import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
 
 describe("CutPaths", () => {
