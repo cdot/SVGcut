@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="300mm"
+   height="180mm"
+   viewBox="0 0 300 180"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="circle.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="2.9148709"
+     inkscape:cx="217.16227"
+     inkscape:cy="122.13234"
+     inkscape:window-width="1920"
+     inkscape:window-height="1007"
+     inkscape:window-x="0"
+     inkscape:window-y="36"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs id="defs1" />
+  <!-- two rows of 4, each column 75 -->
+
+  <!-- closed figures -->
+  <!-- 0,0..75,75 -->
+  <rect id="rect" x="0" y="0" width="75" height="75"
+        stroke="green" fill="#f0f0f0" />
+  <!-- 75,0..150,75 -->
+  <circle id="circle" cx="112.5" cy="37.5" r="37.5"
+          stroke="red" fill="#f0f0f0" />
+  <!-- 150,0..225,75 -->
+  <ellipse id="ellipse" cx="187.5" cy="37.5" rx="37.5" ry="18.75"
+           stroke="green" fill="#f0f0f0" />
+  <!-- 225,0..300,75 -->
+  <polygon points="225,0, 262.5,75, 300,0, 262.5,37.5"
+           stroke="red" fill="#f0f0f0" />
+
+  <!-- 0,75..75,150 -->
+  <line id="line" x1="0" y1="75" x2="75" y2="150"
+        stroke="red" fill="none" />
+
+  <!-- 75,75..150,150 -->
+  <polyline points="75,150, 112.5,112.5, 150,150, 112.5,75"
+            stroke="green" fill="none" />
+
+  <!-- 150,75..225,150 -->
+  <path d="M150,75 225,150, 225,112.5, 150,112.5"
+        stroke="red" fill="none" />
+
+  <!-- 225,75..300,150 -->
+  <path d="M225,75 300,75 300,150 Z"
+        stroke="green" fill="#f0f0f0"" />
+</svg>

@@ -1,8 +1,13 @@
 body > .container {
   padding: 60px 15px 0;
 }
+
 .container .text-muted {
   margin: 20px 0;
+}
+
+#content {
+  filter: contrast(50%);
 }
 
 #footer > .container {
@@ -32,9 +37,16 @@ code {
 }
 
 /* Highlighting in SVG */
-.selectedPath {
-  stroke:none;
+.selectedPath.closedPath {
+  stroke: none;
   fill: rgba(255, 255, 0, 0.5);
+}
+
+/* Highlighting in SVG */
+.selectedPath.openPath {
+  stroke: rgba(255, 255, 0, 0.5);
+  stroke-width: 8px;
+  fill: none;
 }
 
 .combinedGeometry {
@@ -106,4 +118,9 @@ code {
 .ecks:hover {
   cursor: pointer;
   font-weight: bold;
+}
+
+.centre-text {
+    display: flex;
+    align-items: center;
 }

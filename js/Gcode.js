@@ -8,7 +8,7 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 
 /**
- * Gcode utilities
+ * Gcode parsing an generation.
  * @namespace Gcode
  */
 
@@ -18,6 +18,7 @@ import { CutPaths } from "./CutPaths.js";
  * @property {number} y Y coordinate
  * @property {number} z Z coordinate
  * @property {number} f feed rate
+ * @memberof Gcode
  */
 
 /**
@@ -29,28 +30,29 @@ import { CutPaths } from "./CutPaths.js";
  * G93-G71 will be ignored.
  *
  * @see {@link https://linuxcnc.org/docs/stable/html/nb/gcode/overview.html}
- * @param {Gcode} gcode the gcode to parse
+ * @param {string|string[]} gcode the gcode to parse, either a single string
+ * containing \n separated code lines, or an array of lines.
  * @return {CNCPoint[]} path in machine units (no scaling is performed).
  * @memberof Gcode
  */
 export function parse(gcode) {
   const path = [];
-  const lines = gcode
-        .replace(/\(.*?\)/g, "") // remarks
-        .replace(/;[^\n]*/g, "") // end of code line
-        .split(/[ \t]*\r?\n[ \t]*/);
+  const lines = Array.isArray(gcode) ? gcode : gcode.split(/\r?\n/);
   let lineNo = 0;
   let last = { x: NaN, y: NaN, z: NaN, f: NaN };
   let terminated = false, percents = 0;
-  for (const line of lines) {
+  for (const l of lines) {
     if (terminated) // terminated by M2 or M30?
       break;
     lineNo++;
 
-    if (line[0] === "/" // block delete,
-        || /^\s*$/.test(line)) { // blank line
+    const line = l.replace(/\(.*?\)/g, "") // embedded remarks
+          .replace(/;.*$/, "") // end of code line
+          .replace(/^\s*(.*?)\s*$/, "$1"); // trim
+
+    if (line.length === 0
+       || line[0] === "/") // block delete
       continue;
-    }
 
     if (line === '%') { // program begin/end
       // "Demarcating a file with percents is optional if the file
@@ -78,7 +80,7 @@ export function parse(gcode) {
         case 0: case 1:
           pending = { x: last.x, y: last.y, z: last.z, f: last.f }; break;
         default:
-          console.debug(`Gcode:${lineNo} ignored g${value}`);
+          //console.debug(`Gcode:${lineNo} ignored g${value}`);
           pending = undefined;
         }
         break;
@@ -124,10 +126,10 @@ export function parse(gcode) {
       case 'u': // U axis of machine
       case 'v': // V axis of machine
       case 'w': // W axis of machine
-        console.debug(`Gcode:${lineNo} ignored ${code}${value}`);
+        //console.debug(`Gcode:${lineNo} ignored ${code}${value}`);
         break;
       default:
-        console.debug(`Gcode:${lineNo} unsupported ${code}${value}`);
+        console.error(`Gcode:${lineNo} unsupported ${code}${value}`);
       }
     }
     if (pending) {
@@ -170,276 +172,378 @@ export function parse(gcode) {
   return path;
 }
 
-export function startJob(job, gcode) {
-  const u = job.gunits;
-  gcode.push(
-    `; Work area:${job.workWidth.toFixed(2)}x${job.workHeight.toFixed(2)} ${u}`);
-  gcode.push(
-    `; Offset:   (${job.offsetX.toFixed(2)},${job.offsetY.toFixed(2)}) ${u}`);
-
-  switch (u) {
-  case "inch": gcode.push("G20 ; Set units to inches"); break;
-  case "mm": gcode.push("G21 ; Set units to mm"); break;
-  default: throw new Error(`${u} units not supported by gcode`);
-  }
-  gcode.push("G90 ; Absolute positioning");
-  gcode.push(`G0 Z${job.safeZ} F${job.rapidFeed} ; Move to clearance level`);
-}
-
-export function endJob(job, gcode) {
-  if (job.returnTo00)
-    gcode.push(`G0 X0 Y0 F${job.rapidFeed} ; Return to 0,0`);
-  gcode.push("M2 ; end program");
-}
-
 /**
- * Generate gcode for a set of paths. Assumes that the current Z
- * position is safe. Parameters are in gcode units unless specified
- * otherwise.
- * @param {object} op
- * @param {CutPaths} op.paths Paths to convert. These paths are
- * in "integer" units, and will be transformed to Gcode units using the
- * `Scale` parameters.
- * @param {boolean} op.ramp Ramp plunge. Default is to drill plunge.
- * @param {boolean} op.precalculatedZ Use Z coordinates in paths.
- * Some operations (such as Perforate) have pre-calculated
- * Z coordinates.  Use of these is enabled by this switch.
- * @param {CutPaths} op.tabGeometry Tab geometry (optional),
- * defined in "integer" units and require scaling.
- * @param {string[]} gcode array of Gcode lines to be added to
- *
- * @param {object} job
- * @param {number} job.xScale Factor to convert "integer" units to
- * gcode units
- * @param {number} job.yScale Factor to convert "integer" units to
- * gcode units
- * @param {number} job.zScale Factor to convert "integer" units to
- * gcode units
- * @param {number} job.offsetX Origin offset X
- * @param {number} job.offsetY Origin offset Y
- * @param {number} job.decimal Number of decimal places to keep
- * in gcode
- * @param {number} job.topZ Top of area to cut
- * @param {number} job.tabZ Depth to cut over tabs (only useful if
- * tabGeometry is not empty)
- * @param {number} job.safeZ Z position to safely move over
- * uncut areas
- * @param {number} job.passDepth Cut depth for each pass
- * @param {number} job.plungeFeed Feedrate to plunge cutter
- * @param {number} job.retractFeed Feedrate to retract cutter
- * @param {number} job.cutFeed Feedrate for horizontal cuts
- * @param {number} job.rapidFeed Feedrate for rapid moves
- * @param {string[]} gcode array of Gcode lines to be added to
- * @memberof Cam
+ * A generator for Gcode
  */
-export function generateOperation(op, job, gcode) {
-  const dec = job.decimal ?? 2;
+export class Generator {
 
-  // Tab depth must be > the botZ depth of the Operation. If it isn't,
-  // then ignore the tab geometry
-  let tabGeometry = op.tabGeometry;
-  // NOTE the cut depth might be a lot less than the material thickness
-  const botZ = job.topZ - op.cutDepth;
-  let tabZ = job.tabZ ?? botZ;
+  /**
+   * Set up a gcode job.
+   * @param {object} job job parameters
+   * @param {number} job.xScale Factor to convert "integer" units to
+   * gcode units
+   * @param {number} job.yScale Factor to convert "integer" units to
+   * gcode units
+   * @param {number} job.zScale Factor to convert "integer" units to
+   * gcode units
+   * @param {number} job.offsetX Origin offset X
+   * @param {number} job.offsetY Origin offset Y
+   * @param {number} job.decimal Number of decimal places to keep
+   * in gcode
+   * @param {number} job.topZ Top of area to cut
+   * @param {number} job.tabZ Depth to cut over tabs (only useful if
+   * tabGeometry is not empty)
+   * @param {number} job.safeZ Z position to safely move over
+   * uncut areas
+   * @param {number} job.passDepth Cut depth for each pass
+   * @param {number} job.plungeFeed Feedrate to plunge cutter
+   * @param {number} job.retractFeed Feedrate to retract cutter
+   * @param {number} job.cutFeed Feedrate for horizontal cuts
+   * @param {number} job.rapidFeed Feedrate for rapid moves
+   */
+  constructor(job) {
 
-  if (tabGeometry && tabZ <= botZ) {
-    App.showAlert("tabsDeeper", 'alert-warning');
-    tabGeometry = undefined;
+    for (const k of Object.keys(job))
+    this[k] = job[k];
+
+    /**
+     * Generate Gcode for the start of a cut job.
+     * @param {JobCard} job the job card
+     * @param {string[]} gcode array of gcode lines
+     */
+    const u = this.gunits;
+    this.gcode = [
+      `; Work area:${this.workWidth.toFixed(2)}x${this.workHeight.toFixed(2)} ${u}`,
+      `; Offset:   (${this.offsetX.toFixed(2)},${this.offsetY.toFixed(2)}) ${u}`,
+    ];
+
+    switch (u) {
+    case "inch": this.G(20, { rem: "Set units to inches" }); break;
+    case "mm": this.G(21, { rem: "Set units to mm"}); break;
+    default: throw new Error(`${u} units not supported by gcode`);
+    }
+
+    this.stopSpindle();
+    this.G(90, { rem: "Absolute positioning" });
+    this.decimal = this.decimal ?? 2;
+
+    this.spindleTurning = false;
+    this.lastF = NaN;
+    this.lastX = NaN;
+    this.lastY = NaN;
+    this.G(0, { z: this.safeZ, f: this.rapidFeed, rem: "Move to clearance level" });
   }
 
-  gcode.push(`; ** Operation "${op.name}"`);
-  gcode.push(`; Type:        ${op.cutType}`);
-  gcode.push(`; Paths:       ${op.paths.length}`);
-  gcode.push(`; Direction:   ${op.direction}`);
-  gcode.push(`; Cut Depth:   ${op.cutDepth} ${job.gunits}`);
-  gcode.push(`; Pass Depth:  ${op.passDepth} ${job.gunits}`);
-  gcode.push(`; Plunge rate: ${job.plungeFeed} ${job.gunits}/min`);
+  /**
+   * Generate gcode to mark the end of a job
+   * @return {string[]} array of gcode commands
+   */
+  end() {
+    const p = {
+      z: this.safeZ,
+      f: this.rapidFeed
+    };
+    if (this.returnTo00) {
+      this.offsetX = this.offsetY = 0;
+      this.xScale = this.yScale = 0;
+      p.pt = { X: 0, Y: 0 };
+      p.rem = "Return to 0,0";
+    }
+    this.G(0, p);
+    this.M(2, { rem: "end program" });
+    return this.gcode;
+  }
 
-  let lastF = NaN, lastX = NaN, lastY = NaN, lastZ = job.safeZ;
+  /**
+   * @private
+   */
+  rem(remark) {
+    this.gcode.push(`; ${remark}`);
+  }
 
-  // Get distance between two points
-  function dist(p1, p2) {
-    const dx = (p2.x - p1.X) * job.xScale + job.offsetX;
-    const dy = (p2.Y - p1.Y) * job.yScale + job.offsetY;
+  mapX(x) { return x * this.xScale + this.offsetX; }
+
+  mapY(y) { return y * this.yScale + this.offsetY; }
+
+  toolAt(pt) {
+    return this.lastX !== this.mapX(pt.X) ||
+    this.lastY !== this.mapY(pt.Y);
+  }
+
+  /**
+   * Generate a G gcode
+   * @param {string} code the code e.g. G0
+   * @param {object} opts optional data
+   * @param {number} opts.f the speed, undefined means no change
+   * @param {Vector?} opts.pt the position, undefined means no move
+   * @param {number?} opts.z the z coord, undefined means same z
+   * @param {string?} opts.rem optional remark (comment)
+   * @private
+   */
+  code(code, opts) {
+    const line = [ code ];
+    if (typeof opts.pt !== "undefined") {
+      const x = this.mapX(opts.pt.X);
+      if (x !== this.lastX) {
+        line.push(`X${x.toFixed(this.decimal)}`);
+        this.lastX = x;
+      }
+      const y = this.mapY(opts.pt.Y);
+      if (y !== this.lastY) {
+        line.push(`Y${y.toFixed(this.decimal)}`);
+        this.lastY = y;
+      }
+    }
+
+    if (typeof opts.z === "undefined"
+        && typeof opts.pt !== "undefined" && typeof opts.pt.Z !== "undefined")
+      opts.z = opts.pt.Z * this.zScale + this.topZ;
+
+    if (typeof opts.z !== "undefined" && opts.z !== this.lastZ) {
+      if (opts.z !== this.lastZ) {
+        line.push(`Z${opts.z}`);
+        this.lastZ = opts.z;
+      }
+    }
+
+    // Don't add zero moves
+    if (line.join("") === "G0" || line.join("") == "G1")
+      return;
+
+    if (typeof opts.f !== "undefined" && opts.f !== this.lastF) {
+      line.push(`F${opts.f}`);
+      this.lastF = opts.f;
+    }
+
+    if (typeof opts.rem !== "undefined")
+      line.push(`; ${opts.rem}`);
+
+    this.gcode.push(line.join(" "));
+  }
+
+  /**
+   * @private
+   */
+  M(code, opts) {
+    this.code(`M${code}`, opts);
+  }
+
+  /**
+   * @private
+   */
+  G(code, opts) {
+    this.code(`G${code}`, opts);
+  }
+
+  /**
+   * Get distance between two points in gcode units
+   * @private
+   */
+  dist(p1, p2) {
+    const dx = (p2.X - p1.X) * this.xScale;
+    const dy = (p2.Y - p1.Y) * this.yScale;
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  // Generate a G gcode
-  function G(code, f, pt, z, comment) {
-    const line = [ `G${code}` ];
-    if (typeof pt !== "undefined") {
-      const x = pt.X * job.xScale + job.offsetX;
-      if (x !== lastX) {
-        line.push(`X${x.toFixed(dec)}`);
-        lastX = x;
-      }
-      const y = pt.Y * job.yScale + job.offsetY;
-      if (y !== lastY) {
-        line.push(`Y${y.toFixed(dec)}`);
-        lastY = y;
-      }
-    }
-
-    if (typeof z === "undefined" && typeof pt.Z !== "undefined")
-      z = pt.Z * job.zScale + job.topZ;
-
-    if (typeof z !== "undefined" && z !== lastZ) {
-      if (z !== lastZ) {
-        line.push(`Z${z}`);
-        lastZ = z;
-      }
-    }
-
-    if (typeof f !== "undefined" && f !== lastF) {
-      line.push(`F${f}`);
-      lastF = f;
-    }
-
-    if (typeof comment !== "undefined")
-      line.push(`; ${comment}`);
-
-    return line.join(" ");
+  /**
+   * @private
+   */
+  startSpindle() {
+    if (!this.spindleTurning)
+      this.M(3, { rem: "Start spindle" });
+    this.spindleTurning = true;
   }
 
-  let spindleTurning = false;
-
-  function startSpindle() {
-    if (!spindleTurning)
-      gcode.push('M3 ; Start spindle');
-    spindleTurning = true;
+  /**
+   * @private
+   */
+  stopSpindle() {
+    if (this.spindleTurning)
+      this.M(5, { rem: "Stop spindle" });
+    this.spindleTurning = false;
   }
 
-  function stopSpindle() {
-    if (spindleTurning)
-      gcode.push('M5 ; Stop spindle');
-    spindleTurning = false;
-  }
+  /**
+   * Ramp in by backtracking the path, then turn and cut at
+   * that depth.
+   * @param {CutPath} path path we are ramping into
+   * @param {number} required target Z at the end of the ramp
+   * @return true if the path could be ramped, false otherwise
+   * @private
+   */
+  rampIn(path, requiredZ) {
+    // Start at the first point on the path, cut the ramp down for
+    // half the time a drill plunge would take, then turn and cut back
+    // to the start point.
 
-  function rampIn(selectedPath, currentZ, selectedZ) {
     // Calculate the best angle for the ramp
-    const minPlungeTime = (currentZ - selectedZ)
-          / job.plungeFeed;
-    const idealDist = job.cutFeed * minPlungeTime;
+    const minPlungeTime = (this.topZ - requiredZ) / this.plungeFeed;
+    const idealDist = this.cutFeed * minPlungeTime;
 
     // Calculate the path segments that need to be
-    // involved in the ramp
+    // involved in the ramp.
     let end;
-    let totalDist = 0;
-    for (end = 1; end < selectedPath.length; ++end) {
-      if (totalDist > idealDist)
-        break;
-      totalDist += 2 * dist(selectedPath[end - 1], selectedPath[end]);
+    const edgeLens = [];
+    let totalLen = 0;
+    for (end = 1; end < path.length && totalLen < idealDist / 2; end++) {
+      // 2 * because it's out and back
+      const edgeLen = this.dist(path[end - 1], path[end]);
+      edgeLens.push(edgeLen);
+      totalLen += edgeLen;
     }
 
-    if (totalDist <= 0) // is the ramp doable?
+    if (totalLen <= 0) // is the ramp doable?
+      // TODO: could wrap a closed poly, or do multiple passes
+      // over the range of segments
       return false;
 
-    gcode.push('; ramp');
+    this.rem('ramp');
 
-    // We ramp in by backtracking the path
-    const rampPath = selectedPath.slice(0, end)
-          .concat(selectedPath.slice(0, end - 1).reverse());
-    let distTravelled = 0;
-    const feed = Math.min(totalDist / minPlungeTime, job.cutFeed);
-    for (let i = 1; i < rampPath.length; ++i) {
-      distTravelled += dist(rampPath[i - 1], rampPath[i]);
-      const newZ = currentZ + distTravelled
-            / totalDist * (selectedZ - currentZ);
-      gcode.push(G(1, feed, rampPath[i], newZ));
-      return true;
+    let curZ = this.lastZ;
+    const dZ = (this.topZ - requiredZ) / (2 * totalLen);
+    const feed = Math.min(2 * totalLen / minPlungeTime, this.cutFeed);
+    // Out
+    for (let i = 0; i < edgeLens.length; i++) {
+      curZ -= edgeLens[i] * dZ;
+      this.G(1, { f: feed, pt: path[i + 1], z: curZ });
     }
+    // Back
+    for (let i = edgeLens.length - 1; i >= 0; i--) {
+      curZ -= edgeLens[i] * dZ;
+      this.G(1, { f: feed, pt: path[i], z: curZ });
+    }
+    assert(this.lastZ === requiredZ, `${this.lastZ} != ${requiredZ}`);
+    return true;
   }
 
-  let pathIndex = 0;
-  assert(op.paths instanceof CutPaths);
-  console.log(op.paths);
-  for (const path of op.paths) {
+  /**
+   * Generate gcode for a set of paths. Assumes that the current Z
+   * position is safe. Parameters are in gcode units unless specified
+   * otherwise.
+   * @param {object} op operation description
+   * @param {CutPaths} op.paths Paths to convert. These paths are
+   * in "integer" units, and will be transformed to Gcode units using the
+   * `Scale` parameters.
+   * @param {boolean} op.ramp Ramp plunge. Default is to drill plunge.
+   * @param {boolean} op.precalculatedZ Use Z coordinates in paths.
+   * Some operations (such as Perforate) have pre-calculated
+   * Z coordinates.  Use of these is enabled by this switch.
+   * @param {CutPaths} op.tabGeometry Tab geometry (optional),
+   * defined in "integer" units and requires scaling.
+   */
+  addOperation(op) {
 
-    if (path.length === 0)
-      continue;
+    // Tab depth must be > the botZ depth of the Operation. If it isn't,
+    // then ignore the tab geometry
+    let tabGeometry = op.tabGeometry;
+    // NOTE the cut depth might be a lot less than the material thickness
+    const botZ = this.topZ - op.cutDepth;
+    let tabZ = this.tabZ ?? botZ;
 
-    // If necessary, split path where it enters/leaves tab geometry
-    const separatedPaths = (tabGeometry && tabGeometry.length > 0)
-          ? Cam.separateTabs(path, tabGeometry)
-          : [ path ];
+    if (tabGeometry && tabZ <= botZ) {
+      App.showAlert("tabsDeeper", 'alert-warning');
+      tabGeometry = undefined;
+    }
 
-    gcode.push(`; Path ${++pathIndex}`);
+    this.rem(`** Operation "${op.name}"`);
+    this.rem(`Type:        ${op.cutType}`);
+    this.rem(`Paths:       ${op.paths.length}`);
+    this.rem(`Direction:   ${op.direction}`);
+    this.rem(`Cut Depth:   ${op.cutDepth} ${this.gunits}`);
+    this.rem(`Pass Depth:  ${op.passDepth} ${this.gunits}`);
+    this.rem(`Plunge rate: ${this.plungeFeed} ${this.gunits}/min`);
 
-    let finishedZ = job.topZ; // Last deepest cut
+    let pathIndex = 0;
+    assert(op.paths instanceof CutPaths);
 
-    // Loop over the paths until the target cut depth is reached
-    while (finishedZ > botZ) {
-      // Calculate next cut depth
-      const nextZ = Math.max(finishedZ - job.passDepth, botZ);
+    for (const path of op.paths) {
 
-      // The current Z is deeper than the safe Z and the path isn't
-      // safe to close or there is tab geometry, retract to
-      // a safe depth
-      //if (lastZ < job.safeZ && (!path.safeToClose || tabGeometry))
-      //  gcode.push(G(0, job.rapidFeed, undefined,
-      //               job.safeZ, "Z safe"));
+      if (path.length === 0)
+        continue;
 
-      // If the tool isn't over the next cut, lift it and move it there
-      if (lastX !== path[0].X || lastY !== path[0].Y) {
-        stopSpindle();
-        if (lastZ < job.safeZ)
-          gcode.push(G(0, job.rapidFeed, undefined, job.safeZ));
-        gcode.push(G(0, job.rapidFeed, path[0], undefined, "Goto path"));
+      // If necessary, split path where it enters/leaves tab geometry
+      const separatedPaths = (tabGeometry && tabGeometry.length > 0)
+            ? Cam.separateTabs(path, tabGeometry)
+            : [ path ];
+
+      this.rem(`Path ${++pathIndex}`);
+
+      // Loop over the paths until the target cut depth is reached
+      let lastCutZ = this.topZ;
+      while (this.lastZ > botZ) {
+        // Calculate cut depth for this pass
+        const targetZ = Math.max(lastCutZ - this.passDepth, botZ);
+
+        // The current Z is deeper than the safe Z and the path isn't
+        // safe to close or there is tab geometry, retract to
+        // a safe depth
+        //if (this.lastZ < this.safeZ && (!path.safeToClose || tabGeometry))
+        //  this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Z safe" });
+
+        // If the tool isn't over the start of the next cut, lift it
+        // before moving it there
+        if (!this.toolAt(path[0])) {
+          this.stopSpindle();
+          this.G(0, { f: this.rapidFeed, z: this.safeZ }); // clear
+        }
+        // Drop to top of material
+        this.G(0, { f: this.rapidFeed, pt: path[0], z: this.topZ } );
+
+        // We're over the start of the path, we can start cutting
+        this.startSpindle();
+
+        let cutPaths;
+        if (targetZ >= tabZ || op.precalculatedZ)
+          // Cutting above tab depth, or we are using coordinates
+          cutPaths = [ path ];
+        else
+          // Cutting below tab depth, so need to exclude tabGeometry
+          cutPaths = separatedPaths;
+
+        // Every even-numbered path is cut to tabZ, every odd numbered
+        // to targetZ. Without tabGeometry, all paths are cut to targetZ,
+        // but with tabGeometry, even numbered paths are the tab
+        // paths so are cut shallower.
+        let overTab = true;
+        for (const cutPath of cutPaths) {
+          overTab = !overTab;
+          let requiredZ = overTab ? tabZ : targetZ;
+
+          if (cutPath.length === 0)
+            continue;
+
+          if (op.precalculatedZ) {
+            this.G(1, { f: this.cutFeed, pt: cutPath[0],
+                        rem: "Precalculated Z" });
+            requiredZ = undefined; // so G uses the coordinate
+          } else {
+
+            if (requiredZ < this.lastZ) { // do we need to be deeper?
+              if (!(op.ramp && this.rampIn(cutPath, requiredZ)))
+                // No ramp, so drill plunge
+                this.G(1, { f: this.plungeFeed, z: requiredZ,
+                            rem: "Drill plunge" });
+
+            } else
+              this.G(0, { f: this.rapidFeed, z: requiredZ });
+          }
+
+          // Cut the rest of the path at the current depth
+          for (let i = 1; i < cutPath.length; ++i)
+            this.G(1, { f: this.cutFeed, pt: cutPath[i], z: requiredZ });
+          if (cutPath.isClosed)
+            this.G(1, { f: this.cutFeed, pt: cutPath[0], z: requiredZ });
+        }
+
+        if (op.precalculatedZ)
+          break;
+
+        lastCutZ = targetZ;
       }
 
-      startSpindle();
-
-      let cutPaths;
-      if (nextZ >= tabZ || op.precalculatedZ)
-        // Cutting above tab depth, or useZ is defined
-        cutPaths = [ path ];
-      else
-        // Cutting below tab depth, so need to exclude tabGeometry
-        cutPaths = separatedPaths;
-
-      // Every even-numbered path is cut to tabZ, every odd numbered
-      // to nextZ. Without tabGeometry, all paths are cut to nextZ,
-      // but with tabGeometry, even numbered paths are the tab
-      // paths so are cut shallower.
-      let overTab = true;
-      for (const cutPath of cutPaths) {
-        overTab = !overTab;
-
-        if (cutPath.length === 0)
-          continue;
-
-        if (op.precalculatedZ) {
-          gcode.push(G(1, job.cutFeed, cutPath[0],
-                       undefined, "Precalculated Z"));
-        } else {
-          let selectedZ = overTab ? tabZ : nextZ;
-
-          if (selectedZ < lastZ) { // do we need to be deeper?
-            if (!(op.ramp && rampIn(cutPath, lastZ, selectedZ)))
-              // No ramp, so drill plunge
-              gcode.push(
-                G(1, job.plungeFeed, undefined, selectedZ, "Drill plunge"));
-
-          } else if (selectedZ > lastZ)
-            // We're over a tab, retract to the tab level
-            gcode.push(
-              G(0, job.rapidFeed, undefined, selectedZ, "Retract for tab"));
-
-          // We're ready to cut the path
-        } // !op.precalculatedZ
-
-        for (let i = 1; i < cutPath.length; ++i)
-          gcode.push(G(1, job.cutFeed, cutPath[i]));
-
-      }
-
-      if (op.precalculatedZ)
-        break;
-
-      finishedZ = nextZ;
-    } // while (finishedZ > botZ)
-
-    gcode.push(G(0, job.rapidFeed, undefined, job.safeZ, "Path done"));
-  } // each path
-  stopSpindle();
+      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Path done" });
+    } // each path
+    this.stopSpindle();
+    console.debug("Gcode generated");
+  }
 }

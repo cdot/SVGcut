@@ -2,19 +2,9 @@
 
 /* global assert */
 /* global ClipperLib */
+ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
-
-/**
- * Get the square of the distance between two ClipperLib.IntPoints
- * @param {ClipperLib.IntPoint} a
- * @param {ClipperLib.IntPoint} b
- */
-export function dist2(a, b) {
-  const dx = a.X - b.X;
-  const dy = a.Y - b.Y;
-  return dx * dx + dy * dy;
-}
 
 /**
  * Paths processed by ClipperLib are simple arrays of points. That
@@ -25,9 +15,20 @@ export function dist2(a, b) {
 export class CutPath extends Array {
 
   /**
+   * Get the square of the distance between two ClipperLib.IntPoints
+   * @param {ClipperLib.IntPoint} a
+   * @param {ClipperLib.IntPoint} b
+   */
+  static dist2(a, b) {
+    const dx = a.X - b.X;
+    const dy = a.Y - b.Y;
+    return dx * dx + dy * dy;
+  }
+
+  /**
    * Convert an array of points to a CutPath if necessary
    * @param {CutPath|Array} path
-   * @param {boolean>} closed true to close (make a poly) but only if
+   * @param {boolean?} closed true to close (make a poly) but only if
    * initialising from Arrays. If initialising from a CutPath, the
    * closedness is retained. If path is a (non-CutPath) array, then the
    * individual entries must be { x:number, y:number } or
@@ -35,7 +36,10 @@ export class CutPath extends Array {
    * @return {CutPath}
    */
   constructor(path, closed) {
-    super();
+    if (typeof path === "number")
+      super(path);
+    else
+      super();
 
     /**
      * True if this is a closed poly. Default is false.
@@ -48,18 +52,17 @@ export class CutPath extends Array {
     else if (typeof closed !== "undefined")
       this.isClosed = closed;
 
-    if (!path)
-      return;
-
-    for (const point of path) {
-      const x = point.x ?? point.X;
-      const y = point.y ?? point.Y;
-      if (ClipperLib.use_xyz) {
-        const z = point.z ?? point.Z ?? 0;
-        // IntPoint defaults Z to 0
-        this.push(new ClipperLib.IntPoint(x, y, z));
-      } else
-        this.push(new ClipperLib.IntPoint(x, y));
+    if (Array.isArray(path)) {
+      for (const point of path) {
+        const x = point.x ?? point.X;
+        const y = point.y ?? point.Y;
+        if (ClipperLib.use_xyz) {
+          const z = point.z ?? point.Z ?? 0;
+          // IntPoint defaults Z to 0
+          this.push(new ClipperLib.IntPoint(x, y, z));
+        } else
+          this.push(new ClipperLib.IntPoint(x, y));
+      }
     }
   }
 
@@ -99,7 +102,7 @@ export class CutPath extends Array {
    * @return {number} perimeter
    */
   perimeter() {
-    return ClipperLib.JS.PerimeterOfPath(this, true, 1);
+    return ClipperLib.JS.PerimeterOfPath(this, true, 1 /* number scale */);
   }
 
   /**
@@ -112,7 +115,7 @@ export class CutPath extends Array {
   closestVertex(pt) {
     let best, i = 0;
     for (const tp of this) {
-      const d2 = dist2(pt, tp);
+      const d2 = CutPath.dist2(pt, tp);
       if (best && d2 < best.dist2) {
         best.point = i;
         best.dist2 = d2;
@@ -132,9 +135,11 @@ export class CutPath extends Array {
     if (i < this.length / 2)
       while (i-- > 0)
         this.push(this.shift());
-    else
+    else {
+      i = this.length - i;
       while (i-- > 0)
         this.unshift(this.pop());
+    }
   }
 
   /**
@@ -170,7 +175,7 @@ export class CutPath extends Array {
         // a little lower
         if (pt.Y == A.Y && B.Y >= A.Y || pt.Y == B.Y && A.Y >= B.Y)
           continue;
-        // calc cross product `ptA X ptB`, pt lays on left side of AB if c > 0 
+        // calc cross product `ptA X ptB`, pt lays on left side of AB if c > 0
         const c = (A.X - pt.X) * (B.Y - pt.Y) - (B.X - pt.X) * (A.Y - pt.Y);
         if (c == 0)
           return 0;

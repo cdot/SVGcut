@@ -1,27 +1,41 @@
 /**Copyright Ivan Frantic, Crawford Currie
-   MIT license, see https://github.com/ivanfratric/polypartition/tree/master
-   Ported to Javascript by Crawford Currie
+   MIT license, see https://github.com/ivanfratric/polypartition
 */
 
-import { Vector, Polygon } from "flatten-js";
+/**
+ * Polygon partitioning.
+ * @see {@link https://github.com/ivanfratric/polypartition}
+ * Ported to Javascript by Crawford Currie
+ * @namespace Partition
+ */
 
+import * as Flatten from "flatten-js";
+
+// Test for reflex (non-hull) vertex
 function isReflex(p1, p2, p3) {
   const tmp = (p3.y - p1.y) * (p2.x - p1.x) - (p3.x - p1.x) * (p2.y - p1.y);
   return (tmp < 0);
 }
 
+// Test for convex vertex
 function isConvex(p1, p2, p3) {
   const tmp = (p3.y - p1.y) * (p2.x - p1.x) - (p3.x - p1.x) * (p2.y - p1.y);
   return (tmp > 0);
 }
 
+// Vertex inside test
 function isInside(p1, p2, p3, p) {
   return !(isConvex(p1, p, p2)
            || isConvex(p2, p, p3)
            || isConvex(p3, p, p1));
 }
 
+/**
+ * A vertex in a polygon during partitioning.
+ * @memberof Partition
+ */
 class PartitionVertex {
+
   constructor(p) {
     this.isActive = true;
     this.isEar = false;
@@ -32,9 +46,9 @@ class PartitionVertex {
   update(vertices) {
     this.isConvex = isConvex(this.previous.p, this.p, this.next.p);
 
-    const v2 = new Vector(this.p.x, this.p.y);
-    const v1 = new Vector(this.previous.p.x, this.previous.p.y);
-    const v3 = new Vector(this.next.p.x, this.next.p.y);
+    const v2 = new Flatten.Vector(this.p.x, this.p.y);
+    const v1 = new Flatten.Vector(this.previous.p.x, this.previous.p.y);
+    const v3 = new Flatten.Vector(this.next.p.x, this.next.p.y);
     const vec1 = v1.subtract(v2).normalize();
     const vec3 = v3.subtract(v2).normalize();
     this.angle = vec1.x * vec3.x + vec1.y * vec3.y;
@@ -58,8 +72,9 @@ class PartitionVertex {
 
 /**
  * Partition a polygon into a set of triangles.
- * @param {Polygon} poly
- * @return {Polygon[]} triangles
+ * @param {Flatten.Polygon} poly
+ * @return {Flatten.Polygon[]} triangles
+* @memberof Partition
  */
 export function triangulate(poly) {
 
@@ -101,7 +116,7 @@ export function triangulate(poly) {
     if (!earfound)
       break;
 
-    triangles.push(new Polygon([ear.previous.p, ear.p, ear.next.p]));
+    triangles.push(new Flatten.Polygon([ear.previous.p, ear.p, ear.next.p]));
 
     ear.isActive = false;
     ear.previous.next = ear.next;
@@ -115,7 +130,7 @@ export function triangulate(poly) {
   }
   for (const inner of vertices) {
     if (inner.isActive) {
-      triangles.push(new Polygon([ inner.previous.p, inner.p, inner.next.p ]));
+      triangles.push(new Flatten.Polygon([ inner.previous.p, inner.p, inner.next.p ]));
       break;
     }
   }
@@ -125,10 +140,11 @@ export function triangulate(poly) {
 
 /**
  * Partition a (possibly concave) polygon into a set of convex polygons.
- * @param {Polygon} poly
- * @return {Polygon[]} parts
+ * @param {Flatten.Polygon} poly
+ * @return {Flatten.Polygon[]} parts
+ * @memberof Partition
  */
-export function convexPartition(poly) {
+export function convex(poly) {
 
   // Check if the poly is already convex.
   let hasReflex = false;
@@ -209,7 +225,7 @@ export function convexPartition(poly) {
       for (let j = i22; j != i21; j = (j + 1) % (poly2.vertices.length))
         newV.push(poly2.vertices[j]);
 
-      poly1 = parts[first] = new Polygon(newV);
+      poly1 = parts[first] = new Flatten.Polygon(newV);
       parts.splice(second, 1);
       i11 = -1;
     } // i11

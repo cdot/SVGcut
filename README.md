@@ -26,9 +26,7 @@ machine can handle. Make sure that the Scale (in Document Properties)
 is set to 1.
 
 There are some limitations:
-- SVGcut can only handle closed paths.
-    - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
-    - Simple unclosed paths (such as lines or arcs) aren't supported, so don't use them.
+- You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
 - Colour is ignored, so beware of creating paths the same colour as their background.
 - Stroke width is also ignored, so you are recommended to set a very small stroke width.
 
@@ -63,12 +61,12 @@ to Gcode (click a path again to deselect it; a double-click will
 select all paths). They will change colour. In the `Operations` pane,
 click `Create Operation` to tell it what you want to do with the
 selected paths. There are a number of operations available:
-+ `Engrave` - the tool will follow the selected paths (basically what a pen plotter does).
-+ `Outside` - will cut around the outside of the selected paths.
++ `Engrave` - the tool will follow the paths (basically what a pen plotter does).
++ `Outside` - will cut around the outside of the paths.
 + `Inside` - will cut around the inside of your paths.
 + `Pocket (concentric)` - will carve out the interior of your selected paths using ever-decreasing circles.
 + `Pocket (raster)` - will carve out the interior of your selected paths using side-to-side tool movements.
-+ `Perforate` - will drill a series of evenly-spaced holes outside the boundary of the selected paths. You can control the spacing of the holes.
++ `Perforate` - will drill a series of evenly-spaced holes outside the boundary of closed paths, or along the line of open paths. You can control the spacing of the holes.
 
 The `Toolpaths` pane will change to show what has been selected for
 the operation, and the tool paths generated for that operation.
@@ -204,11 +202,13 @@ these, and more.
 + Select all on a double-click
 + Easier to work with XY origins
 + Perforate operation
++ Raster pocket operation
 + Gcode text preview
 + Extensive newbie documentation
 + Extensive in-code documentation and literate programming techniques
 + Clean ES6 Javascript
 + Updated third-party dependencies
++ Support for a lot more of SVG
 
 Some features of `jscut` have been disabled/removed. This may be because
 they are deemed too esoteric, or the (undocumented) code was too

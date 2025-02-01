@@ -8,6 +8,7 @@
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
+import { segments2d } from "./SVG.js";
 
 /**
  * View model for a holding tab within the `Tabs` card.
@@ -44,12 +45,11 @@ export class TabViewModel extends ViewModel {
      * @member {observable.<boolean>}
      */
     this.enabled = ko.observable(true);
-    this.enabled.subscribe(
-      () => document.dispatchEvent(new Event("TOOL_PATHS_CHANGED")));
     this.enabled.subscribe(newValue => {
       const v = newValue ? "visible" : "hidden";
       if (this.combinedGeometrySvg)
-        this.combinedGeometrySvg.attr("visibility", v);
+        this.combinedGeometrySvg.setAttribute("visibility", v);
+      () => document.dispatchEvent(new Event("UPDATE_GCODE"));
     });
 
     /**
@@ -70,12 +70,11 @@ export class TabViewModel extends ViewModel {
     this.combinedGeometry = new CutPaths();
 
     /**
-     * SVG showing the geometry for this tab.
-     * This is a path that gets added to App.svgGroups.tabs
+     * The combined geometry as an SVG path element.
      * @member {SVGGaphicsElement}
      * @private
      */
-    this.combinedGeometrySvg = null;
+    this.svgPath = null;
 
     this.recombine();
   }
@@ -102,9 +101,9 @@ export class TabViewModel extends ViewModel {
    * Remove the SVG geometry contributed by this operation
    */
   removeCombinedGeometry() {
-    if (this.combinedGeometrySvg)
-      this.combinedGeometrySvg.remove();
-    this.combinedGeometrySvg = null;
+    if (this.svgPath)
+      this.svgPath.remove();
+    this.svgPath = null;
     this.combinedGeometry = new CutPaths();
   }
 
@@ -125,17 +124,21 @@ export class TabViewModel extends ViewModel {
       this.combinedGeometry = this.combinedGeometry.offset(off);
 
     if (this.combinedGeometry.length > 0) {
-      const svg = this.combinedGeometry.toSegments();
-      if (svg) {
-        this.combinedGeometrySvg = App.svgGroups.tabs
-        .path(svg)
-        .attr("class", "tabsGeometry");
+      const segs = this.combinedGeometry.toSegments();
+      if (segs) {
+        const svgel = document.createElementNS(
+          'http://www.w3.org/2000/svg', "path");
+        svgel.setAttribute("d", segments2d(segs));
+        svgel.setAttribute("class", "tabsGeometry");
+        document.getElementById("tabsSVGGroup").append(svgel);
+        this.svgPath = svgel;
+
         this.enabled(true);
       }
     }
 
-    App.models.Operations.generateToolPaths();
-  };
+    document.dispatchEvent(new Event("UPDATE_TOOL_PATHS"));
+  }
 
   /**
    * @override

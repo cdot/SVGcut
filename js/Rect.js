@@ -11,12 +11,14 @@
  * (an inside-out rect is one where the left edge is to the right of
  * the right edge)
  */
-class Rect {
+export class Rect {
 
   /**
-   * @param {number|Rect|DOMRect|SVGRect} x x origin, or an object
+   * @param {number|Rect|DOMRect|SVGRect|ClipperLib.IntRect} x x
+   * origin, or an object (basically anything that defines
+   * x/y/width/height)
    * copy-construct
-   * @param {number} y y origin
+   * @param {number} y y origin, if x is a number
    * @param {number} width width of the rect (negative if the rect
    * extends to the left of the origin)
    * @param {number} height (negative if the rect extends above the
@@ -191,5 +193,3 @@ class Rect {
     return `Rect{${this.x},${this.y},${this.width},${this.height}}`;
   }
 }
-
-export { Rect }

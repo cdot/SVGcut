@@ -1,12 +1,6 @@
 //import "knockout";
 /* global ko */
 
-//import "snapsvg";
-/* global Snap */
-
-//import "clipper-lib";
-/* global ClipperLib */
-
 /* global App */
 
 import { ViewModel } from "./ViewModel.js";
@@ -37,7 +31,7 @@ class TabsViewModel extends ViewModel {
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth(App.models.Tool.passDepth() / 2);
     this.maxCutDepth.subscribe(() =>
-      document.dispatchEvent(new Event("TOOL_PATHS_CHANGED")));
+      document.dispatchEvent(new Event("UPDATE_GCODE")));
   }
 
   /**
@@ -59,12 +53,17 @@ class TabsViewModel extends ViewModel {
    */
   addTab() {
     // Get integer paths from the current selection
-    const operands = App.models.Selection.getSelectedPaths();
+    const operands = App.models.Selection.getSelectedPaths()
+          .filter(p => p.isClosed);
+    if (operands.length === 0) {
+      App.showAlert("tabsMustBeClosed", "alert-error");
+      return;
+    }
     const tab = new TabViewModel(this.unitConverter, operands);
     tab.recombine();
     this.tabs.push(tab);
 
-    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
   };
 
   /**
@@ -73,7 +72,7 @@ class TabsViewModel extends ViewModel {
   removeTab(tab) {
     tab.removeCombinedGeometry();
     this.tabs.remove(tab);
-    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
   };
 
   /**

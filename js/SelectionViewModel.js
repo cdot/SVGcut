@@ -4,9 +4,6 @@
 // import "knockout";
 /* global ko */
 
-//import "snapsvg";
-/* global Snap */
-
 /* global App */
 
 import { CutPaths } from "./CutPaths.js";
@@ -27,54 +24,86 @@ class SelectionViewModel extends ViewModel {
     super();
 
     /**
-     * Number of elements selected (==App.svgGroups.selection size)
+     * Number of open paths currently selected
      * @member {observable.<number>}
      */
-    this.numSelected = ko.observable(0);
+    this.openSelected = ko.observable(0);
+
+    /**
+     * Number of closed paths currently selected
+     * @member {observable.<number>}
+     */
+    this.closedSelected = ko.observable(0);
+
+    /**
+     * The SVG group that is used to display all selected elements
+     */
+    this.svgGroup = document.getElementById("selectionSVGGroup");
   }
 
   /**
    * Handler for a click event on the SVG window.
-   * @param {Snap.Element} elem SVG element that was hit by the click
+   * @param {SVGElement} elem SVG element that was hit by the click
    * @return {boolean} true if the event has been handled
    */
   clickOnSVG(elem) {
-    const clas = elem.attr("class");
-
-    // Filter out App-generated classes
-    if (clas === "combinedGeometry"
-        || clas === "toolPath"
-        || clas === "tabsGeometry")
+    if (elem.tagName.toLowerCase() === "svg") {
+      this.clearSelection();
       return false;
+    }
 
-    // Deselect previously selected path
-    if (clas === "selectedPath") {
-      elem.remove();
-      this.numSelected(this.numSelected() - 1);
-      return true;
+    const clas = elem.getAttribute("class");
+
+    if (clas) {
+      // Filter out App-generated classes
+      if (clas.indexOf("combinedGeometry") >= 0
+          || clas.indexOf("toolPath") >= 0
+          || clas.indexOf("tabsGeometry") >= 0)
+        return false;
+
+      // Deselect previously selected path
+      if (clas.indexOf("selectedPath") >= 0) {
+        elem.remove();
+        if (clas.indexOf("openPath") >= 0)
+          this.openSelected(this.openSelected() - 1);
+        else
+          this.closedSelected(this.closedSelected() - 1);
+        return true;
+      }
     }
 
     // When something is selected in the SVG it is automatically linearised
     // before being added to the selection SVG. That way when an operation is
-    // created, the paths can simply be converted to Clipper coordinates
+    // created, the paths can simply be converted to integer coordinates
     // without worrying about linearisation.
     try {
-      const path = SVG.segmentsFromElement(
+      const vb = App.getMainSVGBBox();
+      //console.debug("BBOX ", vb);
+      const segs = SVG.segmentsFromElement(
         elem,
-        App.models.CurveConversion.minSegs(),
-        App.models.CurveConversion.minSegLen.toUnits("px"));
-      if (path) {
-        const newPath = App.svgGroups.selection.path(path);
+        {
+          curveMinSegs: App.models.CurveConversion.minSegs(),
+          curveMinSegLen: App.models.CurveConversion.minSegLen.toUnits("px"),
+          vbx: vb.width,
+          vby: vb.height
+        });
+      if (segs && segs.length > 0) {
+        const newPath = document.createElementNS(
+          'http://www.w3.org/2000/svg', "path");
+        newPath.setAttribute("d", SVG.segments2d(segs));
         let classes = "selectedPath";
         // .path loses Z, so have to save it somehow
-        if (path[path.length - 1][0] === 'Z') {
-          if (elem.attr("fill-rule") === "evenodd")
-            newPath.attr("fill-rule", "evenodd");
-        } else
+        if (segs[segs.length - 1][0] === 'Z') {
+          if (elem.getAttribute("fill-rule") === "evenodd")
+            newPath.setAttribute("fill-rule", "evenodd");
+          classes += " closedPath";
+          this.closedSelected(this.closedSelected() + 1);
+        } else {
           classes += " openPath";
-        newPath.attr("class", classes);
-
-        this.numSelected(this.numSelected() + 1);
+          this.openSelected(this.openSelected() + 1);
+        }
+        newPath.setAttribute("class", classes);
+        this.svgGroup.appendChild(newPath);
         return true;
       }
     } catch (e) {
@@ -88,15 +117,7 @@ class SelectionViewModel extends ViewModel {
    * @return {boolean} True if at least one path is selected
    */
   isSomethingSelected() {
-    return this.numSelected() > 0;
-  }
-
-  /**
-   * Get the list of SVG elements that are currently selected.
-   * @return {SVGElement[]} list of SVG elements
-   */
-  getSelection() {
-    return App.svgGroups.selection.selectAll("path");
+    return (this.openSelected() + this.closedSelected()) > 0;
   }
 
   /**
@@ -106,15 +127,17 @@ class SelectionViewModel extends ViewModel {
    */
   getSelectedPaths() {
     const cps = new CutPaths();
-    this.getSelection().forEach(element => {
-      // Elements in the selectionSVG have already been linearised, when
-      // the selection was made (in clickOnSVG)
-      const segments = SVG.segmentsFromElement(element);
+    this.svgGroup.querySelectorAll("path")
+    .forEach(element => {
+      // Elements in the selectionSVG have already been linearised and
+      // transformed, when the selection was made (in clickOnSVG)
+      const segments = SVG.parsePathD(element.getAttribute("d"));
       let sps = CutPaths.fromSegments(segments);
-      const isClosed = (element.attr("class").indexOf("openPath") < 0);
+      const clazz = element.getAttribute("class") ?? "";
+      const isClosed = (clazz.indexOf("closedPath") >= 0);
       for (const p of sps)
         p.isClosed = isClosed;
-      sps = sps.simplifyAndClean(element.attr("fill-rule"));
+      sps = sps.simplifyAndClean(element.getAttribute("fill-rule"));
       assert(sps instanceof CutPaths);
       cps.push(...sps);
     });
@@ -123,11 +146,13 @@ class SelectionViewModel extends ViewModel {
   }
 
   /**
-   * Deselect all SVG elements
+   * Deselect everything
    */
   clearSelection() {
-    App.svgGroups.selection.selectAll("path").remove();
-    this.numSelected(0);
+    // replaceChildren with no parameters clears the node
+    this.svgGroup.replaceChildren();
+    this.openSelected(0);
+    this.closedSelected(0);
   }
 
   /**

@@ -2,7 +2,7 @@ import { assert } from "chai";
 /* global describe, it */
 
 import { Point, Polygon } from "flatten-js";
-import { convexPartition, triangulate } from "../js/Partition.js";
+import * as Partition from "../js/Partition.js";
 
 describe("Partition", () => {
   it("triangulate", () => {
@@ -20,7 +20,7 @@ describe("Partition", () => {
       new Point(0, 10),
       new Point(10, 10)
     ]);
-    const triangles = triangulate(poly);
+    const triangles = Partition.triangulate(poly);
     assert.equal(triangles.length, 10);
     for (const t of triangles) {
       //console.log(t.vertices);
@@ -42,7 +42,7 @@ describe("Partition", () => {
       new Point(0, 10),
       new Point(10, 10)
     ]);
-    const parts = convexPartition(poly);
+    const parts = Partition.convex(poly);
     assert.equal(parts.length, 5);
     for (const t of parts) {
       //console.log(t.vertices);

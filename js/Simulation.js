@@ -1,7 +1,5 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-/* global App */
-
 import * as mat4 from "gl-matrix/mat4.js";
 
 const GPU_MEM = 2 * 1024 * 1024;
@@ -474,6 +472,9 @@ class Simulation {
     const coneDia = coneHeight * 2
           * Math.sin(this.cutterAngleRad / 2)
           / Math.cos(this.cutterAngleRad / 2);
+    const coneDia_2 = coneDia / 2;
+    const stride = this.pathStride;
+    const pvpl = this.pathVerticesPerLine;
 
     let rotAngle;
     if (curr.x === prev.x && curr.y === prev.y)
@@ -485,8 +486,7 @@ class Simulation {
 
     function addToBuffer(virtexIndex, command,
                          rawX, rawY, rawZ, rotCos, rotSin, zOffset = 0) {
-      const base = idx * this.pathStride *
-            this.pathVerticesPerLine + virtexIndex * this.pathStride;
+      const base = stride * (idx * pvpl + virtexIndex);
       bufferContent[base + 0] = prev.x;
       bufferContent[base + 1] = prev.y;
       bufferContent[base + 2] = prev.z + zOffset;
@@ -515,11 +515,11 @@ class Simulation {
            circleIndex < HALF_CIRCLE_SEGMENTS*2; ++circleIndex) {
         const a1 = 2 * Math.PI * circleIndex / HALF_CIRCLE_SEGMENTS/2;
         const a2 = 2 * Math.PI * (circleIndex + 1) / HALF_CIRCLE_SEGMENTS/2;
-        addToBuffer(index++, command, coneDia / 2 * Math.cos(a2),
-                    coneDia / 2 * Math.sin(a2), coneHeight, 1, 0);
+        addToBuffer(index++, command, coneDia_2 * Math.cos(a2),
+                    coneDia_2 * Math.sin(a2), coneHeight, 1, 0);
         addToBuffer(index++, command, 0, 0, 0, 1, 0);
-        addToBuffer(index++, command, coneDia / 2 * Math.cos(a1),
-                    coneDia / 2 * Math.sin(a1), coneHeight, 1, 0);
+        addToBuffer(index++, command, coneDia_2 * Math.cos(a1),
+                    coneDia_2 * Math.sin(a1), coneHeight, 1, 0);
       }
 
       //if (index > this.pathVerticesPerLine)
@@ -539,28 +539,28 @@ class Simulation {
 
       let index = 0;
       //if (true) {
-      addToBuffer(index++, 100, 0, -coneDia / 2, coneHeight,
+      addToBuffer(index++, 100, 0, -coneDia_2, coneHeight,
                   Math.cos(rotAngle - planeContactAngle),
                   Math.sin(rotAngle - planeContactAngle));
-      addToBuffer(index++, 101, 0, -coneDia / 2, coneHeight,
+      addToBuffer(index++, 101, 0, -coneDia_2, coneHeight,
                   Math.cos(rotAngle - planeContactAngle),
                   Math.sin(rotAngle - planeContactAngle));
       addToBuffer(index++, 100, 0, 0, 0, 1, 0);
       addToBuffer(index++, 100, 0, 0, 0, 1, 0);
-      addToBuffer(index++, 101, 0, -coneDia / 2, coneHeight,
+      addToBuffer(index++, 101, 0, -coneDia_2, coneHeight,
                   Math.cos(rotAngle - planeContactAngle),
                   Math.sin(rotAngle - planeContactAngle));
       addToBuffer(index++, 101, 0, 0, 0, 1, 0);
       addToBuffer(index++, 100, 0, 0, 0, 1, 0);
       addToBuffer(index++, 101, 0, 0, 0, 1, 0);
-      addToBuffer(index++, 100, 0, coneDia / 2, coneHeight,
+      addToBuffer(index++, 100, 0, coneDia_2, coneHeight,
                   Math.cos(rotAngle + planeContactAngle),
                   Math.sin(rotAngle + planeContactAngle));
-      addToBuffer(index++, 100, 0, coneDia / 2, coneHeight,
+      addToBuffer(index++, 100, 0, coneDia_2, coneHeight,
                   Math.cos(rotAngle + planeContactAngle),
                   Math.sin(rotAngle + planeContactAngle));
       addToBuffer(index++, 101, 0, 0, 0, 1, 0);
-      addToBuffer(index++, 101, 0, coneDia / 2, coneHeight,
+      addToBuffer(index++, 101, 0, coneDia_2, coneHeight,
                   Math.cos(rotAngle + planeContactAngle),
                   Math.sin(rotAngle + planeContactAngle));
       //}
@@ -575,16 +575,16 @@ class Simulation {
             * (endAngle - startAngle);
         //console.debug(`a1,a2: ${a1 * 180 / Math.PI}, ${a2 * 180 / Math.PI}`);
 
-        addToBuffer(index++, 100, coneDia / 2 * Math.cos(a2),
-                    coneDia / 2 * Math.sin(a2), coneHeight, 1, 0);
+        addToBuffer(index++, 100, coneDia_2 * Math.cos(a2),
+                    coneDia_2 * Math.sin(a2), coneHeight, 1, 0);
         addToBuffer(index++, 100, 0, 0, 0, 1, 0);
-        addToBuffer(index++, 100, coneDia / 2 * Math.cos(a1),
-                    coneDia / 2 * Math.sin(a1), coneHeight, 1, 0);
-        addToBuffer(index++, 101, coneDia / 2 * Math.cos(a2 + Math.PI),
-                    coneDia / 2 * Math.sin(a2 + Math.PI), coneHeight, 1, 0);
+        addToBuffer(index++, 100, coneDia_2 * Math.cos(a1),
+                    coneDia_2 * Math.sin(a1), coneHeight, 1, 0);
+        addToBuffer(index++, 101, coneDia_2 * Math.cos(a2 + Math.PI),
+                    coneDia_2 * Math.sin(a2 + Math.PI), coneHeight, 1, 0);
         addToBuffer(index++, 101, 0, 0, 0, 1, 0);
-        addToBuffer(index++, 101, coneDia / 2 * Math.cos(a1 + Math.PI),
-                    coneDia / 2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
+        addToBuffer(index++, 101, coneDia_2 * Math.cos(a1 + Math.PI),
+                    coneDia_2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
       }
 
       //if (index != this.pathVerticesPerLine)

@@ -26,6 +26,8 @@ class CurveConversionViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.minSegs = ko.observable(1);
+    this.minSegs.subscribe(
+      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
 
     /**
      * Minimum number of segments in a curve

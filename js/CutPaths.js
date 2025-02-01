@@ -2,14 +2,10 @@
 
 /* global assert */
 /* global ClipperLib */
+ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
-import { CutPath, dist2 } from "./CutPath.js";
-
-/**
- * Support for operations using ClipperLib.
- * @namespace Clipper
- */
+import { CutPath } from "./CutPath.js";
 
 /*
  * The distance parameter's default value is approximately √2 so that
@@ -20,10 +16,12 @@ import { CutPath, dist2 } from "./CutPath.js";
  * offsetting is 0.1 * scale.
  */
 const CLEAN_POLY_DIST = 0.1 * UnitConverter.from.mm.to.integer;
+
 /*
  * Remove path vertices closer than this.
  */
 const CLEAN_PATH_DIST2 = CLEAN_POLY_DIST * CLEAN_POLY_DIST;
+
 /*
  * Only relevant when JoinType = jtRound and/or EndType = etRound.
  * Since flattened paths can never perfectly represent arcs, this
@@ -49,7 +47,7 @@ const CLEAN_PATH_DIST2 = CLEAN_POLY_DIST * CLEAN_POLY_DIST;
 const ARC_TOLERANCE = 0.25 * UnitConverter.from.mm.to.integer;
 
 /**
- * A list of CutPath. Cutpaths are treated as sets of disjoint polygons
+ * A list of `CutPath`. Cutpaths are treated as sets of disjoint polygons
  * and paths.
  */
 export class CutPaths extends Array {
@@ -64,22 +62,27 @@ export class CutPaths extends Array {
    * retain their closedness.
    */
   constructor(paths, closed) {
-    super();
-    
-    if (paths) {
-      if (paths instanceof CutPath)
+    if (typeof paths === "number")
+      super(paths);
+    else
+      super();
+
+    if (paths instanceof CutPath) {
+      if (paths.length > 0)
         this.push(new CutPath(paths));
-      else if (paths instanceof CutPaths) {
-        for (const p of paths)
+    } else if (paths instanceof CutPaths) {
+      for (const p of paths) {
+        if (p.length > 0)
           this.push(new CutPath(p));
-      } else if (Array.isArray(paths)) {
-        if (Array.isArray(paths[0])) {
-            for (const p of paths)
-              this.push(new CutPath(p, closed));
-        } else
-          this.push(new CutPath(paths, closed));
+      }
+    } else if (Array.isArray(paths) && paths.length > 0) {
+      if (Array.isArray(paths[0])) {
+        for (const p of paths) {
+          if (p.length > 0)
+            this.push(new CutPath(p, closed));
+        }
       } else
-        throw new Error("Bad paths");
+          this.push(new CutPath(paths, closed));
     }
   }
 
@@ -126,13 +129,13 @@ export class CutPaths extends Array {
    * Convert to a set of SVG paths, using only `M` and
    * `L` path commands. The resulting path is suitable for a `d` attribute
    * on an SVG `path`.
-   * @see {@link http://snapsvg.io/docs/#Paper.path|Snap}
    * @return {svgSegment[]}
    */
   toSegments() {
     const segments = [];
     for (const path of this)
-      segments.push(...path.toSegments());
+      for (const seg of path.toSegments())
+        segments.push(seg);
     return segments;
   }
 
@@ -158,7 +161,7 @@ export class CutPaths extends Array {
       else
         open.push(p);
     }
-    const offsetted = new ClipperLib.Paths();
+    const offsetted = [];
     co.Execute(offsetted, amount);
     const res = new CutPaths(offsetted, true);
     for (const p of open)
@@ -176,17 +179,16 @@ export class CutPaths extends Array {
   clip(clipPaths, clipType) {
     assert(clipPaths instanceof CutPaths);
     const clipper = new ClipperLib.Clipper();
-    for (const path of this)
-      clipper.AddPath(path, ClipperLib.PolyType.ptSubject, path.isClosed);
+    clipper.AddPaths(this, ClipperLib.PolyType.ptSubject, true);
     clipper.AddPaths(clipPaths, ClipperLib.PolyType.ptClip, true);
     const newGeom = new ClipperLib.Paths();
     clipper.Execute(clipType, newGeom, ClipperLib.PolyFillType.pftEvenOdd,
                     ClipperLib.PolyFillType.pftEvenOdd);
-    return new CutPaths(newGeom);
+    return new CutPaths(newGeom, true);
   }
 
   /**
-   * Return union ofto Clipper geometries. Returns new geometry.
+   * Return union of Clipper geometries. Returns new geometry.
    * @param {CutPaths} paths2 second set of paths
    * @return {CutPaths} new geometry.
    */
@@ -228,7 +230,7 @@ export class CutPaths extends Array {
    * @memberof Clipper
    */
   simplifyAndClean(fillRule) {
-    const paths = new CutPaths();
+    const cleanPaths = new CutPaths();
     for (const path of this) {
       if (path.isClosed) {
         // Remove vertices:
@@ -238,29 +240,30 @@ export class CutPaths extends Array {
         // 2. that are within the specified distance of an adjacent vertex
         // 3. that are within the specified distance of a semi-adjacent
         // vertex together with their out-lying vertices
-        const clean = ClipperLib.Clipper.CleanPolygon(path, CLEAN_POLY_DIST);
+        const cleanPolys = ClipperLib.Clipper.CleanPolygon(
+          path, CLEAN_POLY_DIST);
         // Remove self-intersections
         const fr = fillRule === "evenodd"
             ? ClipperLib.PolyFillType.pftEvenOdd
             : ClipperLib.PolyFillType.pftNonZero;
-        const simple = ClipperLib.Clipper.SimplifyPolygon(clean, fr); 
-        paths.push(new CutPath(simple, true));
+        const simplePolys = ClipperLib.Clipper.SimplifyPolygon(cleanPolys, fr);
+        cleanPaths.push(new CutPath(simplePolys[0], true));
       } else {
         // Remove vertices that are within the specified distance of an
         // adjacent vertex.
         let i = 1;
         while (i < path.length) {
-          const d2 = dist2(path[i], path[i - 1]);
+          const d2 = CutPath.dist2(path[i], path[i - 1]);
           if (d2 < CLEAN_PATH_DIST2)
             path.splice(i, 1);
           else
             i++;
         }
         const clean = ClipperLib.JS.Clean(path, CLEAN_POLY_DIST);
-        paths.push(new CutPath(clean, false));
+        cleanPaths.push(new CutPath(clean, false));
       }
     }
-    return paths;
+    return cleanPaths;
   }
 
   /**
@@ -346,10 +349,8 @@ export class CutPaths extends Array {
    * @private
    */
   mergePath(path, clip) {
-    if (this.length === 0) {
-      this.push(path);
+    if (path.length === 0)
       return;
-    }
 
     if (path.isClosed)
       this.mergeClosedPath(path, clip);

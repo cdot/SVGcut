@@ -22,6 +22,19 @@
       }
     }
   </script>
+  <script>
+    window.assert = (cond, mess) =>
+    { if (!cond) throw new Error(mess||"Assertion failure") };
+  </script>
+  <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
+  </script>
+  <script src="node_modules/knockout.validation/dist/knockout.validation.js">
+  </script>
+  <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+  <script src="node_modules/bootstrap-slider/dist/bootstrap-slider.js"></script>
+  <script src="node_modules/clipper-lib/clipper.js"></script>
+  <script src="node_modules/file-saver/dist/FileSaver.js"></script>
+  <script type="module" src="js/app.js"></script>
 </head>
 <body>
 
@@ -145,7 +158,8 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div style="white-space: pre; font-family: monospace; overflow: scroll; max-height: 80vh;" data-bind="text: gcode"></div>
+          <div style="white-space:pre;font-family:monospace;overflow:scroll;max-height:80vh;" data-bind="text: gcodeS">
+          </div>
         </div>
       </div>
     </div>
@@ -194,13 +208,7 @@
                            data-bind="checked: enabled" />
                   </div>
                   <div style="display: table-cell" class="entry-mid">
-                    <select id="opOperation" data-bind="value: operation">
-                      <option value="Engrave">Engrave</option>
-                      <option value="Inside">Inside</option>
-                      <option value="Outside">Outside</option>
-                      <option value="Perforate">Perforate</option>
-                      <option value="ConcentricPocket">Pocket (concentric)</option>
-                      <option value="RasterPocket">Pocket (raster)</option>
+                    <select id="opOperation" data-bind="options: availableOperations, optionsText: function(entry) { return App.opName(entry); }, value: operation">
                     </select>
                   </div>
                   <div
@@ -530,6 +538,13 @@
                 </li>
               </ul>
             </li>
+            <li class="nav-item centre-text">
+              Selected:&nbsp;
+              <span data-bind="text: App.models.Selection.openSelected"></span>
+              &nbsp;open,&nbsp;
+              <span data-bind="text: App.models.Selection.closedSelected"></span>
+              &nbsp;closed
+            </li>
           </ul>
         </nav>
 
@@ -552,7 +567,25 @@
             <!-- toolpaths tab -->
             <div class="tab-pane active" id="svgPanel">
               <svg id="MainSvg" viewBox="0 0 500 500"
-                   preserveAspectRatio="xMinYMin meet" />
+                   preserveAspectRatio="xMinYMin meet">
+                <defs>
+                  <filter id="contrastFilter" filterUnits="objectBoundingBox">
+                    <feComponentTransfer>
+                      <feFuncR type="linear" slope="0.5" intercept="0.25">
+                      </feFuncR>
+                      <feFuncG type="linear" slope="0.5" intercept="0.25">
+                      </feFuncG>
+                      <feFuncB type="linear" slope="0.5" intercept="0.25">
+                      </feFuncB>
+                    </feComponentTransfer>
+                  </filter>
+                </defs>
+                <g id="contentSVGGroup" class="managedSVGGroup serialisableSVGGroup" filter="#contrastFilter"/>
+                <g id="toolPathsSVGGroup" class="managedSVGGroup serialisableSVGGroup" />
+                <g id="combinedGeometrySVGGroup" class="managedSVGGroup" />
+                <g id="tabsSVGGroup" class="managedSVGGroup" />
+                <g id="selectionSVGGroup" class="managedSVGGroup" />
+              </svg>
             </div>
             <!-- simulate tab -->
             <div class="tab-pane" id="simulatePanel">
@@ -613,6 +646,7 @@
                     <span data-bind="text: App.models.Misc.units"></span>
                   </td>
                 </tr>
+                <!-- No support for angled bit
                 <tr>
                   <td>
                     <label for="toolAngle" class="control-label">
@@ -623,6 +657,7 @@
                            data-bind="value: angle"> &deg;
                   </td>
                 </tr>
+                -->
                 <tr>
                   <td><label for="toolPassDepth" class="control-label">
                       Pass Depth</label>
@@ -692,7 +727,7 @@
                   <div class="col-sm-10">
                     <svg id="MaterialSvg" class="autoheight"
                          viewBox="0 0 74 35" internalWidth="74"
-                         internalHeight="35" />
+                         internalHeight="35" src="images/Material.svg" />
                   </div>
                 </div>
               </div>
@@ -784,7 +819,7 @@
     <span name="Step1">Import one or more SVG files.</span>
     <span name="Step2">Click 1 or more paths</span>
     <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
-    <span name="Step4">Click "Generate" to generate Gcode for the operation.</span>
+    <span name="Step4">Customise the operation to your tastes.</span>
     <span name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</span>
   </div>
   <div id="popovers" style="display:none">
@@ -850,7 +885,6 @@
         Select one or more objects in the "Toolpaths" tab before clicking
         here</p></span>
     <span name="opEnabled">Enable/disable this operation. Only enabled operation are shown</span>
-    <span name="opGenerate">Generate toolpaths and Gcode for this operation</span>
     <span name="opName">Name used in gcode comments</span>
     <span name="opRamp">Ramp the cutter in gradually instead of plunging straight down</span>
     <span name="opCombine">How to combine multiple paths into this operation</span>
@@ -860,11 +894,11 @@
     <div name="opOperation">Operation to perform on the selected paths.
       <ul>
         <li><em>Engrave</em> - middle of the tool follows the paths</li>
-        <li><em>Inside</em> - cuts around the inside</li>
-        <li><em>Outside</em> - cuts around the outside</li>
-        <li><em>Perforate</em> - drills holes around the outside</li>
-        <li><em>Pocket (concentric</em>) - makes a pocket using ever-decreasing circles</li>
-        <li><em>Pocket (raster</em>) - makes a pocket using side-to-side movement</li>
+        <li><em>Inside</em> - cuts around the inside of closed paths</li>
+        <li><em>Outside</em> - cuts around the outside of closed paths</li>
+        <li><em>Perforate</em> - drills holes around the outside of closed paths, or along open paths</li>
+        <li><em>Pocket (concentric</em>) - carves a pocket using ever-decreasing circles (closed paths only)</li>
+        <li><em>Pocket (raster</em>) - carves a pocket using side-to-side movement (closed paths only)</li>
       </ul>
     </div>
     <span name="opVMaxDepth">Maximum depth this operation should cut.
@@ -878,10 +912,11 @@
       cutter width then it uses the cutter width</span>
     <!-- selection -->
     <span name="inputMinNumSegments">Minimum number of line segments
-      to convert a curve to</span>
+      to convert a curve to. Curve conversion is done when something
+      with a curve in it is selected.</span>
     <span name="inputMinSegmentLength">Minimum length of each line segment
-      when converting curves. This conversion is done when you select an
-      object (it becomes blue)</span>
+      when converting curves. Curve conversion is done when something
+      with a curve in it is selected.</span>
   </div>
   <div id="alerts" style="display:none">
     <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
@@ -899,19 +934,7 @@
     <span name="svgLoadAbort">Aborted reading $1</span>
     <span name="svgLoadError">Error reading $1</span>
     <span name="tutorialStep">Step $1: $2</span>
+    <span name="tabsMustBeClosed">At least one closed path must be selected to create tabs</span>
   </div>
-  <script>
-    window.assert = console.assert;
-  </script>
-  <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
-  </script>
-  <script src="node_modules/knockout.validation/dist/knockout.validation.js">
-  </script>
-  <script src="node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
-  <script src="node_modules/bootstrap-slider/dist/bootstrap-slider.js"></script>
-  <script src="node_modules/snapsvg/dist/snap.svg.js"></script>
-  <script src="node_modules/clipper-lib/clipper.js"></script>
-  <script src="node_modules/file-saver/dist/FileSaver.js"></script>
-  <script type="module" src="js/app.js"></script>
 </body>
 </html>

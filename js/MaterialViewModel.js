@@ -3,10 +3,10 @@
 // import "knockout";
 /* global ko */
 
-// import "snapsvg"
-/* global Snap */
+/* global App */
 
 import { ViewModel } from "./ViewModel.js";
+import { loadSVGFromText } from "./SVG.js";
 
 const POPOVERS = [
   { id:"inputMatThickness" },
@@ -32,6 +32,8 @@ class MaterialViewModel extends ViewModel {
      */
     this.thickness = ko.observable(unitConverter.fromUnits(10, "mm"));
     unitConverter.add(this.thickness);
+    this.thickness.subscribe(
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
 
     /**
      * Tool clearance level
@@ -39,12 +41,16 @@ class MaterialViewModel extends ViewModel {
      */
     this.clearance = ko.observable(unitConverter.fromUnits(10, "mm"));
     unitConverter.add(this.clearance);
+    this.clearance.subscribe(
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
 
     /**
      * Z origin, Top or Bottom of the material
      * @member {observable.<string>}
      */
     this.zOrigin = ko.observable("Top");
+    this.zOrigin.subscribe(
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
 
     /**
      * Z level for Z origin, computed
@@ -56,14 +62,17 @@ class MaterialViewModel extends ViewModel {
       else
         return this.thickness();
     });
+
+    // Set some text in the SVG
+    function setText(id, text) {
+      const el = document.getElementById(id);
+      if (el)
+        el.firstChild.textContent = text;
+    }
+
     unitConverter.addComputed(this.topZ);
     // Subscribe to range values to update the SVG picture
-    this.topZ.subscribe(newValue => {
-      if (this.materialSvg()) {
-        this.materialSvg().select("#matTopZ").node.textContent
-        = formatZ(newValue);
-      }
-    });
+    this.topZ.subscribe(newValue => setText("matTopZ", newValue));
 
     /**
      * Z level for bottom of material, computed
@@ -76,12 +85,7 @@ class MaterialViewModel extends ViewModel {
         return -this.thickness();
     });
     unitConverter.addComputed(this.botZ);
-    this.botZ.subscribe(newValue => {
-      if (this.materialSvg()) {
-        this.materialSvg().select("#matBotZ").node.textContent
-        = formatZ(newValue);
-      }
-    });
+    this.botZ.subscribe(newValue => setText("matBotZ", formatZ(newValue)));
 
     /**
      * Safe level, computed
@@ -94,31 +98,25 @@ class MaterialViewModel extends ViewModel {
         return parseFloat(this.thickness()) + parseFloat(this.clearance());
     });
     unitConverter.addComputed(this.zSafeMove);
-    this.zSafeMove.subscribe(newValue => {
-      if (this.materialSvg()) {
-        this.materialSvg().select("#matZSafeMove").node.textContent
-        = formatZ(newValue);
-      }
-    });
+    this.zSafeMove.subscribe(newValue =>
+      setText("matZSafeMove", formatZ(newValue)));
 
     /**
      * The little picture at the top of the card
-     * @member {observable.<SnapElement>}
+     * @member {observable.<SVGElement>}
      */
     this.materialSvg = ko.observable(null);
     this.materialSvg.subscribe(newValue => {
-      newValue.select("#matTopZ").node.textContent = formatZ(this.topZ());
-      newValue.select("#matBotZ").node.textContent = formatZ(this.botZ());
-      newValue.select("#matZSafeMove").node.textContent
-      = formatZ(this.zSafeMove());
+      setText("matTopZ", formatZ(this.topZ()));
+      setText("matBotZ", formatZ(this.botZ()));
+      setText("matZSafeMove", formatZ(this.zSafeMove()));
     });
 
-    const materialSvg = Snap("#MaterialSvg");
-    Snap.load("images/Material.svg", f => {
-      // f is a Snap.Fragment
-      materialSvg.append(f);
-      this.materialSvg(materialSvg);
-    });
+    const svg = document.getElementById("MaterialSvg");
+    fetch("images/Material.svg")
+    .then(response => response.text())
+    .then(content => Promise.resolve(loadSVGFromText(content)))
+    .then(dom => { svg.replaceWith(dom); this.materialSvg(dom); });
   }
 
   /**

@@ -5,6 +5,14 @@ import Import from "eslint-plugin-import";
 export default [
   pluginJs.configs.recommended,
   {
+    settings: {
+      'import/resolver': {
+        node: {
+          extensions: ['.js'],
+          moduleDirectory: ['node_modules', 'js/']
+        }
+      }
+    },
     languageOptions: {
       globals: { ...globals.browser },
       ecmaVersion: "latest",

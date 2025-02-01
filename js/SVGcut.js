@@ -3,9 +3,6 @@
 // import "file-saver"
 /* global saveAs */
 
-// import "snapsvg"
-/* global Snap */
-
 // import "bootstrap"
 /* global bootstrap */
 
@@ -18,28 +15,25 @@ import { SelectionViewModel } from "./SelectionViewModel.js";
 import { CurveConversionViewModel } from "./CurveConversionViewModel.js";
 import { MiscViewModel } from "./MiscViewModel.js";
 import { Simulation } from "./Simulation.js";
-import * as Gcode from "./Gcode.js";
-//CPP import { getScript } from "./getScript.js";
 import { Rect } from "./Rect.js";
-
-// Identifiers for different groups created at the top level
-// of the SVG. Assigned so we can recover groups from a
-// serialised SVG.
-// Note: The order the groups are created in is important. Later
-// groups may obscure earlier groups during srawing and selections,
-// so we always create the selection group last.
-const SVG_GROUPS = [
-  'content', 'toolPaths', 'combinedGeometry', 'tabs', 'selection'
-];
+import * as Gcode from "./Gcode.js";
+import * as SVG from "./SVG.js";
 
 /**
  * Singleton.
  * SVGcut makes extensive use of "knockout" to bind the various parts
  * of the UI together. You will need to understand the basics of
  * knockout to read this code.
+ * @see {@link ../DEVELOPING.md}
+ * @listens UPDATE_SIMULATION updates the simulation for new Gcode
  */
-class App {
+export class SVGcut {
 
+  /**
+   * Construct the SVGcut singleton. This is available throughout the code
+   * via the global variable `App`.
+   * @param {object} config currently unused, but might be needed again.
+   */
   constructor(config) {
 
     /**
@@ -47,12 +41,12 @@ class App {
      * @member {object.<name,string>}
      */
     this.PolyOps = {
-      ConcentricPocket: "ConcentricPocket",
-      Engrave: "Engrave",
-      Inside: "Inside",
-      Outside: "Outside",
-      Perforate: "Perforate",
-      RasterPocket: "RasterPocket"
+      ConcentricPocket: 0,
+      Engrave: 1,
+      Inside: 2,
+      Outside: 3,
+      Perforate: 4,
+      RasterPocket: 5
     };
 
     /**
@@ -97,19 +91,13 @@ class App {
      * of 0,0,500,500 before an SVG is loaded.
      * @member {Element}
      */
-    this.mainSnap = Snap("#MainSvg");
+    this.mainSVG = document.getElementById("MainSvg");
 
-    /**
-     * SVG groups used to organising the main SVG view.
-     * @member {SVGGraphicsElement}
-     */
-    this.svgGroups = {};
-    for (const group of SVG_GROUPS) {
-      const g = this.mainSnap.group();
-      g.attr("id", group);
-      this.svgGroups[group] = g;
-    }
-    this.addSVGFilters();
+    // Create the simulation canvas.
+    this.simulation = new Simulation(
+      "glShaders",
+      document.getElementById("simulationCanvas"),
+      document.getElementById('timeControl'));
 
     // Create view models.
 
@@ -123,17 +111,6 @@ class App {
     this.models.Operations = new OperationsViewModel(unitConverter);
     this.models.Tabs = new TabsViewModel(unitConverter);
     this.models.GcodeGeneration = new GcodeGenerationViewModel();
-
-    /*CPP*
-     * Paths to try to load CPP module asynchronously
-     * @member {String[]}
-     *
-    this.tryCppPaths = Array.from(config.camCppPaths);
-    // requires Misc model
-
-    this.downloadCpp();
-    this.models.Misc.loadedCamCpp(true); // not if downloadCpp is used
-    /CPP*/
 
     // bootstrap is a bit crap at submenus. If we want to close a menu
     // tree when an action is selected, we have to jump through some hoops.
@@ -156,7 +133,9 @@ class App {
         const lert = this.showAlert("loadingSVG", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
-          this.importSvg(e.target.result);
+          const svgEl = SVG.loadSVGFromText(e.target.result);
+          document.getElementById("contentSVGGroup").append(svgEl);
+          this.updateMainSvgSize();
           lert.remove();
           this.showAlert("loadedSVG", "alert-success", file.name);
           this.tutorial(2);
@@ -178,21 +157,18 @@ class App {
 
     window.addEventListener("resize", () => {
       this.updateMainSvgSize();
-      this.updateSvgAutoHeight();
       this.updateSimulationCanvasSize();
     });
 
     document.addEventListener("UPDATE_SIMULATION", () => {
-      if (this.simulation) {
-        // Set the simulation path from the Gcode
-        const uc = this.models.GcodeGeneration.unitConverter;
-        const topZ = this.models.Material.topZ.toUnits(uc.units());
-        const diam = this.models.Tool.diameter.toUnits(uc.units());
-        const ang = this.models.Tool.angle();
-        const cutterH = uc.fromUnits(1, "mm");
-        const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
-        this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
-      }
+      // Set the simulation path from the Gcode
+      const uc = this.models.GcodeGeneration.unitConverter;
+      const topZ = this.models.Material.topZ.toUnits(uc.units());
+      const diam = this.models.Tool.diameter.toUnits(uc.units());
+      const ang = this.models.Tool.angle();
+      const cutterH = uc.fromUnits(1, "mm");
+      const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
+      this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
     // Try and load default project
@@ -201,12 +177,6 @@ class App {
     // Complete UI initialisation of the view models
     for (const m in this.models)
       this.models[m].initialise();
-
-    // Create the simulation canvas.
-    this.simulation = new Simulation(
-      "glShaders",
-      document.getElementById("simulationCanvas"),
-      document.getElementById('timeControl'));
   }
 
   /**
@@ -214,7 +184,6 @@ class App {
    * @return {Promise} promise that resolves to undefined
    */
   start() {
-    this.updateSvgAutoHeight();
     this.updateMainSvgSize();
     this.updateSimulationCanvasSize();
 
@@ -224,23 +193,10 @@ class App {
   }
 
   /**
-   * Add filters to modify the rendering of SVG groups
-   * @private
-   */
-  addSVGFilters() {
-    // Add a filter to dim the content
-    this.svgGroups.content.attr({
-      filter: this.mainSnap.filter(
-        Snap.filter.contrast(.5)).attr("filterUnits", "objectBoundingBox")
-    });
-  }
-
-  /**
    * Add handlers for evenet in SVG
    */
   addSVGEventHandlers() {
-    const mainSvgEl = document.getElementById("MainSvg");
-    mainSvgEl
+    this.mainSVG
     .addEventListener("click", e => setTimeout(() => {
       if (e.detail > 1)
         return false; // ignore dblclick first click
@@ -248,7 +204,7 @@ class App {
       const element = e.target;
       if (e.target != null) {
         // Ignore clicks that are not on SVG elements
-        if (this.models.Selection.clickOnSVG(Snap(e.target))) {
+        if (this.models.Selection.clickOnSVG(e.target)) {
           if (this.models.Selection.isSomethingSelected()) {
             this.tutorial(3);
             return true;
@@ -258,7 +214,7 @@ class App {
       return false;
     }, 200));
 
-    mainSvgEl
+    this.mainSVG
     .addEventListener("dblclick", e => {
       // Select everything
 
@@ -266,14 +222,26 @@ class App {
         // Deselect current selection
         this.models.Selection.clearSelection();
 
-      const selectedPaths = this.mainSnap.selectAll('path');
-      if (selectedPaths.length > 0) {
-        selectedPaths.forEach(element =>
+      const selectedEls = this.mainSVG.querySelectorAll(
+        'path,rect,circle,ellipse,line,polyline,polygon');
+      if (selectedEls.length > 0) {
+        selectedEls.forEach(element =>
           this.models.Selection.clickOnSVG(element));
         if (this.models.Selection.isSomethingSelected())
           this.tutorial(3);
       }
     });
+  }
+
+  opName(v) {
+    switch (v) {
+    case this.PolyOps.Engrave: return "Engrave";
+    case this.PolyOps.Perforate: return "Perforate";
+    case this.PolyOps.Inside: return "Inside";
+    case this.PolyOps.Outside: return "Outside";
+    case this.PolyOps.ConcentricPocket: return "Pocket (concentric)";
+    case this.PolyOps.RasterPocket: return "Pocket (raster)";
+    }
   }
 
   /**
@@ -334,11 +302,12 @@ class App {
   }
 
   /**
-   * Get the bounding box of the main SVG.
+   * Get the bounding box of the content in the main SVG.
+   * This is the smallest box that encompasses the content.
    * @return {Rect} the BB (in px units)
    */
-  getMainSvgBBox() {
-    return new Rect(this.mainSnap.getBBox());
+  getMainSVGBBox() {
+    return SVG.getBounds(this.mainSVG);
   }
 
   /**
@@ -357,48 +326,23 @@ class App {
   }
 
   /**
-   * Update the client size of any svg that's tagged as autoheight
-   * so that the aspect ratio is preserved. This is currently only
-   * used for the MaterialSvg picture.
-   * @private
-   */
-  updateSvgAutoHeight() {
-    const nodes = document.querySelectorAll("svg.autoheight");
-    for (const node of nodes) {
-      const ar = node.getAttribute("internalHeight")
-            / node.getAttribute("internalWidth");
-      node.setAttribute("clientHeight", node.clientWidth * ar);
-    }
-  }
-
-  /**
-   * Set the client area of the main SVG so that it fits the
+   * Set the viewBox of the main SVG so that it fits the
    * viewing area.
    * @private
    */
   updateMainSvgSize() {
-    // Get the whole middle section
+    // Get the whole middle section that the SVG has to fit in
     const middleDiv = document.getElementById("Middle");
-    // Get the BB for the main SVG view using Snap
-    const bbox = this.mainSnap.getBBox();
-    // Get the actual DOM SVG and attribute it accordingly
-    const mSvg = document.getElementById("MainSvg");
-    mSvg.setAttribute("clientWidth", middleDiv.clientWidth);
-    mSvg.setAttribute("clientHeight", Math.max(10, window.clientHeight - 120));
-    mSvg.setAttribute("preserveAspectRatio", 'xMinYMin meet');
+    // Get the SVG and attribute it accordingly
+    const mSvg = this.mainSVG;
+    // Get the BB for the main SVG view
+    const bbox = mSvg.getBBox();
+    // Mine; works even when the SVG hasn't been rendered, but is heavy.
+    //const bbox = this.getMainSVGBBox();
+    // Set the viewBox to view all the contents of the main svg
     mSvg.setAttribute(
-      "viewBox", `${bbox.x - 2} ${bbox.y - 2} ${bbox.w + 4} ${bbox.h + 4}`);
-  }
-
-  /**
-   * Load SVG from plain text into the "content" SVG group. This won't
-   * affect the other SVG groups.
-   * @param {Buffer|string} content the svg plain text
-   * @private
-   */
-  importSvg(content) {
-    this.svgGroups.content.append(Snap.parse(content));
-    this.updateMainSvgSize();
+      "viewBox",
+      `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`);
   }
 
   /**
@@ -437,11 +381,11 @@ class App {
         container.model[this.models[m].jsonFieldName()] = json;
     }
     if (!template) {
-      // We don't need to serialise the combinedGeometry (it can
-      // be regenerated by recombine) or the tabs or the selection
-      for (const group of [ 'content', 'toolPaths' ]) {
-        container.svg[group] = this.svgGroups[group].outerSVG();
-      }
+      // Only the content and toolPaths SVG need to be saved, everything
+      // else can be regenerated
+      const svgGroups = document.querySelector(".serialisableSVGGroup");
+      for (const svgel of svgGroups)
+        container.svg[svgel.id] = svgel.innerHTML;
     }
     return container;
   }
@@ -454,9 +398,10 @@ class App {
    * @param {string[]} saveable.svg mapping from svg group name to geometry
    */
   loadSaveable(container) {
-    // Clean out SVG groups (also kills filters)
-    for (const group of SVG_GROUPS)
-      this.svgGroups[group].clear();
+    // Clean out SVG groups
+    let svgGroups = document.querySelector(".managedSVGGroup");
+    for (const svgel of svgGroups)
+      svgel.replaceChildren();
 
     // Reload models
     for (const m in this.models) {
@@ -466,17 +411,14 @@ class App {
         this.models[m].fromJson(json);
     }
 
-    // Reload SVG groups
-    for (const group of SVG_GROUPS) {
-      if (container.svg[group]) {
-        const snapEl = Snap.parse(container.svg[group]);
-        // Append the reloaded content
-        this.svgGroups[group].append(snapEl);
+    // Reload content
+    svgGroups = document.querySelector(".serialisableSVGGroup");
+    for (const svgel of svgGroups) {
+      if (container.svg[svgel.id]) {
+        const el = SVG.loadSVGFromText(container.svg[svgel.id]);
+        svgel.append(el);
       }
     }
-    this.addSVGFilters();
     this.updateMainSvgSize();
   }
 }
-
-export { App };

@@ -1,5 +1,5 @@
 const options = {
-  // Might be needed again
+  // Currently unused, but might be needed again
 };
 
 export default options;

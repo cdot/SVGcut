@@ -1,8 +1,5 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2024. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-// import "snapsvg";
-/* global Snap */
-
 // import "knockout";
 /* global ko */
 
@@ -36,16 +33,6 @@ class OperationsViewModel extends ViewModel {
      * @member {observable.<Rect>}
      */
     this.boundingBox = ko.observable(new Rect());
-
-    App.models.Tool.stepover.subscribe(() => {
-      for (const op of this.operations())
-        op.removeToolPaths();
-    });
-
-    App.models.Tool.diameter.subscribe(() => {
-      for (const op of this.operations())
-        op.recombine();
-    });
   }
 
   /**
@@ -65,6 +52,7 @@ class OperationsViewModel extends ViewModel {
         popover.show();
       }
     });
+
     cob.parentElement.addEventListener("mouseleave", () => {
       const popover = bootstrap.Popover.getInstance(cob);
       popover.hide();
@@ -79,7 +67,7 @@ class OperationsViewModel extends ViewModel {
    * material should be encompassed.
    * @return {ClipperLib.IntRect}
    */
-  getBBox() {
+  getBounds() {
     return this.boundingBox();
   }
 
@@ -145,15 +133,16 @@ class OperationsViewModel extends ViewModel {
     op.removeCombinedGeometry();
     op.removeToolPaths();
     this.operations.remove(op);
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
   };
 
   /**
-   * Regenerate tool paths in all operations. This will normally be
-   * in response to a parameter change.
+   * (Re)generate combinedGeometry from the paths associated with all
+   * operations and recompile tool paths.
    */
-  generateToolPaths() {
+  recombine() {
     for (const op of this.operations())
-      op.generateToolPaths();
+      op.recombine();
   }
 
   /**
@@ -206,7 +195,7 @@ class OperationsViewModel extends ViewModel {
       }
     }
 
-    document.dispatchEvent(new Event("TOOL_PATHS_CHANGED"));
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
     this.updateBB();
   }
 }

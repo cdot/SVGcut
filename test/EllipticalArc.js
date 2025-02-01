@@ -1,13 +1,13 @@
 /* global assert */
 /* global describe, it */
 
-import{ Vector } from "../js/Vector.js";
-import { endpointToCentreArcParams, ellipticalArcToBezier, ellipticalArcToBeziers } from "../js/EllipticalArc.js";
+import { Vector } from "flatten-js";
+import * as EllipticalArc from "../js/EllipticalArc.js";
 
 import { UNit } from "./TestSupport.js";
 
 function a(cx, cy, rx, ry, xang, laf, sf, x, y) {
-  return ellipticalArcToBeziers(
+  return EllipticalArc.toBeziers(
     new Vector(cx, cx),
     new Vector(rx, ry),
     Math.PI * xang / 180,
@@ -17,83 +17,144 @@ function a(cx, cy, rx, ry, xang, laf, sf, x, y) {
 }
 
 describe("Elliptical Arc", () => {
-  it("cap quad 1 clockwise", () => {
-    const p1 = new Vector(0, 10);
-    const p2 = new Vector(10, 0);
+
+  // Some angles used in tests
+  const D45 = Math.PI / 4;
+  const D90 = 2 * D45;
+  const D135 = 3 * D45;
+  const D180 = 2 * D90;
+  const D270 = 3 * D90;
+  const D315 = 7 * D45;
+
+  // PI = 3.14 = 180deg
+  // PI*3/2 = 4.217 = 270deg
+  // +ve rotation is clockwise
+
+  // See arcs.svg for coloured arcs
+  it("a 10,10 0 0 0 10,10 red", () => {
+    const p1 = new Vector(0, 0);
+    const p2 = new Vector(10, 10);
     const r = new Vector(10, 10);
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.deepEqual(cap.c, new Vector(0,0));
-    assert.equal(cap.theta, Math.PI / 2);
-    assert.equal(cap.delta, -Math.PI / 2);
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(10,0));
+    // bowl
+    assert.equal(cap.theta, D180);
+    assert.equal(cap.delta, -D90);
   });
 
-  it("cap quad 1 clockwise sweep", () => {
-    const p1 = new Vector(0, 10);
-    const p2 = new Vector(10, 0);
+  it("a 10,10 0 0 S 10,10 green", () => {
+    const p1 = new Vector(0, 0);
+    const p2 = new Vector(10, 10);
     const r = new Vector(10, 10);
     const xAngle = 0;
     const largeArc = false;
-    const sweep = true;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.deepEqual(cap.c, new Vector(10,10));
-    assert.equal(cap.theta, Math.PI);
-    assert.equal(cap.delta, Math.PI / 2);
+    const sweep = true; // clockwise arc
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(0,10));
+    assert.equal(cap.theta, D270);
+    assert.equal(cap.delta, D90);
   });
 
-  it("cap quad 1 clockwise largeArc", () => {
-    const p1 = new Vector(0, 10);
-    const p2 = new Vector(10, 0);
+  it("a 10,10 0 L 0 10,10 blue", () => {
+    const p1 = new Vector(0, 0);
+    const p2 = new Vector(10, 10);
     const r = new Vector(10, 10);
     const xAngle = 0;
     const largeArc = true;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.deepEqual(cap.c, new Vector(10,10));
-    assert.equal(cap.theta, Math.PI);
-    assert.equal(cap.delta, -3 * Math.PI / 2);
+    const cap = EllipticalArc.endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(0,10));
+    assert.equal(cap.theta, D270);
+    assert.equal(cap.delta, -D270);
   });
 
-  it("cap quad 1 clockwise largeArc sweep", () => {
-    const p1 = new Vector(0, 10);
-    const p2 = new Vector(10, 0);
+  it("a 10,10 0 L S 10,10 yellow", () => {
+    const p1 = new Vector(0, 0);
+    const p2 = new Vector(10, 10);
     const r = new Vector(10, 10);
     const xAngle = 0;
     const largeArc = true;
     const sweep = true;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.deepEqual(cap.c, new Vector(0,0));
-    assert.equal(cap.theta, Math.PI / 2);
-    assert.equal(cap.delta, 3 * Math.PI / 2);
+    const cap = EllipticalArc.endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(10,0));
+    assert.equal(cap.theta, D180);
+    assert.equal(cap.delta, D270);
   });
 
-  it("cap quad 1 anticlockwise", () => {
-    const p1 = new Vector(10, 0);
-    const p2 = new Vector(0, 10);
+  it("a 10,10 0 0 0 -10,-10 red", () => {
+    const p1 = new Vector(10, 10);
+    const p2 = new Vector(0, 0);
     const r = new Vector(10, 10);
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.deepEqual(cap.c, new Vector(10,10));
-    assert.equal(cap.theta, -Math.PI / 2);
-    assert.equal(cap.delta, -Math.PI / 2);
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(0,10));
+    assert.equal(cap.theta, 0);
+    assert.equal(cap.delta, -D90);
   });
 
-  it("cap quad 1 twisted", () => {
-    const p1 = new Vector(0, 10);
-    const p2 = new Vector(10, 0);
+  it("a 10,10 0 0 S -10,-10 green", () => {
+    const p1 = new Vector(10, 10);
+    const p2 = new Vector(0, 0);
+    const r = new Vector(10, 10);
+    const xAngle = 0;
+    const largeArc = false;
+    const sweep = true;
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(10,0));
+    assert.equal(cap.theta, D90);
+    assert.equal(cap.delta, D90);
+  });
+
+  it("a 10,10 0 L 0 -10,-10 blue", () => {
+    const p1 = new Vector(10, 10);
+    const p2 = new Vector(0, 0);
+    const r = new Vector(10, 10);
+    const xAngle = 0;
+    const largeArc = true;
+    const sweep = false;
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(10,0));
+    assert.equal(cap.theta, D90);
+    assert.equal(cap.delta, -D270);
+  });
+
+  it("a 10,10 0 L 0 -10,-10 yellow", () => {
+    const p1 = new Vector(10, 10);
+    const p2 = new Vector(0, 0);
+    const r = new Vector(10, 10);
+    const xAngle = 0;
+    const largeArc = true;
+    const sweep = true;
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.deepEqual(cap.c, new Vector(0,10));
+    assert.equal(cap.theta, 0);
+    assert.equal(cap.delta, D270);
+  });
+
+  it("a 10,10 45 0 0 10,10", () => {
+    const p1 = new Vector(0, 0);
+    const p2 = new Vector(10, 10);
     const r = new Vector(10, 10);
     const xAngle = Math.PI / 4;
     const largeArc = false;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    assert.almost(cap.c.x, 0);
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.almost(cap.c.x, 10);
     assert.almost(cap.c.y, 0);
-    assert.almost(cap.theta, 0.7853981633974484);
-    assert.almost(cap.delta, -1.570796326794897);
+    assert.almost(cap.theta, D135);
+    assert.almost(cap.delta, -D90);
   });
 
   it("bez quad 1", () => {
@@ -103,8 +164,9 @@ describe("Elliptical Arc", () => {
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    const bez = ellipticalArcToBezier(cap.c, cap.theta, cap.delta, r, xAngle);
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    const bez = EllipticalArc.toBezier(cap.c, cap.theta, cap.delta, r, xAngle);
     assert.almost(bez[0].x, 0);
     assert.almost(bez[0].y, 10);
     assert.almost(bez[1].x, 5.4858377035486345);
@@ -122,8 +184,10 @@ describe("Elliptical Arc", () => {
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-    const bez = ellipticalArcToBezier(cap.c, cap.theta, cap.delta/2, r, xAngle);
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    const bez = EllipticalArc.toBezier(
+      cap.c, cap.theta, cap.delta/2, r, xAngle);
     assert.almost(bez[0].x, 0);
     assert.almost(bez[0].y, 10);
     assert.almost(bez[1].x, 2.651147734913025);
@@ -141,7 +205,7 @@ describe("Elliptical Arc", () => {
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const bez = ellipticalArcToBeziers(p1, r, xAngle, largeArc, sweep, p2);
+    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
     assert.almost(bez, [
       [
         new Vector(0, 10),
@@ -165,7 +229,33 @@ describe("Elliptical Arc", () => {
     const xAngle = Math.PI;
     const largeArc = false;
     const sweep = false;
-    const bez = ellipticalArcToBeziers(p1, r, xAngle, largeArc, sweep, p2);
-    console.log(bez);
+    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
+    // a semicircle should give us 4 curves
+    assert.almost(bez, [
+      [
+        { x: 10, y: 0 },
+        { x: 10, y: 1.3255738674565123 },
+        { x: 10.527143823425085, y: 2.5982116352905598 },
+        { x: 11.464466094067262, y: 3.5355339059327378 }
+      ],
+      [
+        { x: 11.464466094067262, y: 3.5355339059327378 },
+        { x: 12.40178836470944, y: 4.472856176574916 },
+        { x: 13.674426132543488, y: 5 },
+        { x: 15, y: 5 }
+      ],
+      [
+        { x: 15, y: 5 },
+        { x: 16.325573867456512, y: 5 },
+        { x: 17.59821163529056, y: 4.472856176574915 },
+        { x: 18.535533905932738, y: 3.5355339059327373 }
+      ],
+      [
+        { x: 18.535533905932738, y: 3.5355339059327373 },
+        { x: 19.472856176574915, y: 2.5982116352905598 },
+        { x: 20, y: 1.3255738674565123 },
+        { x: 20, y: 0 }
+      ]
+    ]);
   });
 });

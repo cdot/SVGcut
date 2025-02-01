@@ -1,14 +1,15 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 /* global ClipperLib */
+ClipperLib.use_xyz = true;
 
 /* global App */
 /* global assert */
 
-import { Point as FPoint, Segment as FSegment, Polygon as FPolygon } from 'flatten-js';
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
-import { convexPartition } from "./Partition.js";
+import * as Partition from "./Partition.js";
+import * as Flatten from 'flatten-js';
 
 /**
  * Support for different CAM operations
@@ -16,8 +17,9 @@ import { convexPartition } from "./Partition.js";
  */
 
 /**
- * Compute pocket tool path. The pocket is cleared using concentric passes,
- * starting from the outside and working towards the centre.
+ * Compute pocket tool paths. The pockets are cleared using concentric passes,
+ * starting from the outside and working towards the centre. Only works
+ * on closed paths.
  * @param {CutPaths} geometry the geometry to compute for
  * @param {number} cutterDia in "integer" units
  * @param {number} overlap is in the range [0, 1)
@@ -27,25 +29,37 @@ import { convexPartition } from "./Partition.js";
  */
 export function concentricPocket(geometry, cutterDia, overlap, climb) {
   assert(geometry instanceof CutPaths);
-  geometry = geometry.closedOnly();
+  geometry = geometry.filter(p => p.isClosed);
+  const toolPaths = new CutPaths();
   if (geometry.length === 0)
-    return geometry;
+    return toolPaths;
 
-  console.debug("Cam.concentricPocket");
+  console.debug(`Cam.concentricPocket ${geometry.length} paths`);
+
   // Shrink by half the cutter diameter
   let current = geometry.offset(-cutterDia / 2);
   // take a copy of the shrunk pocket to clip against
-  const clipPoly = current.slice(0);
+  const clipPoly = new CutPaths(current);
   // Iterate, shrinking the pocket for each pass
-  let allPaths = new CutPaths();
+  let n = 1;
   while (current.length != 0) {
+    /*console.debug("Pass", n++,
+                  Math.max(current[0][0].X,
+                           current[0][1].X,
+                           current[0][2].X,
+                           current[0][3].X) -
+                  Math.min(current[0][0].X,
+                           current[0][1].X,
+                           current[0][2].X,
+                           current[0][3].X));*/
     if (climb)
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
-    allPaths.mergePaths(current, clipPoly);
+    toolPaths.mergePaths(current, clipPoly);
     current = current.offset(-cutterDia * (1 - overlap));
   }
-  return allPaths;
+  console.debug(`Cam.concentricPocket generated ${toolPaths.length} tool paths`);
+  return toolPaths;
 }
 
 /**
@@ -56,14 +70,13 @@ export function concentricPocket(geometry, cutterDia, overlap, climb) {
  * @private
  */
 function rasteriseConvexPocket(pocket, step) {
-  assert(pocket instanceof CutPath);
   // Get the min Y
   const bb = pocket.box;
   let y = bb.ymin + step;
   let direction = 1;
   let path = new CutPath();
   while (y < bb.ymax) {
-    const ray = new FSegment(bb.xmin - step, y, bb.xmax + step, y);
+    const ray = new Flatten.Segment(bb.xmin - step, y, bb.xmax + step, y);
     const intersections = ray.intersect(pocket);
     if (direction === 1)
       intersections.sort((a, b) => a.x - b.x);
@@ -81,48 +94,51 @@ function rasteriseConvexPocket(pocket, step) {
 
 /**
  * Compute tool pockets using rasters. The geometry is decomposed into
- * convex areas and each is rasterised with horizontal tool sweeps.
+ * convex areas and each is rasterised with horizontal tool sweeps. Only
+ * works on closed paths.
  * @param {CutPaths} geometry
  * @param {number} cutterDia is in "integer" units
  * @param {number} overlap is in the range [0, 1)
  * @param {boolean} climb true to reverse cutter direction
  * @return {CutPaths} rasters
+ * @memberof Cam
  */
 export function rasterPocket(geometry, cutterDia, overlap, climb) {
   assert(geometry instanceof CutPaths);
-  geometry = geometry.closedOnly();
+  geometry = geometry.filter(p => p.isClosed);
+  const toolPaths = new CutPaths();
   if (geometry.length === 0)
-    return geometry;
+    return toolPaths;
 
-  console.debug("Cam.rasterPocket");
+  console.debug(`Cam.rasterPocket ${geometry.length} paths`);
   const step = cutterDia * (1 - overlap);
   // Shrink first path by half the cutter diameter
   let iPockets = geometry.offset(-cutterDia / 2);
 
-  const pockets = new CutPaths();
   for (let poly of iPockets) {
     if (!poly.isClosed)
       continue; // ignore this poly for rasterisation
     // Rasterise interior
-    const pocket = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));
-    const convexPockets = convexPartition(pocket);
+    const pocket = new Flatten.Polygon(poly.map(pt => new Flatten.Point(pt.X, pt.Y)));
+    const convexPockets = Partition.convex(pocket);
     let firstPoint;
     for (const convexPocket of convexPockets) {
       const rasters = rasteriseConvexPocket(convexPocket, step);
       if (!firstPoint)
         firstPoint = rasters[0];
       if (rasters.length > 0)
-        pockets.push(rasters);
+        toolPaths.push(rasters);
     }
     // Find the point on the outline closest to the first point of
     // the rasters, and reshape the bounding poly
     let cp = poly.closestVertex(firstPoint);
     if (cp)
       poly.makeLast(cp.point);
-    pockets.unshift(poly);
+    toolPaths.unshift(poly);
   }
 
-  return pockets;
+  console.debug(`Cam.rasterPocket generated ${toolPaths.length} tool paths`);
+  return toolPaths;
 }
 
 /**
@@ -138,13 +154,13 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
  */
 export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   assert(geometry instanceof CutPaths);
-  geometry = geometry.closedOnly();
+  geometry = geometry.filter(p => p.isClosed);
+  let toolPaths = new CutPaths();
   if (geometry.length === 0)
-    return geometry;
+    return toolPaths;
 
-  console.debug(`Cam.${isInside ? "in" : "out"}line`);
+  console.debug(`Cam.${isInside ? "in" : "out"}line ${geometry.length} paths`);
   let currentWidth = cutterDia;
-  let allPaths = new CutPaths();
   const eachWidth = cutterDia * (1 - overlap);
 
   let current;
@@ -169,20 +185,21 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     if (needReverse)
       for (i = 0; i < current.length; ++i)
         current[i].reverse();
-    allPaths.mergePaths(current, clipPoly);
+    toolPaths.mergePaths(current, clipPoly);
     const nextWidth = currentWidth + eachWidth;
     if (nextWidth > width && width - currentWidth > 0) {
       current = current.offset(width - currentWidth);
       if (needReverse)
         for (i = 0; i < current.length; ++i)
           current[i].reverse();
-      allPaths.mergePaths(current, clipPoly);
+      toolPaths.mergePaths(current, clipPoly);
       break;
     }
     currentWidth = nextWidth;
     current = current.offset(eachOffset);
   }
-  return allPaths;
+  console.debug(`Cam.${isInside ? "in" : "out"} generated ${toolPaths.length} tool paths`);
+  return toolPaths;
 };
 
 /**
@@ -219,17 +236,20 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   // Measure the path
   let totalPathLength = path.perimeter();
 
+  if (path.isClosed)
+    path.push(path[0]); // duplicate first vertex
+
   // Work out number of holes, and step between them, allowing spacing
   // between adjacent holes
   const numHoles = Math.floor(totalPathLength / (cutterDia + spacing));
-  const step = totalPathLength / numHoles;
+  const step = totalPathLength / (numHoles - 1);
 
   // Walk round the path stopping at every hole, generating a new path
   let newPath = new CutPath();
   let gap = 0; // distance along the path from the last hole;
-  let segi = 0; // index of end of current segment
+  let segi = 1; // index of end of current segment
   // Start of the current segment
-  let segStart = path[path.length - 1], segEnd = path[0];
+  let segStart = path[0], segEnd = path[1];
   // dimensions of the current segment
   let dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
   // Length of the current segment
@@ -263,13 +283,18 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
     segLen -= where;
     gap += where;
   }
+  if (path.isClosed)
+    path.pop(); // remove pseudo-vertex
+
   return newPath;
 }
 
 /**
  * Compute perforation tool path. This is an outline path, but it
  * has a vertex at every tool diameter step along the path. Gcode generation
- * will convert those vertices to drill holes.
+ * will convert those vertices to drill holes. Works on both open and closed
+ * paths; closed paths the tool will follow outside the path, open paths the
+ * tool will follow the path.
  * @param {CutPaths} geometry
  * @param {number} cutterDia in "integer" units
  * @param {number} spacing is the gap to leave between perforations
@@ -280,22 +305,24 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
  */
 export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
   assert(geometry instanceof CutPaths);
-  console.debug("Cam.perforate");
-  const allPaths = new CutPaths();
+  console.debug(`Cam.perforate ${geometry.length} paths`);
+  const toolPaths = new CutPaths();
 
   // Bloat the closed paths by half the cutter diameter
   const bloated = new CutPaths();
   for (const path of geometry) {
-    if (path.isClosed)
-      bloated.push(path.offset(cutterDia / 2));
-    else // just follow open paths
-      bloated.push(path);
+    if (path.isClosed) {
+      const bloated = new CutPaths(path)
+            .offset(cutterDia / 2, ClipperLib.JoinType.jtRound)[0];
+      const ring = perforatePath(bloated, cutterDia, spacing, topZ, botZ);
+      toolPaths.mergePath(ring);
+    } else { // just follow open paths
+      toolPaths.mergePath(perforatePath(path, cutterDia, spacing, topZ, botZ));
+    }
   }
 
-  for (const path of bloated)
-    allPaths.mergePath(perforatePath(path, cutterDia, spacing, topZ, botZ));
-
-  return allPaths;
+  console.debug(`Cam.perforate generated ${toolPaths.length} tool paths`);
+  return toolPaths;
 }
 
 /**
@@ -322,7 +349,7 @@ function drill(geometry, topZ, botZ) {
 /**
  * Compute paths for engraving. This simply generates a tool path
  * that follows the outline of the geometry, regardless of the tool
- * diameter.
+ * diameter. Works on both open and closed paths.
  * @param {CutPaths} geometry the engraving
  * @param {boolean} climb reverse cutter direction
  * @return {CutPaths}
@@ -330,39 +357,43 @@ function drill(geometry, topZ, botZ) {
  */
 export function engrave(geometry, climb) {
   assert(geometry instanceof CutPaths);
-  console.debug("Cam.engrave");
-  const allPaths = new CutPaths();
+  console.debug(`Cam.engrave ${geometry.length} paths`);
+  const toolPaths = new CutPaths();
   for (const path of geometry) {
     const copy = new CutPaths(path); // take a copy
     if (!climb)
       copy.reverse();
-    allPaths.mergePaths(copy, path.isClosed);
+    toolPaths.mergePaths(copy, geometry);
   }
-  return allPaths;
+  console.debug(`Cam.engrave generated ${toolPaths.length} tool paths`);
+  return toolPaths;
 };
 
 /**
- * Given a tool path and an array of paths representing a set of
+ * Given a single tool path and an array of paths representing a set of
  * disjoint polygons, split the toolpath into a sequence of paths such
  * that where a path enters or leaves one of the polygons it gets
  * split into two paths. In this way it generates a new array of paths
  * where the odd-numbered paths are outside the polygons, while the
  * even numbered paths are inside the polygons.
  * @param {CutPath} toolPath path being followed by the cutter
- * @param {CutPaths} tabGeometry polygons representing tabs
+ * @param {CutPaths} tabGeometry polygons representing tabs, must all
+ * be closed paths.
  * @author Crawford Currie
+ * @memberof Cam
  */
 export function separateTabs(toolPath, tabGeometry) {
   assert(toolPath instanceof CutPath);
   assert(tabGeometry instanceof CutPaths);
-  console.debug("Cam.separateTabs");
+  console.debug(`Cam.separateTabs over ${tabGeometry.length} tab paths`);
   const tabPolys = new CutPaths();
   for (const poly of tabGeometry) {
-    const poly2d = new FPolygon(poly.map(pt => new FPoint(pt.X, pt.Y)));
+    const poly2d = new Flatten.Polygon(
+      poly.map(pt => new Flatten.Point(pt.X, pt.Y)));
     tabPolys.push(poly2d);
   }
   let ip0 = toolPath[toolPath.length - 1];
-  let p0 = new FPoint(ip0.X, ip0.Y);
+  let p0 = new Flatten.Point(ip0.X, ip0.Y);
 
   // If the first point of the last path is outside a tab poly,
   // then we need to add a zero-length path so that all even-numbered
@@ -381,8 +412,8 @@ export function separateTabs(toolPath, tabGeometry) {
   for (const ip1 of toolPath) {
     if (ip1.X !== ip0.X || ip1.Y !== ip0.Y) {
       //console.debug("\tnew point at ", ip1);
-      const p1 = new FPoint(ip1.X, ip1.Y);
-      const seg = new FSegment(p0, p1);
+      const p1 = new Flatten.Point(ip1.X, ip1.Y);
+      const seg = new Flatten.Segment(p0, p1);
       for (const tabPoly of tabPolys) {
         const intersections = seg.intersect(tabPoly);
         if (intersections.length > 0) {
@@ -410,6 +441,7 @@ export function separateTabs(toolPath, tabGeometry) {
   }
   if (currPath.length > 1)
     paths.push(currPath);
-  //console.debug("Separated paths", paths);
+
+  console.debug(`Cam.separatePaths generated ${paths.length} tool paths`);
   return paths;
 }
