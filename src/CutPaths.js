@@ -15,12 +15,7 @@ import { CutPath } from "./CutPath.js";
  * developers, the best distance value to remove artifacts before
  * offsetting is 0.1 * scale.
  */
-const CLEAN_POLY_DIST = 0.1 * UnitConverter.from.mm.to.integer;
-
-/*
- * Remove path vertices closer than this.
- */
-const CLEAN_PATH_DIST2 = CLEAN_POLY_DIST * CLEAN_POLY_DIST;
+const CLEAN_POLY_DIST = 0.001 * UnitConverter.from.mm.to.integer;
 
 /*
  * Only relevant when JoinType = jtRound and/or EndType = etRound.
@@ -251,14 +246,7 @@ export class CutPaths extends Array {
       } else {
         // Remove vertices that are within the specified distance of an
         // adjacent vertex.
-        let i = 1;
-        while (i < path.length) {
-          const d2 = CutPath.dist2(path[i], path[i - 1]);
-          if (d2 < CLEAN_PATH_DIST2)
-            path.splice(i, 1);
-          else
-            i++;
-        }
+        path.unduplicate();
         const clean = ClipperLib.JS.Clean(path, CLEAN_POLY_DIST);
         cleanPaths.push(new CutPath(clean, false));
       }
@@ -306,6 +294,7 @@ export class CutPaths extends Array {
   /**
    * Find the closest point on this geometry to the given point
    * @param {ClipperLib.IntPoint} point to test
+   * @param {boolean} match must match isClosed
    * @return {object?} { path: number, point: number, dist2: number }
    */
   closestVertex(pt, match) {
@@ -325,132 +314,123 @@ export class CutPaths extends Array {
   }
 
   /**
-   * Add a set of paths to the current path set. The paths will be
-   * joined to existing paths if possible. This is used where a
-   * transition between paths can be completed without raising the
-   * tool. Note: merged paths are never closed.
-   * @param {CutPaths} paths paths to add
-   * @param {CutPaths?} clip only add joining edge if it
-   * doesn't cross this poly.
+   * If a `within` object is given, the paths will be merged with
+   * existing paths where a transition between the paths can be
+   * completed without raising the tool. Where merging isn't possible,
+   * the polys are sorted so that the tool moves are kept short.
+   * This isn't a general solution to the problem of computing an
+   * optimal tool path, that is NP-hard.
+   * @param {CutPaths?} within merge closed polys if the shortest
+   * joining edge won't cross these closed polys. This is used when
+   * pocketing.
    */
-  mergePaths(paths, clip) {
-    assert(paths instanceof CutPaths);
-    assert(!clip || clip instanceof CutPaths);
-    for (const path of paths)
-      this.mergePath(path, clip);
+  mergePaths(within) {
+    assert(!within || within instanceof CutPaths);
+    const cp = this.filter(p => p.isClosed);
+    if (cp.length === this.length) {
+      this.mergeClosedPaths(within);
+      return; // all paths are closed?
+    }
+    if (cp.length === 0) {
+      // cp is empty, so all paths must be open
+      this.mergeOpenPaths();
+      return;
+    }
+    // mix of open and closed paths
+    cp.mergeClosedPaths(within);
+    const op = this.filter(p => !p.isClosed);
+    op.mergeOpenPaths();
+    this.splice(0, this.length);
+    while (cp.length > 0) this.push(cp.shift());
+    while (op.length > 0) this.push(op.shift());
   }
 
   /**
-   * Add a path to the current path set. The path will be
-   * joined to an existing path if possible.
-   * @param {CutPath} path paths to add
-   * @param {CutPaths?} clip only add joining edge if it
-   * doesn't cross this poly.
+   * Try to merge a set of paths paths by linking them with
+   * an edge that doesn't cross the bounds. Paths are
+   * considered in order, by looking for the shortest edge between the
+   * last point on `path` to all points on all polys in `this`.
+   * @param {CutPaths?} bounds the boundary paths
    * @private
    */
-  mergePath(path, clip) {
-    if (path.length === 0)
+  mergeClosedPaths(bounds) {
+    if (this.length < 2)
       return;
 
-    if (path.isClosed)
-      this.mergeClosedPath(path, clip);
-    else
-      this.mergeOpenPath(path);
-  }
+    // start with the first point on the first poly
+    let currentPath = this[0];
+    currentPath.push(currentPath[0]); // close it.
+    let currentPoint = currentPath[currentPath.length - 1];
+    // remove the first poly (why leave it?)
+    this.shift();//[0] = new CutPath();
 
-  /**
-   * Try to merge the new path into existing paths by linking them with
-   * an edge that doesn't cross the clip. Paths are
-   * considered in order, by looking for the shortest edge between the
-   * last point on `path` to all points on all polys in `this`. This is
-   * expensive, try to avoid calling it with more than 2 polys.
-   * @param {CutPath} path
-   * @param {CutPaths?} clip
-   * @private
-   */
-  mergeClosedPath(path, clip) {
-    // The best merge is one that shares a common point
-    let best;
-    for (let i = 0; i < path.length; i++) {
-      const pt = path[i];
-      const cv = this.closestVertex(pt, path.isClosed);
-      if (cv) {
-        if (!best || cv.dist2 < best.dist2) {
-          best = cv;
-          cv.closest = i;
-          // best.path = index of path in `this`
-          // best.point = index of point in `best.path`
-          // best.dist2 = best dist2 so far
-          // best.closest = index of point in `path`
-        }
+    const mergedPaths = [];
+    while (this.length > 0) {
+      // find the closest point on any of the remaining polys to the
+      // current point
+      const best = this.closestVertex(currentPoint, true);
+      const closestPathIndex = best.path;
+      const closestPointIndex = best.point;
+
+      const path = this[closestPathIndex];
+      this.splice(closestPathIndex, 1);
+
+      // re-order the points on the closest path to bring the closest
+      // point to the front
+      path.makeLast(closestPathIndex);
+      path.push(path[0]); // close the "new" path
+      // Does the edge from the current point to the closest point cross
+      // the bounds?
+      if (bounds.crosses(currentPoint, path[0])) {
+        // it crosses, need a new path
+        mergedPaths.push(currentPath);
+        currentPath = path;
+        currentPoint = currentPath[currentPath.length - 1];
+      }
+      else { // doesn't cross, merge the two paths
+        currentPath = currentPath.concat(path);
+        currentPoint = currentPath[currentPath.length - 1];
       }
     }
+    mergedPaths.push(currentPath);
 
-    if (!best) {
-      // Nothing to merge with
-      this.push(path);
-      return;
-    }
-
-    // best gives us the point of closest approach between the
-    // two closed paths
-
-    const p1 = path[best.closest];
-    const path2 = this[best.path];
-    const p2 = path2[best.point];
-    const edgeIsCut = clip ? clip.crosses(p1, p2) : false;
-
-    if (edgeIsCut) {
-      this.unshift(path);
-    } else {
-      path2.makeLast(best.point);
-      // Insert a closing vertex
-      path2.unshift(path2[path2.length - 1]);
-      let n = path.length + 1; // +1 to duplicate the closing vertex
-      for (let vi = best.closest;
-           n > 0;
-           vi = (vi + 1) % path.length, n--)
-        path2.push(path[vi]);
-      path2.isClosed = false;
-    }
+    while (mergedPaths.length > 0)
+      this.push(mergedPaths.shift());
   }
-
+  
   /**
    * The only way to merge open paths is by connecting endpoints. An
    * open path could be merged into a closed path to make a new open
    * path, but that's not currently done.
-   * @param {CutPath} path
    * @private
    */
-  mergeOpenPath(path) {
-    let a = path[0], b = path[path.length - 1];
-    for (const tpath of this) {
-      if (tpath.isClosed) {
-        // can't merge into a closed path (yet)
-      } else {
-        // Connect endpoints
-        const ta = tpath[0], tb = tpath[tpath.length - 1];
-        if (a.X === ta.X && a.Y === ta.Y
-            || b.X === tb.X && b.Y === tb.Y) {
-          path = path.reverse();
-          const t = b; b = a; a = t;
-        }
-        if (a.X === tb.X && a.Y === tb.Y) {
-          // connect path start to tpath end
-          for (const pt of path)
-            tpath.push(pt);
-          return;
-        }
-        if (b.X === ta.X && b.Y === ta.Y) {
-          // connect path end to tpath start
-          for (let i = path.length - 1; i >= 0; i--)
-            tpath.unshift(path[i]);
-          return;
-        }
+  mergeOpenPaths() {
+    let p1i = 0;
+    while (p1i < this.length - 1) {
+      const p1 = this[p1i];
+      const p1a = p1[0], p1b = p1[p1.length - 1];
+      let p2i = p1i + 1;
+      while (p2i < this.length) {
+        const p2 = this[p2i];
+        const p2a = p2[0], p2b = p2[p2.length - 1];
+        
+        if (p1b.X === p2a.X && p1b.Y === p2b.Y) {
+          this[p1i] = p1.concat(p2);
+          this.splice(p2i, 1);
+          p1b = p2b;
+        } else if (p1a.X === p2b.X && p1a.Y === p2b.Y) {
+          this[p1i] = p2.concat(p1);
+          this.splice(p2i, 1);
+          p1a = p2a;
+        } else if (p1a.X === p2a.x && p1a.Y === p2a.Y) {
+          this[p2i] = p2.reverse();
+          const t = p2a;
+          p2a = p2b;
+          p2b = t;
+        } else
+          p2i++;
       }
     }
-    // Couldn't connect endpoints
-    this.push(path);
   }
 }
 

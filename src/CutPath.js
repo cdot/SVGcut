@@ -6,6 +6,12 @@ ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
 
+/*
+ * Remove path vertices closer than this.
+ */
+const CLEAN_PATH_DIST = 0.0001 * UnitConverter.from.mm.to.integer;
+const CLEAN_PATH_DIST2 = CLEAN_PATH_DIST * CLEAN_PATH_DIST;
+
 /**
  * Paths processed by ClipperLib are simple arrays of points. That
  * means you can't flag a path as closed. That's OK if you only process
@@ -124,6 +130,23 @@ export class CutPath extends Array {
       i++;
     }
     return best;
+  }
+
+  /**
+   * Remove adjacent duplicate vertices
+   */
+  unduplicate() {
+    if (this.isClosed)
+      this.push(this[0]);
+    let i = 1;
+    while (i < this.length) {
+      if (this[i].X === this[i - 1].X && this[i].Y === this[i - 1].Y)
+        this.splice(i, 1);
+      else
+        i++;
+    }
+    if (this.isClosed)
+      this.pop();
   }
 
   /**

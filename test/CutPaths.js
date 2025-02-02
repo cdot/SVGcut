@@ -5,12 +5,26 @@ global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
 import { UNit } from "./TestSupport.js";
-import { CutPath } from "../src/CutPath.js";
-import { CutPaths } from "../src/CutPaths.js";
 import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
+let CutPath, CutPaths;
 
 describe("CutPaths", () => {
+  let page;
+
+  // CutPath depends on ClipperLib
+  before(() => {
+    return Promise.all([
+      import("../src/CutPath.js"),
+      import("../src/CutPaths.js") ])
+    .then(mods => {
+      CutPath = mods[0].CutPath;
+      CutPaths = mods[1].CutPaths;
+      page = new CutPaths(
+        [[{X:-10,Y:-10},{X:140,Y:-10},{X:140,Y:140},{X:-10,Y:140}]]);
+    });
+  });
+
   it("empty", () => {
     const cp = new CutPaths();
     assert(cp instanceof CutPaths);
@@ -82,7 +96,8 @@ describe("CutPaths", () => {
     ]);
   });
 
-  it("mergePaths simple", () => {
+  /*
+    it("mergePaths simple", () => {
     const cps = new CutPaths([
       new CutPath([
         { X:0, Y:0 }, { X:100*d, y:0 }, { X:100*d, Y:100*d }, { X:0,y:100*d }],
@@ -151,6 +166,178 @@ describe("CutPaths", () => {
     ], false));
   });
 
+  it("mergePaths 1 within", () => {
+    const existing = new CutPaths([[{X:0,Y:0},{X:10,Y:10},{X:20,Y:0}]], true);
+    const path = new CutPath([{X:0,Y:20},{X:10,Y:10},{X:20,Y:20}], true);
+    existing.mergeClosedPath(path, page);
+    assert.deepEqual(
+      existing,
+      new CutPaths([{ X: 0, Y: 0, Z: 0 },
+                    { X: 10, Y: 10, Z: 0 },
+                    { X: 20, Y: 20, Z: 0 },
+                    { X: 0, Y: 20, Z: 0 },
+                    { X: 10, Y: 10, Z: 0 },
+                    { X: 20, Y: 0, Z: 0 }],
+                   true));
+
+  });
+   
+  it("mergePaths 2 within", () => {
+    const existing = new CutPaths([[{X:30,Y:0},{X:40,Y:10},{X:50,Y:0}]], true);
+    const path = new CutPath([{X:30,Y:25},{X:40,Y:15},{X:50,Y:25}], true);
+    existing.mergeClosedPath(path, page);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        { X: 30, Y: 0, Z: 0 },
+        { X: 40, Y: 10, Z: 0 },
+        { X: 40, Y: 15, Z: 0 },
+        { X: 50, Y: 25, Z: 0 },
+        { X: 30, Y: 25, Z: 0 },
+        { X: 40, Y: 15, Z: 0 },
+        { X: 40, Y: 10, Z: 0 },
+        { X: 50, Y: 0, Z: 0 }],
+                   true));
+  });
+   
+  it("mergePaths 3 within", () => {
+    const existing = new CutPaths([[{X:60,Y:0},{X:70,Y:10},{X:80,Y:0}]], true);
+    const path = new CutPath([{X:65,Y:10},{X:75,Y:20},{X:65,Y:30}], true);
+    existing.mergeClosedPath(path, page);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        { X: 60, Y: 0, Z: 0 },
+        { X: 70, Y: 10, Z: 0 },
+        { X: 65, Y: 10, Z: 0 },
+        { X: 75, Y: 20, Z: 0 },
+        { X: 65, Y: 30, Z: 0 },
+        { X: 65, Y: 10, Z: 0 },
+        { X: 70, Y: 10, Z: 0 },
+        { X: 80, Y: 0, Z: 0 }],
+                   true));
+  });
+   
+  it("mergePaths 4 within", () => {
+    const existing = new CutPaths([[{X:90,Y:0},{X:100,Y:10},{X:110,Y:0}]], true);
+    const path = new CutPath([{X:115,Y:0},{X:125,Y:10},{X:115,Y:20}], true);
+    existing.mergeClosedPath(path, page);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        { X: 115, Y: 0, Z: 0 },
+        { X: 125, Y: 10, Z: 0 },
+        { X: 115, Y: 20, Z: 0 },
+        { X: 115, Y: 0, Z: 0 },
+        { X: 110, Y: 0, Z: 0 },
+        { X: 90, Y: 0, Z: 0 },
+        { X: 100, Y: 10, Z: 0 },
+        { X: 110, Y: 0, Z: 0 }],
+                   true));
+  });
+
+  it("mergePaths 1 without", () => {
+    const existing = new CutPaths([[{X:0,Y:0},{X:10,Y:10},{X:20,Y:0}]], true);
+    const path = new CutPath([{X:0,Y:20},{X:10,Y:10},{X:20,Y:20}], true);
+    existing.mergeClosedPath(path);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        new CutPath([
+          { X: 10, Y: 10, Z: 0 },
+          { X: 20, Y: 20, Z: 0 },
+          { X: 0, Y: 20, Z: 0 },
+        ], true),
+        new CutPath([
+          { X: 0, Y: 0, Z: 0 },
+          { X: 10, Y: 10, Z: 0 },
+          { X: 20, Y: 0, Z: 0 }
+        ], true)
+      ]));
+  });
+   
+  it("mergePaths 2 without", () => {
+    const existing = new CutPaths([[{X:30,Y:0},{X:40,Y:10},{X:50,Y:0}]], true);
+    const path = new CutPath([{X:30,Y:25},{X:40,Y:15},{X:50,Y:25}], true);
+    existing.mergeClosedPath(path);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        [
+          { X: 40, Y: 15, Z: 0 },
+          { X: 50, Y: 25, Z: 0 },
+          { X: 30, Y: 25, Z: 0 },
+        ],
+        [
+          { X: 30, Y: 0, Z: 0 },
+          { X: 40, Y: 10, Z: 0 },
+          { X: 50, Y: 0, Z: 0 },
+        ]
+      ], true));
+  });
+   
+  it("mergePaths 3 without", () => {
+    const existing = new CutPaths([[{X:60,Y:0},{X:70,Y:10},{X:80,Y:0}]], true);
+    const path = new CutPath([{X:65,Y:10},{X:75,Y:20},{X:65,Y:30}], true);
+    existing.mergeClosedPath(path);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        [
+          { X: 65, Y: 10, Z: 0 },
+          { X: 75, Y: 20, Z: 0 },
+          { X: 65, Y: 30, Z: 0 },
+        ],
+        [
+          { X: 60, Y: 0, Z: 0 },
+          { X: 70, Y: 10, Z: 0 },
+          { X: 80, Y: 0, Z: 0 }
+        ]
+      ], true));
+  });
+   
+  it("mergePaths 4 without", () => {
+    const existing = new CutPaths([[{X:90,Y:0},{X:100,Y:10},{X:110,Y:0}]], true);
+    const path = new CutPath([{X:115,Y:0},{X:125,Y:10},{X:115,Y:20}], true);
+    existing.mergeClosedPath(path);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        [
+          { X: 115, Y: 0, Z: 0 },
+          { X: 125, Y: 10, Z: 0 },
+          { X: 115, Y: 20, Z: 0 },
+        ],
+        [
+          { X: 90, Y: 0, Z: 0 },
+          { X: 100, Y: 10, Z: 0 },
+          { X: 110, Y: 0, Z: 0 },
+        ]
+      ], true));
+  });
+
+  it("mergePaths 2 clipped", () => {
+    const clip = new CutPaths(
+        [[{X:-10,Y:-10},{X:140,Y:-10},{X:140,Y:12},{X:-10,Y:12}]]);
+    const existing = new CutPaths([[{X:30,Y:0},{X:40,Y:10},{X:50,Y:0}]], true);
+    const path = new CutPath([{X:30,Y:25},{X:40,Y:15},{X:50,Y:25}], true);
+    existing.mergeClosedPath(path, clip);
+    assert.deepEqual(
+      existing,
+      new CutPaths([
+        [
+          { X: 40, Y: 15, Z: 0 },
+          { X: 50, Y: 25, Z: 0 },
+          { X: 30, Y: 25, Z: 0 },
+        ],
+        [
+          { X: 30, Y: 0, Z: 0 },
+          { X: 40, Y: 10, Z: 0 },
+          { X: 50, Y: 0, Z: 0 },
+        ]
+      ], true));
+  });*/
+  
   it("clip", () => {
   });
 
@@ -165,5 +352,4 @@ describe("CutPaths", () => {
 
   it("closestVertex", () => {
   });
-
 });

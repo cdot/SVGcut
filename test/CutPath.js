@@ -136,5 +136,81 @@ describe("CutPath", () => {
     assert.equal(path.inside(new ClipperLib.IntPoint(10, 0)), 0);
     assert.equal(path.inside(new ClipperLib.IntPoint(0, 10)), 0);
   });
+
+  it("unduplicate inner", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true);
+    path.unduplicate();
+    assert.deepEqual(path, new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true));
+  });
+
+  it("unduplicate start", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true);
+    path.unduplicate();
+    assert.deepEqual(path, new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true));
+  });
+
+  it("unduplicate end", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100},
+      {X:0,y:100}
+    ], true);
+    path.unduplicate();
+    assert.deepEqual(path, new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true));
+  });
+
+  it("unduplicate wrap", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100},
+      {X:0,y:0}
+    ], true);
+    path.unduplicate();
+    assert.deepEqual(path, new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100}
+    ], true));
+  });
+
+  it("unduplicate nowrap", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100},
+      {X:0,y:0}
+    ], false);
+    path.unduplicate();
+    assert.deepEqual(path, new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100},
+      {X:0,y:0}
+    ], false));
+  });
 });
 

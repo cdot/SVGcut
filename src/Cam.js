@@ -17,7 +17,7 @@ import * as Flatten from 'flatten-js';
  */
 
 /**
- * Compute pocket tool paths. The pockets are cleared using concentric passes,
+ * Compute pocket tool paths. The pockets are cleared using annular passes,
  * starting from the outside and working towards the centre. Only works
  * on closed paths.
  * @param {CutPaths} geometry the geometry to compute for
@@ -27,38 +27,37 @@ import * as Flatten from 'flatten-js';
  * @return {CutPaths}
  * @memberof Cam
  */
-export function concentricPocket(geometry, cutterDia, overlap, climb) {
+export function annularPocket(geometry, cutterDia, overlap, climb) {
   assert(geometry instanceof CutPaths);
   geometry = geometry.filter(p => p.isClosed);
-  const toolPaths = new CutPaths();
   if (geometry.length === 0)
-    return toolPaths;
+    return geometry;
 
-  console.debug(`Cam.concentricPocket ${geometry.length} paths`);
+  console.debug(`Cam.annularPocket ${geometry.length} paths`);
 
   // Shrink by half the cutter diameter
   let current = geometry.offset(-cutterDia / 2);
-  // take a copy of the shrunk pocket to clip against
-  const clipPoly = new CutPaths(current);
+
+  // take a copy of the shrunk pocket to check against. Each time
+  // the poly merges, there's a risk that an edge between the
+  // outer poly and the inner poly might cross an edge of the
+  // (non-convex) original poly, this is used to detect this.
+  const outer = new CutPaths(current);
+
+  const toolPaths = new CutPaths();
   // Iterate, shrinking the pocket for each pass
   let n = 1;
+  const innerPaths = [];
   while (current.length != 0) {
-    /*console.debug("Pass", n++,
-                  Math.max(current[0][0].X,
-                           current[0][1].X,
-                           current[0][2].X,
-                           current[0][3].X) -
-                  Math.min(current[0][0].X,
-                           current[0][1].X,
-                           current[0][2].X,
-                           current[0][3].X));*/
     if (climb)
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
-    toolPaths.mergePaths(current, clipPoly);
     current = current.offset(-cutterDia * (1 - overlap));
+    for (const p of current)
+      toolPaths.push(p);
   }
-  console.debug(`Cam.concentricPocket generated ${toolPaths.length} tool paths`);
+  toolPaths.mergePaths(outer);
+  console.debug(`Cam.annularPocket generated ${toolPaths.length} tool paths`);
   return toolPaths;
 }
 
@@ -185,19 +184,18 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     if (needReverse)
       for (i = 0; i < current.length; ++i)
         current[i].reverse();
-    toolPaths.mergePaths(current, clipPoly);
     const nextWidth = currentWidth + eachWidth;
     if (nextWidth > width && width - currentWidth > 0) {
       current = current.offset(width - currentWidth);
       if (needReverse)
         for (i = 0; i < current.length; ++i)
           current[i].reverse();
-      toolPaths.mergePaths(current, clipPoly);
       break;
     }
     currentWidth = nextWidth;
     current = current.offset(eachOffset);
   }
+  toolPaths.mergePaths(clipPoly);
   console.debug(`Cam.${isInside ? "in" : "out"} generated ${toolPaths.length} tool paths`);
   return toolPaths;
 };
@@ -315,9 +313,9 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
       const bloated = new CutPaths(path)
             .offset(cutterDia / 2, ClipperLib.JoinType.jtRound)[0];
       const ring = perforatePath(bloated, cutterDia, spacing, topZ, botZ);
-      toolPaths.mergePath(ring);
+      toolPaths.push(ring);
     } else { // just follow open paths
-      toolPaths.mergePath(perforatePath(path, cutterDia, spacing, topZ, botZ));
+      toolPaths.push(perforatePath(path, cutterDia, spacing, topZ, botZ));
     }
   }
 
@@ -328,22 +326,21 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
 /**
  * Compute a drill path. This is a path where each vertex is a site
  * for a drill hole. The holes are drilled in the order of the edges.
+ * Works on both open and closed paths.
  * @param {CutPaths} geometry
  * @param {number} topZ is the Z to which the tool is withdrawn
  * @param {number} botZ is the depth of the perforations
  * @return {CutPaths}
- * @private
+ * @memberof Cam
  */
-function drill(geometry, topZ, botZ) {
+export function drill(geometry, topZ, botZ) {
   const drillPath = new CutPath();
   for (const path of geometry) {
     for (const hole of path) {
       drillPath.push(...drillHole(hole, topZ, botZ));
     }
   }
-  const paths = new CutPaths();
-  paths.mergePath(new CutPath(drillPath, false));
-  return paths;
+  return new CutPaths(drillPath);
 }
 
 /**
@@ -360,11 +357,12 @@ export function engrave(geometry, climb) {
   console.debug(`Cam.engrave ${geometry.length} paths`);
   const toolPaths = new CutPaths();
   for (const path of geometry) {
-    const copy = new CutPaths(path); // take a copy
+    const copy = new CutPath(path); // take a copy
     if (!climb)
       copy.reverse();
-    toolPaths.mergePaths(copy, geometry);
+    toolPaths.push(copy);
   }
+  toolPaths.mergePaths(geometry);
   console.debug(`Cam.engrave generated ${toolPaths.length} tool paths`);
   return toolPaths;
 };

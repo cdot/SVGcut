@@ -95,23 +95,24 @@ class OperationViewModel extends ViewModel {
      * the mix of open and closed paths in the operandPaths.
      */
     this.availableOperations = ko.observableArray([
-      App.PolyOps.Engrave,
-      App.PolyOps.Perforate
+      App.Ops.Engrave,
+      App.Ops.Perforate,
+      App.Ops.Drill
     ]);
 
     if (operandPaths.filter(p => p.isClosed).length > 0) {
       this.availableOperations.push(
-        App.PolyOps.Inside,
-        App.PolyOps.Outside,
-        App.PolyOps.ConcentricPocket,
-        App.PolyOps.RasterPocket);
+        App.Ops.Inside,
+        App.Ops.Outside,
+        App.Ops.AnnularPocket,
+        App.Ops.RasterPocket);
     }
 
     /**
      * The operation type. Default is Engrave as it's simplest.
      * @member {observable.<string>}
      */
-    this.operation = ko.observable(App.PolyOps.Engrave);
+    this.operation = ko.observable(App.Ops.Engrave);
     this.operation.subscribe(() => this.recombine());
 
     /**
@@ -235,10 +236,19 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
-   * Toggle the display of the detail dropdown
+   * Toggle the display of the detail dropdown.
+   * Used from HTML via knockout.
    */
   toggleDetail() {
     this.showDetail(!this.showDetail());
+  }
+
+  /**
+   * Invoked from HTML. Operations are bound to this view model, so
+   * when removeOperation is bound it comes here.
+   */
+  removeOperation() {
+    App.models.Operations.removeOperation(this);
   }
 
   /**
@@ -262,7 +272,9 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
-   * Get the width of the path created by the tool as it cuts
+   * Get the width of the path to be created by the tool as it cuts.
+   * If the user specified width is less than the cutter diameter
+   * then it uses the cutter diameter.
    * @return {number} in internal units
    */
   toolPathWidth() {
@@ -274,17 +286,10 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
-   * Invoked from HTML. Operations are bound to this view model, so
-   * when removeOperation is bound it comes here.
-   */
-  removeOperation() {
-    App.models.Operations.removeOperation(this);
-  }
-
-  /**
-   * (Re)generate combinedGeometry from the paths associated with this
-   * operation (this.operandPaths) and recompile tool paths.
-   * @return {boolean} true if recombination was successful
+   * (Re)generate geometry and tool paths from the paths associated
+   * with this operation, by applying the requested combination op
+   * (Intersect, Union etc.) The geometry is kept in this.combinedGeometry,
+   * and is also added to the combinedGeometry SVG group for preview.
    */
   recombine() {
     if (this.disableRecombination)
@@ -319,21 +324,22 @@ class OperationViewModel extends ViewModel {
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("integer");
 
-      if (opName === App.PolyOps.ConcentricPocket
-          || opName === App.PolyOps.Inside)
+      if (opName === App.Ops.AnnularPocket
+          || opName === App.Ops.Inside)
         off = -off;
 
-      if (opName !== App.PolyOps.Engrave && off !== 0)
+      if (opName !== App.Ops.Engrave && off !== 0)
         previewGeometry = previewGeometry.offset(off);
 
-      if (opName === App.PolyOps.Inside
-          || opName === App.PolyOps.Outside
-          || opName === App.PolyOps.Perforate) {
+      if (opName === App.Ops.Inside
+          || opName === App.Ops.Outside
+          || opName === App.Ops.Perforate
+          || opName === App.Ops.Drill) {
         const width = this.toolPathWidth();
-        if (opName === App.PolyOps.Inside) {
+        if (opName === App.Ops.Inside) {
           previewGeometry =
             previewGeometry.diff(previewGeometry.offset(-width));
-        } else // Outside or Perforate
+        } else // Outside or Perforate or Drill
           previewGeometry =
             previewGeometry.offset(width).diff(previewGeometry);
       }
@@ -359,9 +365,8 @@ class OperationViewModel extends ViewModel {
 
   /**
    * (Re)generate the tool path(s) for this operation. The tool paths are
-   * type CutPath and are written to `this.toolPaths`. Generating toolpaths
-   * invalidates Gcode, among other things. Triggers `UPDATE_GCODE`
-   * to signal this to the rest of the app.
+   * kept in `this.toolPaths`. Generating toolpaths invalidates the Gcode,
+   * so triggers `UPDATE_GCODE` to signal this.
    */
   generateToolPaths() {
     this.generatingToolpath = true;
@@ -381,44 +386,48 @@ class OperationViewModel extends ViewModel {
 
     // inset/outset the geometry as dictated by the margin
     let off = this.margin.toUnits("integer");
-    if (opName === App.PolyOps.ConcentricPocket
-        || opName === App.PolyOps.RasterPocket
-        || opName === App.PolyOps.Inside)
+    if (opName === App.Ops.AnnularPocket
+        || opName === App.Ops.RasterPocket
+        || opName === App.Ops.Inside)
       off = -off; // inset
-    if (opName !== App.PolyOps.Engrave && off !== 0)
+    if (opName !== App.Ops.Engrave && off !== 0)
       geometry = geometry.offset(off);
 
     let paths, width;
     switch (opName) {
 
-    case App.PolyOps.ConcentricPocket:
-      paths = Cam.concentricPocket(geometry, toolDiameter, 1 - stepover, climb);
+    case App.Ops.AnnularPocket:
+      paths = Cam.annularPocket(geometry, toolDiameter, 1 - stepover, climb);
       break;
 
-    case App.PolyOps.RasterPocket:
+    case App.Ops.RasterPocket:
       paths = Cam.rasterPocket(geometry, toolDiameter, 1 - stepover, climb);
       break;
 
-    case App.PolyOps.Inside:
-    case App.PolyOps.Outside:
+    case App.Ops.Inside:
+    case App.Ops.Outside:
       width = this.width.toUnits("integer");
       if (width < toolDiameter)
         width = toolDiameter;
       paths = Cam.outline(
         geometry, toolDiameter,
-        opName === App.PolyOps.Inside, // isInside
+        opName === App.Ops.Inside, // isInside
         width,
         1 - stepover,
         climb);
       break;
 
-    case App.PolyOps.Perforate:
+    case App.Ops.Perforate:
       paths = Cam.perforate(
         geometry, toolDiameter, this.spacing.toUnits("integer"),
         topZ, botZ);
       break;
 
-    case App.PolyOps.Engrave:
+    case App.Ops.Drill:
+      paths = Cam.drill(geometry, topZ, botZ);
+      break;
+
+    case App.Ops.Engrave:
       paths = Cam.engrave(geometry, climb);
       break;
     }
@@ -456,16 +465,18 @@ class OperationViewModel extends ViewModel {
   needs(what) {
     const op = this.operation();
     switch (what) {
-    case "width": return op === App.PolyOps.Inside
-      || op === App.PolyOps.Outside;
+    case "width": return op === App.Ops.Inside
+      || op === App.Ops.Outside;
 
     case "direction":
-    case "ramp":  return op !== App.PolyOps.Perforate;
+    case "ramp":  return op !== App.Ops.Perforate
+      && op !== App.Ops.Drill;
 
-    case "margin":  return op !== App.PolyOps.Perforate
-      && op !== App.PolyOps.Engrave;
+    case "margin":  return op !== App.Ops.Perforate
+      && op !== App.Ops.Drill
+      && op !== App.Ops.Engrave;
 
-    case "spacing": return op === App.PolyOps.Perforate;
+    case "spacing": return op === App.Ops.Perforate;
     }
     return true;
   }

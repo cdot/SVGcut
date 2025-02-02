@@ -40,13 +40,14 @@ export class SVGcut {
      * Enumeration for supported operations on polygons
      * @member {object.<name,string>}
      */
-    this.PolyOps = {
-      ConcentricPocket: 0,
-      Engrave: 1,
-      Inside: 2,
-      Outside: 3,
-      Perforate: 4,
-      RasterPocket: 5
+    this.Ops = {
+      AnnularPocket: 0,
+      Drill: 2,
+      Engrave: 3,
+      Inside: 4,
+      Outside: 5,
+      Perforate: 6,
+      RasterPocket: 7
     };
 
     /**
@@ -235,12 +236,13 @@ export class SVGcut {
 
   opName(v) {
     switch (v) {
-    case this.PolyOps.Engrave: return "Engrave";
-    case this.PolyOps.Perforate: return "Perforate";
-    case this.PolyOps.Inside: return "Inside";
-    case this.PolyOps.Outside: return "Outside";
-    case this.PolyOps.ConcentricPocket: return "Pocket (concentric)";
-    case this.PolyOps.RasterPocket: return "Pocket (raster)";
+    case this.Ops.Engrave: return "Engrave";
+    case this.Ops.Perforate: return "Perforate";
+    case this.Ops.Inside: return "Inside";
+    case this.Ops.Outside: return "Outside";
+    case this.Ops.AnnularPocket: return "Pocket (annular)";
+    case this.Ops.RasterPocket: return "Pocket (raster)";
+    case this.Ops.Drill: return "Drill";
     }
   }
 

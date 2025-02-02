@@ -203,6 +203,7 @@ these, and more.
 + Easier to work with XY origins
 + Perforate operation
 + Raster pocket operation
++ Drill operation (for PCBs)
 + Gcode text preview
 + Extensive newbie documentation
 + Extensive in-code documentation and literate programming techniques

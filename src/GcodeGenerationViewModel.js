@@ -260,6 +260,8 @@ class GcodeGenerationViewModel extends ViewModel {
     job.tabGeometry = tabGeometry;
 
     for (const op of ops) {
+      const precalc = op.operation() === App.Ops.Perforate ||
+            op.operation() === App.Ops.Drill;
       const opCard = {
         name: op.name(),
         cutType: op.operation(),
@@ -267,13 +269,10 @@ class GcodeGenerationViewModel extends ViewModel {
         ramp: op.ramp(),
         cutDepth: Number(op.cutDepth()),
         direction: op.direction(),
-        // Perforation is always single-pass and cuts directly to the maximum
-        // operation cut depth
-        passDepth: op.operation() === "Perforate"
-        ? Number(op.cutDepth()) : job.passDepth,
-        // Perforate precalculates Z coordinates, so don't try to
-        // do anything clever with these.
-        precalculatedZ: op.operation() === App.PolyOps.Perforate
+        // Perforation and Drill are always single-pass and cut
+        // directly to the maximum operation cut depth
+        passDepth: precalc ? Number(op.cutDepth()) : job.passDepth,
+        precalculatedZ: precalc
       };
       if (opCard.cutDepth < 0) {
         App.showAlert("cutDepthTooSmall", "alert-warning");
