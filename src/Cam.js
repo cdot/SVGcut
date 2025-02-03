@@ -49,12 +49,12 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
   let n = 1;
   const innerPaths = [];
   while (current.length != 0) {
+    for (const p of current)
+      toolPaths.push(p);
     if (climb)
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
     current = current.offset(-cutterDia * (1 - overlap));
-    for (const p of current)
-      toolPaths.push(p);
   }
   toolPaths.mergePaths(outer);
   console.debug(`Cam.annularPocket generated ${toolPaths.length} tool paths`);
@@ -118,7 +118,8 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     if (!poly.isClosed)
       continue; // ignore this poly for rasterisation
     // Rasterise interior
-    const pocket = new Flatten.Polygon(poly.map(pt => new Flatten.Point(pt.X, pt.Y)));
+    const pocket = new Flatten.Polygon(
+      poly.map(pt => new Flatten.Point(pt.X, pt.Y)));
     const convexPockets = Partition.convex(pocket);
     let firstPoint;
     for (const convexPocket of convexPockets) {
@@ -129,7 +130,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
         toolPaths.push(rasters);
     }
     // Find the point on the outline closest to the first point of
-    // the rasters, and reshape the bounding poly
+    // the rasters, and reshape the outline
     let cp = poly.closestVertex(firstPoint);
     if (cp)
       poly.makeLast(cp.point);
