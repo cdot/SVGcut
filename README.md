@@ -11,7 +11,7 @@ capabilities of more sophisticated machines, such as tool swapping.
 No need to install anything, you can
 [run it in your browser](https://cdot.github.io/SVGcut/app.html).
 
-SVGcut is tested with Inkscape 133.0.3, Inkscape 1.4, Candle2, and a
+SVGcut is tested with Firefox 134.0.0, Inkscape 1.4, Candle2, and a
 SainSmart Genmitsu 3018-PRO Router. If you want to contribute to
 development, see [DEVELOPING](DEVELOPING.md).
 
@@ -27,15 +27,15 @@ is set to 1.
 
 There are some limitations:
 - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
-- Colour is shown, but is ignored, so beware of creating paths the same colour as their background.
+- Colour can be confusing. Beware of creating paths the same colour as their background, or that are covered by other objects.
 - Stroke width is also ignored, so you are recommended to set a very small stroke width.
 
 *Tip* If you have a drawing that makes heavy use of complex features
-(such as text, or shapes, or meshes) you might consider taking a copy
-and preparing it for machining, rather than converting your original
-to paths and losing all the nice features.
+(such as text) you might consider taking a copy and preparing it for
+machining, rather than converting your original to paths and losing
+all the nice features.
 
-Load SVGcut in your browser.
+<a href="https://cdot.github.io/SVGcut/app.html" target="_blank">Load SVGcut in your browser.</a>
 
 ## Tool
 
