@@ -32,6 +32,7 @@ class TabsViewModel extends ViewModel {
     this.maxCutDepth(App.models.Tool.passDepth() / 2);
     this.maxCutDepth.subscribe(() =>
       document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.maxCutDepth.subscribe(() => App.projectChanged(true));
   }
 
   /**
@@ -62,6 +63,7 @@ class TabsViewModel extends ViewModel {
     const tab = new TabViewModel(this.unitConverter, operands);
     tab.recombine();
     this.tabs.push(tab);
+    App.projectChanged(true);
 
     document.dispatchEvent(new Event("UPDATE_GCODE"));
   };

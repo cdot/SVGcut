@@ -3,6 +3,8 @@
 // import "knockout";
 /* global ko */
 
+/* global App */
+
 import { ViewModel } from "./ViewModel.js";
 
 const POPOVERS = [
@@ -28,12 +30,14 @@ class CurveConversionViewModel extends ViewModel {
     this.minSegs = ko.observable(1);
     this.minSegs.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+    this.minSegs.subscribe(() => App.projectChanged(true));
 
     /**
      * Minimum number of segments in a curve
      * @member {observable.<number>}
      */
     this.minSegLen = ko.observable(unitConverter.fromUnits(0.25, "mm"));
+    this.minSegLen.subscribe(() => App.projectChanged(true));
 
     unitConverter.add(this.minSegLen);
   }

@@ -34,6 +34,7 @@ class MaterialViewModel extends ViewModel {
     unitConverter.add(this.thickness);
     this.thickness.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.thickness.subscribe(() => App.projectChanged(true));
 
     /**
      * Tool clearance level
@@ -43,6 +44,7 @@ class MaterialViewModel extends ViewModel {
     unitConverter.add(this.clearance);
     this.clearance.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.clearance.subscribe(() => App.projectChanged(true));
 
     /**
      * Z origin, Top or Bottom of the material
@@ -51,6 +53,7 @@ class MaterialViewModel extends ViewModel {
     this.zOrigin = ko.observable("Top");
     this.zOrigin.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.zOrigin.subscribe(() => App.projectChanged(true));
 
     /**
      * Z level for Z origin, computed

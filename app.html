@@ -38,9 +38,9 @@
 </head>
 <body>
 
-  <!-- Save Project Modal - model is MiscViewModel -->
   <div class="modal fade" id="SaveProjectModal" role="dialog"
        aria-labelledby="spaModalTitle" aria-hidden="true">
+    <!-- Bound to ProjectViewModel  -->
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -50,14 +50,14 @@
         </div>
         <div class="modal-body">
           <label for="spName">Name</label>
-          <input id="spName" data-bind="value: projectName">
+          <input id="spName" data-bind="value:projectName" />
           <label for="spTemplate">Template only</label>
           <input id="spTemplate" type="checkbox"
                  data-bind="checked: templateOnly" />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  data-bind="click: saveProjectInBrowser">
+                  data-bind="click: saveProjectInBrowser, enabled: ">
             In Browser
           </button>
           <button type="button" class="btn btn-primary"
@@ -69,9 +69,9 @@
     </div>
   </div>
 
-  <!-- Load Project from the browser. Model is MiscViewModel -->
   <div class="modal fade" id="LoadProjectFromBrowserModal"
        role="dialog" aria-labelledby="lslModalTitle" aria-hidden="true">
+    <!-- Bound to ProjectViewModel  -->
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -83,7 +83,7 @@
           <p data-bind="text: getBrowserProjectsList()"></p>
           <p>Select Project:
             <select id="selectProject"
-                    data-bind="options: browserProjects, value: projectName">
+                    data-bind="options:browserProjects,value:selectedProject">
             </select>
           </p>
         </div>
@@ -101,9 +101,9 @@
     </div>
   </div>
 
-  <!-- Delete Project from Browser Modal, model is MiscViewModel -->
   <div class="modal fade" id="DeleteProjectFromBrowserModal"
        role="dialog" aria-labelledby="dsModalLabel" aria-hidden="true">
+    <!-- Bound to ProjectViewModel  -->
     <div class="modal-dialog alert-danger">
       <div class="modal-content">
         <div class="modal-header">
@@ -123,9 +123,9 @@
     </div>
   </div>
 
-  <!-- Save GCODE Modal, view model GcodeGenerationViewModel -->
   <div class="modal fade" id="SaveGcodeModal" role="dialog"
        aria-labelledby="sgcModalLabel" aria-hidden="true">
+    <!-- Bound to GcodeGenerationViewModel -->
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -147,9 +147,9 @@
     </div>
   </div>
 
-  <!-- View GCODE Modal, view model GcodeGenerationViewModel -->
   <div class="modal fade" id="ViewGcodeModal" tabindex="-1" role="dialog"
        aria-hidden="true" arial-labelledby="gcodeModalTitle">
+    <!-- Bound to GcodeGenerationViewModel -->
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -165,17 +165,40 @@
     </div>
   </div>
 
+  <div class="modal fade" id="ConfirmDataLossModal" tabindex="-1" role="dialog"
+       aria-hidden="true" arial-labelledby="confirmDataLossModalTitle">
+    <!-- Bound to ProjectViewModel -->
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDataLossModalTitle">Confirm Data Loss</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="Back"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you are happy to lose changes?</p>
+          <button type="button" class="btn btn-primary"
+                  data-bind="click: dataLossConfirmed">Yes</button>
+          <button type="button" class="btn btn-primary"
+                  data-bind="click: dataLossRejected">No</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Container -->
   <div class="container-fluid">
-
-    <!-- Begin page content -->
     <div class="row">
 
       <!-- left card column -->
       <div id="LeftColumn" class="col-sm-3 left-column">
-
-        <!-- Operations View -->
+        <div id="ProjectView">
+          <!-- Bound to ProjectViewModel -->
+          <span id="projectChanged" data-bind="text:projectChanged"></span>
+          <span id="projectName" data-bind="text:projectName">New project</span>
+        </div>
         <div class="card" id="OperationsView">
+          <!-- Bound to OperationsViewModel -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -195,8 +218,7 @@
             <div style="display:table">
               <div data-bind="foreach: {data: operations, afterRender: addSubview}">
                 <!-- template for operations table row. Instances are
-                  automatically bound to OperationViewModel
-                  by knockout (well, the code doesn't do it) -->
+                  bound to OperationViewModel -->
                 <div style="display:table-row" class="entry-row">
                   <div style="display:table-cell" class="entry-detail">
                     <label id="opShowDetail"
@@ -220,7 +242,7 @@
                   </div>
                   <div style="display: table-cell" class="entry-mid">
                     <label class="control-label">
-                      <span data-bind="text: App.models.Misc.units"></span>
+                      <span data-bind="text: App.models.Project.units"></span>
                     </label>
                   </div>
                 </div>
@@ -277,7 +299,7 @@
                           <input id="opMargin" type="number"
                                  step="any"
                                  data-bind="value: margin">
-                          <span data-bind="text: App.models.Misc.units"></span>
+                          <span data-bind="text: App.models.Project.units"></span>
                         </td>
                       </tr><tr data-bind="visible:needs('spacing')">
                         <td>
@@ -286,7 +308,7 @@
                           <input id="opSpacing" type="number"
                                  step="any" min="0"
                                  data-bind="value: spacing">
-                          <span data-bind="text: App.models.Misc.units"></span>
+                          <span data-bind="text: App.models.Project.units"></span>
                         </td>
                       </tr>
                       <tr data-bind="visible:needs('width')">
@@ -296,7 +318,7 @@
                           <input id="opWidth" type="number"
                                  step="any" min="0"
                                  data-bind="value: width">
-                          <span data-bind="text: App.models.Misc.units"></span>
+                          <span data-bind="text: App.models.Project.units"></span>
                         </td>
                       </tr>
                       <tr>
@@ -315,8 +337,8 @@
           </div>
         </div>
 
-        <!-- Tabs View -->
         <div class="card" id="TabsView">
+          <!-- Bound to TabsViewModel -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -325,16 +347,6 @@
           </div>
           <div id="TabsViewPane" class="collapse hide">
             <div class="card-body">
-              <!--CPP
-              <div class="alert alert-danger"
-                   data-bind="visible: tabs().length != 0 && !App.models.Misc.loadedCamCpp() && App.models.Misc.camCppError().length == 0">
-                <div>Waiting for cam-cpp.js to load.</div>
-              </div>
-              <div class="alert alert-danger"
-                   data-bind="visible: tabs().length != 0 && App.models.Misc.camCppError().length != 0">
-                <div data-bind="html: App.models.Misc.camCppError()"></div>
-              </div>
-              /CPP-->
               <table class="table">
                 <tr>
                   <td><label for="tabsMaxCutDepth" class="control-label">
@@ -343,7 +355,7 @@
                     <input id="tabsMaxCutDepth" type="number"
                            step="any" min="0"
                            data-bind="value: maxCutDepth">
-                    <span data-bind="text: App.models.Misc.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
               </table>
@@ -358,9 +370,8 @@
             <div style="display:table">
               <div data-bind="foreach: { data: tabs, afterRender: addSubview }">
                 <div style="display:table-row" class="entry-row">
-                  <!-- template for operations table row. Instances are
-                       automatically bound to OperationViewModel
-                       by knockout (well, the code doesn't do it) -->
+                  <!-- template for Tabs table row. Instances are
+                       bound to TabViewModel -->
                   <div style="display: table-cell" class="entry-enabled">
                     <input id="tabEnabled" type="checkbox"
                            data-bind="checked: enabled" />
@@ -382,8 +393,8 @@
           </div>
         </div>
 
-        <!-- Gcode Generation view -->
         <div class="card" id="GcodeGenerationView">
+          <!-- Bound to GcodeGenerationViewModel -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -461,8 +472,8 @@
       <!-- Middle column -->
       <div id="Middle" class="col-sm-6">
 
-        <!-- Tool bar, bound to MiscViewModel -->
         <nav id="NavBar" class="navbar navbar-expand-sm" role="navigation">
+          <!-- Bound to ProjectViewModel -->
           <ul class="navbar-nav">
             <li class="nav-item dropdown navbar-collapse collapse">
               <a href="#"
@@ -476,6 +487,12 @@
               </a>
               <ul class="dropdown-menu"
                   aria-labelledby="projectDropdown">
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link close-on-click"
+                     data-bind="click: newProject">
+                    New
+                  </a>
+                </li>
                 <li class="dropdown-item dropend">
                   <a href="#"
                      class="nav-link dropdown-toggle"
@@ -487,30 +504,30 @@
                   <ul class="dropdown-menu"
                       aria-labelledby="openMenu">
                     <li class="dropdown-item">
-                      <a href="#" class="nav-link choose-file">
+                      <a href="#" class="nav-link close-on-click choose-file">
                         ... from File
                         <input type="file" id="chosenProjectFile">
                       </a>
                     </li><li class="dropdown-item">
-                      <a href="#" class="nav-link open-modal"
-                         data-bind="click: () => App.showModal('LoadProjectFromBrowserModal')">
+                      <a href="#" class="nav-link close-on-click open-modal"
+                         data-bind="click:()=>App.showModal('LoadProjectFromBrowserModal')">
                         ... from Browser
                       </a>
                     </li>
                   </ul>
-                </li> <!-- open submenu -->
-                <li class="dropdown-item">
-                  <a href="#" class="nav-link open-modal"
-                     data-bind="click: () => App.showModal('SaveProjectModal')">
+                </li> <!-- /open submenu -->
+                <li class="dropdown-item change-activated disabled">
+                  <a href="#" class="nav-link close-on-click open-modal"
+                     data-bind="click:()=> App.showModal('SaveProjectModal')">
                     Save
                   </a>
                 </li><li class="dropdown-item">
-                  <a href="#" class="nav-link choose-file">
+                  <a href="#" class="nav-link close-on-click choose-file">
                     Import SVG File
                     <input type="file" id="chosenImportSVGFile" multiple>
                   </a>
                 </li><li class="dropdown-item">
-                  <a href="#" class="nav-link choose-file">
+                  <a href="#" class="nav-link close-on-click choose-file">
                     Save GCODE
                     <input type="file" id="chosenSaveGcodeFile" multiple>
                   </a>
@@ -542,13 +559,14 @@
               Selected:&nbsp;
               <span data-bind="text: App.models.Selection.openSelected"></span>
               &nbsp;open,&nbsp;
-              <span data-bind="text: App.models.Selection.closedSelected"></span>
+              <span data-bind="text: App.models.Selection.closedSelected">
+              </span>
               &nbsp;closed
             </li>
           </ul>
         </nav>
 
-        <!-- svg views -->
+        <!-- SVG views -->
         <div>
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
@@ -580,10 +598,13 @@
                     </feComponentTransfer>
                   </filter>
                 </defs>
-                <g id="contentSVGGroup" class="managedSVGGroup serialisableSVGGroup" filter="#contrastFilter"/>
-                <g id="toolPathsSVGGroup" class="managedSVGGroup serialisableSVGGroup" />
-                <g id="combinedGeometrySVGGroup" class="managedSVGGroup" />
-                <g id="tabsSVGGroup" class="managedSVGGroup" />
+                <g id="contentSVGGroup" class="managedSVGGroup serialisable"
+                   filter="#contrastFilter"/>
+                <g id="toolPathsSVGGroup"
+                   class="managedSVGGroup serialisable" />
+                <g id="combinedGeometrySVGGroup"
+                   class="managedSVGGroup serialisable" />
+                <g id="tabsSVGGroup" class="managedSVGGroup serialisable" />
                 <g id="selectionSVGGroup" class="managedSVGGroup" />
               </svg>
             </div>
@@ -596,22 +617,6 @@
                 <input id="timeControl" class="form-range" type="range"
                        max="1000" value="1000" />
               </p>
-              <!--CPP
-              <p>
-                <div data-bind="visible: App.models.Misc.debug">
-                  <p>
-                    <label class="control-label">debugArg0:&nbsp;</label>
-                    <input type="number" step="any"
-                           data-bind="value: App.models.Misc.debugArg0">
-                  </p>
-                  <p>
-                    <label class="control-label">debugArg1:&nbsp;</label>
-                    <input type="number" step="any"
-                           data-bind="value: App.models.Misc.debugArg1">
-                  </p>
-                </div>
-              </p>
-              /CPP-->
               <ul>
                 <li>Use mouse to rotate view</li>
                 <li>Use slider control to set simulation time</li>
@@ -625,8 +630,8 @@
       <!-- right -->
       <div class="col-sm-3 right-column">
 
-        <!-- Tool View -->
         <div class="card" id="ToolView">
+          <!-- Bound to ToolViewModel -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -643,7 +648,7 @@
                   </td><td>
                     <input id="toolDiameter" type="number" step="any"
                              data-bind="value: diameter">
-                    <span data-bind="text: App.models.Misc.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
                 <!-- No support for angled bit
@@ -665,7 +670,7 @@
                     <input id="toolPassDepth" type="number"
                            step="any" min="0"
                            data-bind="value: passDepth">
-                    <span data-bind="text: App.models.Misc.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr><tr>
                   <td><label for="toolStepOver" class="control-label">
@@ -683,7 +688,7 @@
                     <input id="toolRapidRate" type="number"
                            step="any" min="0"
                            data-bind="value: rapidRate">
-                    <span data-bind="text: App.models.Misc.units"></span>/min
+                    <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr><tr>
                   <td><label for="toolPlungeRate" class="control-label">
@@ -692,7 +697,7 @@
                     <input id="toolPlungeRate" type="number"
                            step="any" min="0"
                            data-bind="value: plungeRate">
-                    <span data-bind="text: App.models.Misc.units"></span>/min
+                    <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr>
                 <tr>
@@ -702,7 +707,7 @@
                     <input id="toolCutRate" type="number"
                            step="any" min="0"
                            data-bind="value: cutRate">
-                    <span data-bind="text: App.models.Misc.units"></span>/min
+                    <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr>
               </table>
@@ -710,8 +715,8 @@
           </div>
         </div>
 
-        <!-- Material View -->
         <div class="card" id="MaterialView">
+          <!-- Bound to MaterialViewModel -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -740,7 +745,7 @@
                     <input type="number" step="any" id="inputMatThickness"
                            data-bind="value: thickness"
                            placeholder="Thickness">
-                    <span data-bind="text: App.models.Misc.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr><tr>
                   <td>
@@ -760,7 +765,7 @@
                     <input type="number" step="any" id="inputMatClearance"
                            data-bind="value: clearance"
                            placeholder="Clearance">
-                    <span data-bind="text: App.models.Misc.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
               </table>
@@ -768,8 +773,8 @@
           </div>
         </div>
 
-        <!-- Curve Conversion view  -->
         <div class="card" id="CurveConversionView">
+          <!-- Bound to CurveConversionViewModel  -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse" data-parent="#accordion"
@@ -803,7 +808,7 @@
                              data-bind="value: minSegLen"
                              placeholder="Length">
                     </td><td>
-                      <span data-bind="text: App.models.Misc.units"></span>
+                      <span data-bind="text: App.models.Project.units"></span>
                     </td>
                   </tr>
                 </table>
@@ -824,7 +829,7 @@
   </div>
   <div id="popovers" style="display:none">
     <span name="selectProject">Select a project stored in this browser</span>
-    <!-- tool -->
+    <!-- Tool -->
     <span name="toolUnits">Display units, does not affect Gcode generation</span>
     <span name="toolDiameter">Diameter of cutter. For a V cutter, diameter of the widest part of the bit.</span>
     <span name="toolAngle">Angle of tapered cutter head. This is the angle
@@ -875,12 +880,12 @@
     <span name="gcodeHeight">Height of the work</span>
     <span name="gcodeReturn00">Move the tool to 0,0 after the last
       operation</span>
-    <!-- material -->
+    <!-- Material -->
     <span name="inputMatThickness">How thick is the material</span>
     <span name="selectMatZOrigin">Where Z=0 is</span>
     <span name="inputMatClearance">How high the tool moves over the material.
       Increase this when using clamps or screws to fasten the material</span>
-    <!-- operations -->
+    <!-- Operation -->
     <span name="createOperationButton"><p class='bg-danger'>
         Select one or more objects in the "Toolpaths" tab before clicking
         here</p></span>
@@ -911,7 +916,7 @@
       How much material to leave uncut between perforations</div>
     <span name="opWidth">How wide a path to cut. If this is less than the
       cutter width then it uses the cutter width</span>
-    <!-- selection -->
+    <!-- Selection -->
     <span name="inputMinNumSegments">Minimum number of line segments
       to convert a curve to. Curve conversion is done when something
       with a curve in it is selected.</span>

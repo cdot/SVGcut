@@ -19,19 +19,16 @@ import { ViewModel } from "./ViewModel.js";
 const LOCAL_PROJECTS_AREA = "svgcut";
 
 // Default name for a project
-const DEFAULT_PROJECT_NAME = "default";
+const DEFAULT_PROJECT_NAME = "undefined";
 
 const POPOVERS = [
   { id: "selectProject" }
 ];
 
 /**
- * View model that handles miscellaneous UI features; specifically:
- * + Global units
- * + Loading and saving projects
- * + The toolbar
+ * View model that handles projects
  */
-class MiscViewModel extends ViewModel {
+class ProjectViewModel extends ViewModel {
 
   constructor() {
     super();
@@ -53,10 +50,25 @@ class MiscViewModel extends ViewModel {
 
     /**
      * Local storage key / file basename to load/save project.
-     8 When the App starts up it will try to load this project.
+     * When the App starts up it will try to load this project.
      * @member {observable.<string>}
      */
-    this.projectName = ko.observable(DEFAULT_PROJECT_NAME);
+    const pn = document.getElementById("projectName").textContent;
+    this.projectName = ko.observable(pn);
+
+    /**
+     * When loading from the browser, the projectName is selected from
+     * a dropdown. If we link that dropdown to projectName, then
+     * initialisation cabbages the value. So we have to use a different
+     * observable for the dropdown values.
+     */
+    this.selectedProject = ko.observable();
+
+    /**
+     * Marker next to project name that indicates a change
+     * @member {observable.<string>}
+     */
+    this.projectChanged = ko.observable("");
 
     /**
      * Whether to save just a template, or a whole project
@@ -69,18 +81,18 @@ class MiscViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.browserProjects = ko.observableArray([]);
-
-    // SMELL: the following are only relevant to calls out to CPP
-    //CPP this.loadedCamCpp = ko.observable(false);
-    //CPP this.camCppError = ko.observable("");
-    //CPP this.debugArg0 = ko.observable(0);
-    //CPP this.debugArg1 = ko.observable(0);
   }
 
   /**
    * @override
    */
   initialise() {
+    this.addPopovers(POPOVERS);
+
+    ko.applyBindings(
+      this,
+      document.getElementById("ProjectView"));
+
     ko.applyBindings(
       this,
       document.getElementById("NavBar"));
@@ -97,15 +109,16 @@ class MiscViewModel extends ViewModel {
       this,
       document.getElementById("DeleteProjectFromBrowserModal"));
 
+    ko.applyBindings(
+      this,
+      document.getElementById("ConfirmDataLossModal"));
+
     // Handler for loading a project from disc when a file is chosen
     // in the browser
     document.getElementById('chosenProjectFile')
     .addEventListener("change", event => {
-      this.addPopovers(POPOVERS);
-
-      const files = event.target.files;
-      for (const file of files) {
-        //console.log(file);
+      const file = event.target.files[0];
+      this.confirmDataLoss(() => {
         const lert = App.showAlert("loadingProject", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
@@ -123,7 +136,7 @@ class MiscViewModel extends ViewModel {
           App.showAlert("projectLoadError", "alert-danger", file.name);
         });
         reader.readAsText(file);
-      }
+      });
     });
   }
 
@@ -153,7 +166,9 @@ class MiscViewModel extends ViewModel {
     json[name] = App.getSaveable(
       this.templateOnly() || name === DEFAULT_PROJECT_NAME);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
+    App.projectChanged(false);
     App.showAlert("projectSavedInBrowser", "alert-info", name);
+    this.getBrowserProjectsList();
   }
 
   /**
@@ -168,27 +183,31 @@ class MiscViewModel extends ViewModel {
     const fn = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, fn);
+    App.projectChanged(false);
   }
 
   /**
    * Load a project from the browser local storage.
-   * Invoked from #LoadProjectFromBrowserModal and from App.js
-   * on preload.
+   * Invoked from #LoadProjectFromBrowserModal.
+   * @return {boolean} true if a project was loaded
    */
   loadProjectFromBrowser() {
     App.hideModals();
 
     const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
-    const name = this.projectName();
+    const name = this.selectedProject();
+
     if (projects) {
       const json = projects[name];
       if (json) {
         App.loadSaveable(json);
-        return;
+        return true;
       }
     }
     if (name !== DEFAULT_PROJECT_NAME)
       App.showAlert("projectNotInBrowser", "alert-danger", name);
+
+    return false;
   }
 
   /**
@@ -214,6 +233,56 @@ class MiscViewModel extends ViewModel {
     alert(`Deleted project "${name}" from the browser`, "alert-info");
   }
 
+  isChanged() {
+    return this.projectChanged() === "*";
+  }
+
+  haveGcode() {
+    return App.models.GcodeGenerationModel.haveGcode();
+  }
+
+  /**
+   * Invoked from the UI to create a new project.
+   */
+  newProject() {
+    this.confirmDataLoss(() => {
+      App.emptySVG();
+      App.models.Operations.reset();
+      this.projectName("New project");
+      App.projectChanged(false);
+    });
+  }
+
+  /**
+   * Confirm that data loss is acceptable
+   * @param {function} callback function to call if data loss is OK
+   * @private
+   */
+  confirmDataLoss(callback) {
+    if (App.projectChanged()) {
+      this.dataLossCallback = callback;
+      App.showModal('ConfirmDataLossModal');
+    } else
+      callback();
+  }
+
+  /**
+   * Called from the UI modal to confirm data loss.
+   * @private
+   */
+  dataLossConfirmed() {
+    App.hideModals();
+    this.dataLossCallback();
+  }
+
+  /**
+   * Called from the UI modal to reject data loss.
+   * @private
+   */
+  dataLossRejected() {
+    App.hideModals();
+  }
+
   /**
    * @override
    */
@@ -234,8 +303,11 @@ class MiscViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'units');
-    this.updateObservable(json, 'projectName');
+    if (json.projectName && json.projectName !== "undefined")
+      this.updateObservable(json, 'projectName');
+    else
+      this.projectName("New project");
   }
 }
 
-export { MiscViewModel }
+export { ProjectViewModel }

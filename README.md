@@ -27,7 +27,7 @@ is set to 1.
 
 There are some limitations:
 - You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
-- Colour is ignored, so beware of creating paths the same colour as their background.
+- Colour is shown, but is ignored, so beware of creating paths the same colour as their background.
 - Stroke width is also ignored, so you are recommended to set a very small stroke width.
 
 *Tip* If you have a drawing that makes heavy use of complex features

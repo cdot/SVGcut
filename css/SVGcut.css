@@ -33,7 +33,7 @@ code {
 }
 
 .table > tbody > tr > td > input[type="number"], .number {
-  width: 60px;
+  width: 4em;
 }
 
 /* Highlighting in SVG */
@@ -41,24 +41,19 @@ code {
   stroke: none;
   fill: rgba(255, 255, 0, 0.5);
 }
-
-/* Highlighting in SVG */
 .selectedPath.openPath {
   stroke: rgba(255, 255, 0, 0.5);
   stroke-width: 8px;
   fill: none;
 }
-
 .combinedGeometry {
   stroke: none;
   fill: rgba(0, 0, 255, 0.3);
 }
-
 .tabsGeometry {
   stroke: none;
   fill: rgba(230, 160, 0, 0.3);
 }
-
 .toolPath {
   stroke: #ffff00;
   fill: none;
@@ -70,7 +65,6 @@ code {
   overflow: hidden;
   display: inline-block;
 }
-
 .choose-file input[type=file] {
   position: absolute;
   top: 0;
@@ -91,16 +85,13 @@ code {
 .entry-row {
   background-color: #f5f5f5;
 }
-
 .entry-detail {
   width: 1px;
   text-align:right;
 }
-
 .entry-enabled {
   width: 1px; padding-right: 5px; padding-left: 5px;
 }
-
 .entry-mid {
   width: 1px; padding-right: 5px;
 }
@@ -114,13 +105,19 @@ code {
 .ecks {
   text-decoration: none;
 }
-
 .ecks:hover {
   cursor: pointer;
   font-weight: bold;
 }
 
+/* Text that must be centred in a precaculated area */
 .centre-text {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
+
+/* Menu item that is only activated when something has changed */
+.change-activated.disabled {
+  filter: contrast(30%);
+}
+

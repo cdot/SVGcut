@@ -78,6 +78,7 @@ class GcodeGenerationViewModel extends ViewModel {
     this.returnTo00 = ko.observable(false);
     this.returnTo00.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+    this.returnTo00.subscribe(() => App.projectChanged(true));
 
     /**
      * Where the origin isone of "SVG page", "Bounding box" or
@@ -94,6 +95,7 @@ class GcodeGenerationViewModel extends ViewModel {
     this.origin = ko.observable("SVG page");
     this.origin.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+    this.origin.subscribe(() => App.projectChanged(true));
 
     /**
      * Extra offset of the work origin from the machine origin
@@ -102,6 +104,7 @@ class GcodeGenerationViewModel extends ViewModel {
     this.extraOffsetX = ko.observable(0);
     this.extraOffsetX.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+    this.extraOffsetX.subscribe(() => App.projectChanged(true));
     /* @todo generate G10,G54 to do this
      * For future reference:
      * G10 defines the coordinates of work offsets G54-G59
@@ -122,6 +125,7 @@ class GcodeGenerationViewModel extends ViewModel {
     this.extraOffsetY = ko.observable(0);
     this.extraOffsetY.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+    this.extraOffsetY.subscribe(() => App.projectChanged(true));
 
     /**
      * Width of the work BB, irrespective of the origin.

@@ -13,7 +13,7 @@ import { TabsViewModel } from "./TabsViewModel.js";
 import { MaterialViewModel } from "./MaterialViewModel.js";
 import { SelectionViewModel } from "./SelectionViewModel.js";
 import { CurveConversionViewModel } from "./CurveConversionViewModel.js";
-import { MiscViewModel } from "./MiscViewModel.js";
+import { ProjectViewModel } from "./ProjectViewModel.js";
 import { Simulation } from "./Simulation.js";
 import { Rect } from "./Rect.js";
 import * as Gcode from "./Gcode.js";
@@ -102,8 +102,8 @@ export class SVGcut {
 
     // Create view models.
 
-    this.models.Misc = new MiscViewModel();
-    const unitConverter = this.models.Misc.unitConverter;
+    this.models.Project = new ProjectViewModel();
+    const unitConverter = this.models.Project.unitConverter;
 
     this.models.Tool = new ToolViewModel(unitConverter);
     this.models.Material = new MaterialViewModel(unitConverter);
@@ -115,10 +115,10 @@ export class SVGcut {
 
     // bootstrap is a bit crap at submenus. If we want to close a menu
     // tree when an action is selected, we have to jump through some hoops.
-    // Since our actions can be classified as "choose-file" or "open-modal"
-    // we can use that to trigger a close.
+    // Since our actions can be easily identified by classes we can use
+    // that to trigger a close.
     document
-    .querySelectorAll(".dropdown-item>.choose-file,.dropdown-item>.open-modal")
+    .querySelectorAll(".dropdown-item>.close-on-click")
     .forEach(el => el.addEventListener("click", () => {
       const nel = document.querySelectorAll(
         ".dropdown-toggle[data-toggle='collapse']");
@@ -138,6 +138,7 @@ export class SVGcut {
           document.getElementById("contentSVGGroup").append(svgEl);
           this.updateMainSvgSize();
           lert.remove();
+          this.projectChanged(true);
           this.showAlert("loadedSVG", "alert-success", file.name);
           this.tutorial(2);
         });
@@ -172,12 +173,10 @@ export class SVGcut {
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
-    // Try and load default project
-    this.models.Misc.loadProjectFromBrowser();
-
     // Complete UI initialisation of the view models
-    for (const m in this.models)
+    for (const m in this.models) {
       this.models[m].initialise();
+    }
   }
 
   /**
@@ -282,6 +281,7 @@ export class SVGcut {
   /**
    * Show the referenced modal, creating it if it is not currently shown.
    * @param {string} id the id attribute of the modal
+   * @return {Element} the bootstrap modal
    */
   showModal(id) {
     const el = document.getElementById(id);
@@ -385,11 +385,39 @@ export class SVGcut {
     if (!template) {
       // Only the content and toolPaths SVG need to be saved, everything
       // else can be regenerated
-      const svgGroups = document.querySelector(".serialisableSVGGroup");
+      const svgGroups = document.querySelectorAll(".serialisableSVGGroup");
       for (const svgel of svgGroups)
         container.svg[svgel.id] = svgel.innerHTML;
     }
     return container;
+  }
+
+  /**
+   * Flag whether the project has been changed or not.
+   * @param {boolean} tf true or false
+   */
+  projectChanged(tf) {
+    if (typeof tf !== "undefined") {
+      if (tf) {
+        this.models.Project.projectChanged("*");
+        for (const el of document.querySelectorAll(".change-activated"))
+          el.classList.remove("disabled");
+      } else {
+        this.models.Project.projectChanged("");
+        for (const el of document.querySelectorAll(".change-activated"))
+          el.classList.add("disabled");
+      }
+    }
+    return this.models.Project.projectChanged() === "*";
+  }
+
+  /**
+   * Clean out SVG groups
+   */
+  emptySVG() {
+    let svgGroups = document.querySelectorAll(".managedSVGGroup");
+    for (const svgel of svgGroups)
+      svgel.replaceChildren();
   }
 
   /**
@@ -400,10 +428,7 @@ export class SVGcut {
    * @param {string[]} saveable.svg mapping from svg group name to geometry
    */
   loadSaveable(container) {
-    // Clean out SVG groups
-    let svgGroups = document.querySelector(".managedSVGGroup");
-    for (const svgel of svgGroups)
-      svgel.replaceChildren();
+    this.emptySVG();
 
     // Reload models
     for (const m in this.models) {
@@ -414,7 +439,7 @@ export class SVGcut {
     }
 
     // Reload content
-    svgGroups = document.querySelector(".serialisableSVGGroup");
+    svgGroups = document.querySelectorAll(".managedSVGGroup.serialisable");
     for (const svgel of svgGroups) {
       if (container.svg[svgel.id]) {
         const el = SVG.loadSVGFromText(container.svg[svgel.id]);
