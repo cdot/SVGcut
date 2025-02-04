@@ -52,38 +52,44 @@ function lineariseBezier(curve, params) {
  * @private
  */
 function linearise(path, params) {
-  let last = new Vector(0, 0), lastCP;
+  let last = new Vector(0, 0), lastCP, xp, yp, i, j;
   const segments = [];
   for (const segment of path) {
     switch (segment[0]) {
 
     case 'c':
-      for (let i = 1; i < segment.length; i += 2) {
-        segment[i] += last.x;
-        segment[i + 1] += last.y;
+      // Transform to absolute coordinates
+      xp = last.x, yp = last.y;
+      for (i = 1; i < segment.length; i += 6) {
+        for (j = 0; j < 6; j += 2)
+          segment[i + j] += xp, segment[i + j + 1] += yp;
+        xp = segment[i + 4], yp = segment[i + 5];
       }
       // fall through
     case 'C':
-      for (let i = 1; i < segment.length; i += 6) {
-        lastCP = new Vector(segment[i + 2], segment[i + 3]);
-        const p2 = new Vector(segment[i + 4], segment[i + 5]);
+      for (i = 1; i < segment.length; i += 6) {
         const q1 = new Vector(segment[i], segment[i + 1]);
-        const curve = new Bezier(last, q1, lastCP, p2);
+        const q2 = new Vector(segment[i + 2], segment[i + 3]);
+        const p2 = new Vector(segment[i + 4], segment[i + 5]);
+        const curve = new Bezier(last, q1, q2, p2);
         const seg = lineariseBezier(curve, params);
         seg.push(p2.x, p2.y);
         segments.push(seg);
+        lastCP = q2;
         last = p2;
       }
       break;
 
     case 's':
-      for (let i = 1; i < segment.length; i += 2) {
-        segment[i] += last.x;
-        segment[i + 1] += last.y;
+      xp = last.x, yp = last.y;
+      for (i = 1; i < segment.length; i += 4) {
+        for (j = 0; j < 4; j += 2)
+          segment[i + j] += xp, segment[i + j + 1] += yp;
+        xp = segment[i + 2], yp = segment[i + 3];
       }
       // fall through
     case 'S':
-      for (let i = 1; i < segment.length; i += 4) {
+      for (i = 1; i < segment.length; i += 4) {
         const cp = last.add(last.subtract(lastCP).invert());
         lastCP = new Vector(segment[i + 2], segment[i + 3]);
         const p2 = new Vector(segment[i + 2], segment[i + 3]);
@@ -94,7 +100,7 @@ function linearise(path, params) {
       break;
 
     case 'm': case 'l':
-      for (let i = 1; i < segment.length; i += 2) {
+      for (i = 1; i < segment.length; i += 2) {
         segment[i] = last.x = last.x + segment[i];
         segment[i + 1] = last.y = last.y + segment[i + 1];
       }
@@ -102,15 +108,18 @@ function linearise(path, params) {
       // fall through
     case 'M': case 'L':
       segments.push([ segment[0], segment[1], segment[2] ]);
-      for (let i = 3; i < segment.length; i += 2)
+      for (i = 3; i < segment.length; i += 2)
         segments.push([ "L", segment[i], segment[i + 1] ]);
       last.x = segment[segment.length - 2];
       last.y = segment[segment.length - 1];
       break;
 
     case 'v':
-      for (let i = 1; i < segment.length; i++)
-        segment[i] = last.y = last.y + segment[i];
+      yp = last.y;
+      for (i = 1; i < segment.length; i++) {
+        segment[i] += yp;
+        yp = segment[i];
+      }
       // fall through
     case 'V':
       for (let i = 1; i < segment.length; i++)
@@ -119,11 +128,14 @@ function linearise(path, params) {
       break;
 
     case 'h':
-      for (let i = 1; i < segment.length; i++)
-        segment[i] = last.x = last.x + segment[i];
+      xp = last.x;
+      for (i = 1; i < segment.length; i++) {
+        segment[i] += xp;
+        xp = segment[i];
+      }
       // fall through
     case 'H':
-      for (let i = 1; i < segment.length; i++)
+      for (i = 1; i < segment.length; i++)
         segments.push(["L", segment[i], last.y]);
       last.x = segment[segment.length - 1];
       break;
@@ -133,13 +145,16 @@ function linearise(path, params) {
       break;
 
     case 'q':
-      for (let i = 1; i < segment.length; i += 2) {
-        segment[i] += last.x;
-        segment[i + 1] += last.y;
+      xp = last.x, yp = last.y;
+      for (i = 1; i < segment.length; i += 4) {
+        for (j = 0; j < 4; j += 2)
+          segment[i + j + 1] += xp, segment[i + j + 1] += yp;
+        xp = segment[i + 2];
+        yp = segment[i + 3];          
       }
       // fall through
     case 'Q':
-      for (let i = 1; i < segment.length; i += 6) {
+      for (i = 1; i < segment.length; i += 4) {
         lastCP = new Vector(segment[i], segment[i + 1]);
         const p2 = new Vector(segment[i + 2], segment[i + 3]);
         const curve = new Bezier(last, lastCP, p2);
@@ -149,13 +164,14 @@ function linearise(path, params) {
       break;
 
     case 't':
-      for (let i = 1; i < segment.length; i += 2) {
-        segment[i] += last.x;
-        segment[i + 1] += last.y;
+      xp = last.x, yp = last.y;
+      for (i = 1; i < segment.length; i += 2) {
+        segment[i] += xp, segment[i + 1] += yp;
+        xp = segment[i], yp = segment[i + 1];
       }
       // fall through
     case 'T':
-      for (let i = 1; i < segment.length; i += 2) {
+      for (i = 1; i < segment.length; i += 2) {
         lastCP = last.add(last.subtract(lastCP).invert());
         const p2 = new Vector(segment[i], segment[i + 1]);
         const curve = new Bezier(last, lastCP, p2);
@@ -166,15 +182,19 @@ function linearise(path, params) {
 
     case 'a':
       // rx ry xAngle largeArc sweep p2x p2y
-      segment[6] += last.x; segment[7] += last.y;
+      xp = last.x, yp = last.y;
+      for (i = 1; i < segment.length; i += 7) {
+        segment[6] += xp; segment[7] += yp;
+        xp = segment[i + 6], yp = segment[i + 7];
+      }
       // fall through
     case 'A':
-      {
-        const r = new Vector(segment[1], segment[2]);
-        const p2 = new Vector(segment[6], segment[7]);
-        const xAngle = Math.PI * segment[3] / 180;
+      for (i = 1; i < segment.length; i += 7) {
+        const r = new Vector(segment[i], segment[i + 1]);
+        const p2 = new Vector(segment[i + 5], segment[i + 6]);
+        const xAngle = Math.PI * segment[i + 2] / 180;
         const curves = EllipticalArc.toBeziers(
-          last, r, xAngle, segment[4] > 0, segment[5] > 0, p2);
+          last, r, xAngle, segment[i + 3] > 0, segment[i + 4] > 0, p2);
         for (const bez of curves) {
           const curve = new Bezier(
             bez[0].x, bez[0].y,
@@ -484,9 +504,15 @@ export function segments2d(segs) {
 export function getBounds(el) {
   // Try getBBox first
   const system = el.getBBox();
-  if (system && system.baseVal &&
-      system.baseVal.width > 0 && system.baseVal.height > 0)
-    return new Rect(system.baseVal);
+  if (system) {
+    if (system.baseVal &&
+        system.baseVal.width > 0 && system.baseVal.height > 0)
+      return new Rect(system.baseVal);
+    else if (typeof system.width !== "undefined")
+      return new Rect(system);
+    else
+      throw new Error(`Wierd type from getBBox: ${system}`);
+  }
 
   // Otherwise analyse the element
   // Get the closest enclosing <svg> for computing %ages
