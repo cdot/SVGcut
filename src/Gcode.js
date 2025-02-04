@@ -456,6 +456,7 @@ export class Generator {
     let pathIndex = 0;
     assert(op.paths instanceof CutPaths);
 
+    console.debug(`Generating Gcode for ${op.name}, ${op.paths.length} paths`);
     for (const path of op.paths) {
 
       if (path.length === 0)
@@ -487,7 +488,8 @@ export class Generator {
           this.G(0, { f: this.rapidFeed, z: this.safeZ }); // clear
         }
         // Drop to top of material
-        this.G(0, { f: this.rapidFeed, pt: path[0], z: this.topZ } );
+        if (this.lastZ > lastCutZ)
+          this.G(0, { f: this.rapidFeed, pt: path[0], z: lastCutZ } );
 
         // We're over the start of the path, we can start cutting
         this.startSpindle();
@@ -517,6 +519,7 @@ export class Generator {
                         rem: "Precalculated Z" });
             requiredZ = undefined; // so G uses the coordinate
           } else {
+            this.G(1, { f: this.cutFeed, pt: cutPath[0], z: lastCutZ });
 
             if (requiredZ < this.lastZ) { // do we need to be deeper?
               if (!(op.ramp && this.rampIn(cutPath, requiredZ)))
