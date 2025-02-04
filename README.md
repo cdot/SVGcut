@@ -78,7 +78,7 @@ Settings` pane). There are other options that can be set in the
 drop-down that opens when you click ▶.
 + `Name` - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
 + `Ramp Plunge` - Normally a deep cut is started by plunging the tool down into the work - by drilling a hole. Some tools or materials are not suitable for this, so a different approach is required. A ramp plunge is where the tool moves along the tool path while it also descends into the work. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
-+ `Combine` - specifies the boolean operation to apply to the selected paths.
++ `Combine` - specifies the boolean operation to apply to the selected paths. Draw a polygon with holes in it in Inkscape, and experiment to understand how this works.
 + `Direction`
     + `Conventional`, the cutter rotates against the direction of the feed.
     + `Climb`, the cutter rotates with the feed. See <a href="https://www.harveyperformance.com/in-the-loupe/conventional-vs-climb-milling/">here</a> for an excellent explanation.

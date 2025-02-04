@@ -120,8 +120,9 @@ class SelectionViewModel extends ViewModel {
   }
 
   /**
-   * Consume the current selection and return it as a CutPaths. Clears
-   * the selection.
+   * Consume the current selection and return it as a CutPaths. Note
+   * polygons - objects with inner contours will be included as peers to
+   * completely disjoint polgons/paths.
    * @return {CutPaths}
    */
   getSelectedPaths() {

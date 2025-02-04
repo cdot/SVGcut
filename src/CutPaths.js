@@ -42,8 +42,9 @@ const CLEAN_POLY_DIST = 0.001 * UnitConverter.from.mm.to.integer;
 const ARC_TOLERANCE = 0.25 * UnitConverter.from.mm.to.integer;
 
 /**
- * A list of `CutPath`. Cutpaths are treated as sets of disjoint polygons
- * and paths.
+ * A single CutPaths object can represent both a disjoint set of CutPath
+ * (open and closed), or can represent a single closed polygon, possibly with
+ * with holes.
  */
 export class CutPaths extends Array {
 
