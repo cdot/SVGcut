@@ -284,8 +284,8 @@ class ProjectViewModel extends ViewModel {
   newProject() {
     this.confirmDataLoss(() => {
       App.emptySVG();
-      for (const model of App.models)
-        model.reset();
+      for (const model of Object.keys(App.models))
+        App.models[model].reset();
       this.projectName("New project");
       this.loadDefaults();
       console.debug("Started new project");
