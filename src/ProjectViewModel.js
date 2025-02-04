@@ -15,15 +15,20 @@
 import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
 
-// Name of a key in browser LocalStorage that can store many projects
-const LOCAL_PROJECTS_AREA = "svgcut";
-
-// Default name for a project
-const DEFAULT_PROJECT_NAME = "undefined";
-
 const POPOVERS = [
   { id: "selectProject" }
 ];
+
+/**
+ * Name of a key in browser LocalStorage that can store
+ * many projects
+ */
+const LOCAL_PROJECTS_AREA = "svgcut";
+
+/**
+ * Special project where defaults are saved in the browser
+ */
+const DEFAULTS_PROJECT = "defaults";
 
 /**
  * View model that handles projects
@@ -69,6 +74,15 @@ class ProjectViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.projectChanged = ko.observable("");
+    this.projectChanged.subscribe(v => {
+      if (v === "*") {
+        for (const el of document.querySelectorAll(".change-activated"))
+          el.classList.remove("disabled");
+      } else {
+        for (const el of document.querySelectorAll(".change-activated"))
+          el.classList.add("disabled");
+      }
+    });
 
     /**
      * Whether to save just a template, or a whole project
@@ -138,6 +152,9 @@ class ProjectViewModel extends ViewModel {
         reader.readAsText(file);
       });
     });
+
+    document.addEventListener(
+      "PROJECT_CHANGED", () => this.projectChanged("*"));
   }
 
   /**
@@ -156,7 +173,7 @@ class ProjectViewModel extends ViewModel {
 
   /**
    * Save the project in the browser local storage. If the selected
-   * project name is DEFAULT_PROJECT_NAME, will only save a template.
+   * project name is DEFAULTS_PROJECT, will only save a template.
    * Invoked from #SaveProjectModal.
    */
   saveProjectInBrowser() {
@@ -164,9 +181,9 @@ class ProjectViewModel extends ViewModel {
     let json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA)) ?? {};
     const name = this.projectName();
     json[name] = App.getSaveable(
-      this.templateOnly() || name === DEFAULT_PROJECT_NAME);
+      this.templateOnly() || name === DEFAULTS_PROJECT);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
-    App.projectChanged(false);
+    this.projectChanged("");
     App.showAlert("projectSavedInBrowser", "alert-info", name);
     this.getBrowserProjectsList();
   }
@@ -183,7 +200,18 @@ class ProjectViewModel extends ViewModel {
     const fn = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, fn);
-    App.projectChanged(false);
+    this.projectChanged("");
+  }
+
+  /**
+   * Try to load the defaults project. Invoked from SVGcut when the
+   * simulation is ready.
+   */
+  loadDefaults() {
+    if (this.importProject(DEFAULTS_PROJECT)) {
+      console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
+      this.projectChanged("");
+    }
   }
 
   /**
@@ -193,19 +221,28 @@ class ProjectViewModel extends ViewModel {
    */
   loadProjectFromBrowser() {
     App.hideModals();
-
-    const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
     const name = this.selectedProject();
-
-    if (projects) {
-      const json = projects[name];
-      if (json) {
-        App.loadSaveable(json);
-        return true;
-      }
-    }
-    if (name !== DEFAULT_PROJECT_NAME)
+    if (!this.importProject(name))
       App.showAlert("projectNotInBrowser", "alert-danger", name);
+  }
+
+  /**
+   * Try to import a project from the browser storage.
+   * @param {string} name name of the project to import
+   * @return {boolean} true if the project was imported
+   * @private
+   */
+  importProject(name) {
+    const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
+
+    if (!projects || !projects[name])
+      return false;
+
+    const json = projects[name];
+    if (json) {
+      App.loadSaveable(json);
+      return true;
+    }
 
     return false;
   }
@@ -247,9 +284,11 @@ class ProjectViewModel extends ViewModel {
   newProject() {
     this.confirmDataLoss(() => {
       App.emptySVG();
-      App.models.Operations.reset();
+      for (const model of App.models)
+        model.reset();
       this.projectName("New project");
-      App.projectChanged(false);
+      this.loadDefaults();
+      console.debug("Started new project");
     });
   }
 
@@ -259,7 +298,7 @@ class ProjectViewModel extends ViewModel {
    * @private
    */
   confirmDataLoss(callback) {
-    if (App.projectChanged()) {
+    if (this.isChanged()) {
       this.dataLossCallback = callback;
       App.showModal('ConfirmDataLossModal');
     } else
@@ -303,7 +342,7 @@ class ProjectViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'units');
-    if (json.projectName && json.projectName !== "undefined")
+    if (json.projectName && json.projectName !== DEFAULTS_PROJECT)
       this.updateObservable(json, 'projectName');
     else
       this.projectName("New project");

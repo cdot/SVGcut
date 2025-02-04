@@ -8,6 +8,9 @@
 import { ViewModel } from "./ViewModel.js";
 import { loadSVGFromText } from "./SVG.js";
 
+const DEFAULT_THICKNESS = 10; //mm
+const DEFAULT_CLEARANCE = 10; //mm
+
 const POPOVERS = [
   { id:"inputMatThickness" },
   { id:"selectMatZOrigin" },
@@ -30,21 +33,23 @@ class MaterialViewModel extends ViewModel {
      * Path thickness
      * @member {observable.<number>}
      */
-    this.thickness = ko.observable(unitConverter.fromUnits(10, "mm"));
+    this.thickness = ko.observable(
+      unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
     unitConverter.add(this.thickness);
     this.thickness.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.thickness.subscribe(() => App.projectChanged(true));
+    this.thickness.subscribe(() => this.projectChanged());
 
     /**
      * Tool clearance level
      * @member {observable.<number>}
      */
-    this.clearance = ko.observable(unitConverter.fromUnits(10, "mm"));
+    this.clearance = ko.observable(
+      unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
     unitConverter.add(this.clearance);
     this.clearance.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.clearance.subscribe(() => App.projectChanged(true));
+    this.clearance.subscribe(() => this.projectChanged());
 
     /**
      * Z origin, Top or Bottom of the material
@@ -53,7 +58,7 @@ class MaterialViewModel extends ViewModel {
     this.zOrigin = ko.observable("Top");
     this.zOrigin.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.zOrigin.subscribe(() => App.projectChanged(true));
+    this.zOrigin.subscribe(() => this.projectChanged());
 
     /**
      * Z level for Z origin, computed
@@ -129,6 +134,17 @@ class MaterialViewModel extends ViewModel {
     this.addPopovers(POPOVERS);
 
     ko.applyBindings(this, document.getElementById("MaterialView"));
+  }
+
+  /**
+   * @override
+   */
+  reset() {
+    this.thickness = ko.observable(
+      this.unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
+    this.clearance = ko.observable(
+      this.unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
+    this.zOrigin("Top");
   }
 
   /**

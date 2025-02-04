@@ -76,9 +76,8 @@ class SelectionViewModel extends ViewModel {
     // before being added to the selection SVG. That way when an operation is
     // created, the paths can simply be converted to integer coordinates
     // without worrying about linearisation.
+    const vb = App.getMainSVGBBox();
     try {
-      const vb = App.getMainSVGBBox();
-      //console.debug("BBOX ", vb);
       const segs = SVG.segmentsFromElement(
         elem,
         {
@@ -107,7 +106,7 @@ class SelectionViewModel extends ViewModel {
         return true;
       }
     } catch (e) {
-      console.error(e);
+      console.warn(e);
     }
 
     return false;

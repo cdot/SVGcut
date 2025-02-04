@@ -172,7 +172,7 @@ When you start up the app for the first time, it starts up with a
 bunch of defaults, many of which you will probably change to create
 your own set of defaults. You can save these defaults for use in other
 projects by selecting `Template only` when you save your project. If
-you save a template called `default` in the browser, it will
+you save a template called `defaults` in the browser, it will
 automatically be loaded whenever you start up. You might have a number
 of different tool configurations; you can save them the same way,
 giving them meaningful names.

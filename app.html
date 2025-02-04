@@ -230,7 +230,7 @@
                            data-bind="checked: enabled" />
                   </div>
                   <div style="display: table-cell" class="entry-mid">
-                    <select id="opOperation" data-bind="options: availableOperations, optionsText: function(entry) { return App.opName(entry); }, value: operation">
+                    <select id="opOperation" data-bind="options: availableOperations, optionsText: function(entry) { return App.longOpName[entry]; }, value: operation">
                     </select>
                   </div>
                   <div
@@ -821,7 +821,7 @@
   </div>
 
   <div id="tutorialSteps" style="display:none">
-    <span name="Step1">Import one or more SVG files.</span>
+    <span name="Step1">Open the Project mena and import one or more SVG files.</span>
     <span name="Step2">Click 1 or more paths</span>
     <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
     <span name="Step4">Customise the operation to your tastes.</span>

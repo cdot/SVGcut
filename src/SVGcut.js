@@ -42,13 +42,29 @@ export class SVGcut {
      */
     this.Ops = {
       AnnularPocket: 0,
-      Drill: 2,
-      Engrave: 3,
-      Inside: 4,
-      Outside: 5,
-      Perforate: 6,
-      RasterPocket: 7
+      Drill: 1,
+      Engrave: 2,
+      Inside: 3,
+      Outside: 4,
+      Perforate: 5,
+      RasterPocket: 6
     };
+
+    // TODO: move these op names to HTML to ease translation
+
+    /**
+     * Long names for supported operations
+     * @member {string[]}
+     */
+    this.longOpName = [
+      "Pocket (annular)",
+      "Drill",
+      "Engrave",
+      "Inside",
+      "Outside",
+      "Perforate",
+      "Pocket (raster)"
+    ];
 
     /**
      * Map from model name (e.g. "Operations") to the view model
@@ -138,7 +154,7 @@ export class SVGcut {
           document.getElementById("contentSVGGroup").append(svgEl);
           this.updateMainSvgSize();
           lert.remove();
-          this.projectChanged(true);
+          document.dispatchEvent(new Event("PROJECT_CHANGED"));
           this.showAlert("loadedSVG", "alert-success", file.name);
           this.tutorial(2);
         });
@@ -170,6 +186,7 @@ export class SVGcut {
       const ang = this.models.Tool.angle();
       const cutterH = uc.fromUnits(1, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
+      console.debug(`Updating simulation of ${toolPath.length} paths`);
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
@@ -177,6 +194,8 @@ export class SVGcut {
     for (const m in this.models) {
       this.models[m].initialise();
     }
+
+    this.tutorial(1);
   }
 
   /**
@@ -187,9 +206,8 @@ export class SVGcut {
     this.updateMainSvgSize();
     this.updateSimulationCanvasSize();
 
-    this.tutorial(1);
-
-    return this.simulation.start();
+    return this.simulation.start()
+    .then(() => this.models.Project.loadDefaults());
   }
 
   /**
@@ -231,18 +249,6 @@ export class SVGcut {
           this.tutorial(3);
       }
     });
-  }
-
-  opName(v) {
-    switch (v) {
-    case this.Ops.Engrave: return "Engrave";
-    case this.Ops.Perforate: return "Perforate";
-    case this.Ops.Inside: return "Inside";
-    case this.Ops.Outside: return "Outside";
-    case this.Ops.AnnularPocket: return "Pocket (annular)";
-    case this.Ops.RasterPocket: return "Pocket (raster)";
-    case this.Ops.Drill: return "Drill";
-    }
   }
 
   /**
@@ -359,7 +365,7 @@ export class SVGcut {
       if (this.tutorialAlert)
         this.tutorialAlert.remove();
       const messEl = document.querySelector(
-        `#tutorialSteps>div[name="Step${step}"]`);
+        `#tutorialSteps>[name="Step${step}"]`);
       if (messEl) {
         const message = messEl.innerHTML;
         this.tutorialAlert = this.showAlert(
@@ -393,25 +399,6 @@ export class SVGcut {
   }
 
   /**
-   * Flag whether the project has been changed or not.
-   * @param {boolean} tf true or false
-   */
-  projectChanged(tf) {
-    if (typeof tf !== "undefined") {
-      if (tf) {
-        this.models.Project.projectChanged("*");
-        for (const el of document.querySelectorAll(".change-activated"))
-          el.classList.remove("disabled");
-      } else {
-        this.models.Project.projectChanged("");
-        for (const el of document.querySelectorAll(".change-activated"))
-          el.classList.add("disabled");
-      }
-    }
-    return this.models.Project.projectChanged() === "*";
-  }
-
-  /**
    * Clean out SVG groups
    */
   emptySVG() {
@@ -439,7 +426,8 @@ export class SVGcut {
     }
 
     // Reload content
-    svgGroups = document.querySelectorAll(".managedSVGGroup.serialisable");
+    const svgGroups = document.querySelectorAll(
+      ".managedSVGGroup.serialisable");
     for (const svgel of svgGroups) {
       if (container.svg[svgel.id]) {
         const el = SVG.loadSVGFromText(container.svg[svgel.id]);

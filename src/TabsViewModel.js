@@ -6,6 +6,8 @@
 import { ViewModel } from "./ViewModel.js";
 import { TabViewModel } from "./TabViewModel.js";
 
+const DEFAULT_MAXCUTDEPTH = 5;
+
 /**
  * View model for (holding) Tabs pane.
  */
@@ -27,12 +29,12 @@ class TabsViewModel extends ViewModel {
      * Maximum depth operations may cut to when they pass over tabs
      * @member {observable.<number>}
      */
-    this.maxCutDepth = ko.observable(0);
+    this.maxCutDepth = ko.observable(DEFAULT_MAXCUTDEPTH);
     unitConverter.add(this.maxCutDepth);
-    this.maxCutDepth(App.models.Tool.passDepth() / 2);
+    this.maxCutDepth(App.models.Material.thickness() / 2);
     this.maxCutDepth.subscribe(() =>
       document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.maxCutDepth.subscribe(() => App.projectChanged(true));
+    this.maxCutDepth.subscribe(() => this.projectChanged());
   }
 
   /**
@@ -63,7 +65,7 @@ class TabsViewModel extends ViewModel {
     const tab = new TabViewModel(this.unitConverter, operands);
     tab.recombine();
     this.tabs.push(tab);
-    App.projectChanged(true);
+    this.projectChanged();
 
     document.dispatchEvent(new Event("UPDATE_GCODE"));
   };
@@ -84,6 +86,7 @@ class TabsViewModel extends ViewModel {
     for (const tab of this.tabs())
       tab.removeCombinedGeometry();
     this.tabs.removeAll();
+    this.maxCutDepth(App.models.Material.thickness() / 2);
   }
 
   /**

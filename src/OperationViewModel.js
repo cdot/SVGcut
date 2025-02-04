@@ -89,7 +89,7 @@ class OperationViewModel extends ViewModel {
      */
     this.combineOp = ko.observable("Union");
     this.combineOp.subscribe(() => this.recombine());
-    this.combineOp.subscribe(() => App.projectChanged(true));
+    this.combineOp.subscribe(() => this.projectChanged());
 
     /**
      * The available operations. This is based on the
@@ -115,7 +115,7 @@ class OperationViewModel extends ViewModel {
      */
     this.operation = ko.observable(App.Ops.Engrave);
     this.operation.subscribe(() => this.recombine());
-    this.operation.subscribe(() => App.projectChanged(true));
+    this.operation.subscribe(() => this.projectChanged());
 
     /**
      * The UI button that opens the detail pane for this operation
@@ -129,7 +129,7 @@ class OperationViewModel extends ViewModel {
      */
     this.name = ko.observable("");
     this.name.subscribe(() => this.updateGcode());
-    this.name.subscribe(() => App.projectChanged(true));
+    this.name.subscribe(() => this.projectChanged());
 
     /**
      * Operations can be selectively enabled/disabled for Gcode
@@ -145,7 +145,7 @@ class OperationViewModel extends ViewModel {
         this.svgToolPath.setAttribute("visibility", v);
     });
     this.enabled.subscribe(() => this.updateGcode());
-    this.enabled.subscribe(() => App.projectChanged(true));
+    this.enabled.subscribe(() => this.projectChanged());
 
     /**
      * Enable ramping. See README.md
@@ -153,7 +153,7 @@ class OperationViewModel extends ViewModel {
      */
     this.ramp = ko.observable(false);
     this.ramp.subscribe(() => this.updateGcode());
-    this.ramp.subscribe(() => App.projectChanged(true));
+    this.ramp.subscribe(() => this.projectChanged());
 
     /**
      * Either "Conventional" or "Climb". See README.md
@@ -162,7 +162,7 @@ class OperationViewModel extends ViewModel {
     this.direction = ko.observable("Conventional");
     this.direction.subscribe(() =>
       document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.direction.subscribe(() => App.projectChanged(true));
+    this.direction.subscribe(() => this.projectChanged());
 
     /**
      * Paths taken by the tool to execute this operation.
@@ -179,7 +179,7 @@ class OperationViewModel extends ViewModel {
     unitConverter.add(this.cutDepth);
     this.cutDepth(App.models.Tool.passDepth());
     this.cutDepth.subscribe(() => this.updateGcode());
-    this.cutDepth.subscribe(() => App.projectChanged(true));
+    this.cutDepth.subscribe(() => this.projectChanged());
 
     /**
      * Amount of material to leave uncut.
@@ -188,7 +188,7 @@ class OperationViewModel extends ViewModel {
     this.margin = ko.observable(0);
     unitConverter.add(this.margin);
     this.margin.subscribe(() => this.recombine());
-    this.margin.subscribe(() => App.projectChanged(true));
+    this.margin.subscribe(() => this.projectChanged());
 
     /**
      * Spacing of perforations.
@@ -197,7 +197,7 @@ class OperationViewModel extends ViewModel {
     this.spacing = ko.observable(1);
     unitConverter.add(this.spacing);
     this.spacing.subscribe(() => this.recombine());
-    this.spacing.subscribe(() => App.projectChanged(true));
+    this.spacing.subscribe(() => this.projectChanged());
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
@@ -207,7 +207,7 @@ class OperationViewModel extends ViewModel {
     this.width = ko.observable(0);
     unitConverter.add(this.width);
     this.width.subscribe(() => this.recombine());
-    this.width.subscribe(() => App.projectChanged(true));
+    this.width.subscribe(() => this.projectChanged());
 
     /**
      * Flag to lock out recombination, usually because we are in a
@@ -306,7 +306,7 @@ class OperationViewModel extends ViewModel {
     if (this.disableRecombination)
       return;
 
-    const opName = this.operation();
+    const oper = this.operation();
 
     this.removeCombinedGeometry();
     this.removeToolPaths();
@@ -335,19 +335,19 @@ class OperationViewModel extends ViewModel {
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("integer");
 
-      if (opName === App.Ops.AnnularPocket
-          || opName === App.Ops.Inside)
+      if (oper === App.Ops.AnnularPocket
+          || oper === App.Ops.Inside)
         off = -off;
 
-      if (opName !== App.Ops.Engrave && off !== 0)
+      if (oper !== App.Ops.Engrave && off !== 0)
         previewGeometry = previewGeometry.offset(off);
 
-      if (opName === App.Ops.Inside
-          || opName === App.Ops.Outside
-          || opName === App.Ops.Perforate
-          || opName === App.Ops.Drill) {
+      if (oper === App.Ops.Inside
+          || oper === App.Ops.Outside
+          || oper === App.Ops.Perforate
+          || oper === App.Ops.Drill) {
         const width = this.toolPathWidth();
-        if (opName === App.Ops.Inside) {
+        if (oper === App.Ops.Inside) {
           previewGeometry =
             previewGeometry.diff(previewGeometry.offset(-width));
         } else // Outside or Perforate or Drill
@@ -383,7 +383,7 @@ class OperationViewModel extends ViewModel {
     this.generatingToolpath = true;
 
     let geometry = this.combinedGeometry;
-    const opName = this.operation();
+    const oper = this.operation();
     const toolModel = App.models.Tool;
     const toolDiameter = toolModel.diameter.toUnits("integer");
     const bitAngle = toolModel.angle();
@@ -397,15 +397,15 @@ class OperationViewModel extends ViewModel {
 
     // inset/outset the geometry as dictated by the margin
     let off = this.margin.toUnits("integer");
-    if (opName === App.Ops.AnnularPocket
-        || opName === App.Ops.RasterPocket
-        || opName === App.Ops.Inside)
+    if (oper === App.Ops.AnnularPocket
+        || oper === App.Ops.RasterPocket
+        || oper === App.Ops.Inside)
       off = -off; // inset
-    if (opName !== App.Ops.Engrave && off !== 0)
+    if (oper !== App.Ops.Engrave && off !== 0)
       geometry = geometry.offset(off);
 
     let paths, width;
-    switch (opName) {
+    switch (oper) {
 
     case App.Ops.AnnularPocket:
       paths = Cam.annularPocket(geometry, toolDiameter, 1 - stepover, climb);
@@ -422,7 +422,7 @@ class OperationViewModel extends ViewModel {
         width = toolDiameter;
       paths = Cam.outline(
         geometry, toolDiameter,
-        opName === App.Ops.Inside, // isInside
+        oper === App.Ops.Inside, // isInside
         width,
         1 - stepover,
         climb);

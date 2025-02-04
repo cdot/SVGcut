@@ -12,6 +12,9 @@ const POPOVERS = [
   { id: "inputMinSegmentLength" }
 ];
 
+const DEFAULT_MINSEGS = 5;
+const DEFAULT_MINSEGLEN = 0.25; //mm
+
 /**
  * View model for curve conversion parameters
  */
@@ -27,17 +30,18 @@ class CurveConversionViewModel extends ViewModel {
      * Minimum number of segments in a curve
      * @member {observable.<number>}
      */
-    this.minSegs = ko.observable(1);
+    this.minSegs = ko.observable(DEFAULT_MINSEGS);
     this.minSegs.subscribe(
       () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
-    this.minSegs.subscribe(() => App.projectChanged(true));
+    this.minSegs.subscribe(() => this.projectChanged());
 
     /**
      * Minimum number of segments in a curve
      * @member {observable.<number>}
      */
-    this.minSegLen = ko.observable(unitConverter.fromUnits(0.25, "mm"));
-    this.minSegLen.subscribe(() => App.projectChanged(true));
+    this.minSegLen = ko.observable(
+      unitConverter.fromUnits(DEFAULT_MINSEGLEN, "mm"));
+    this.minSegLen.subscribe(() => this.projectChanged(true));
 
     unitConverter.add(this.minSegLen);
   }
@@ -49,6 +53,14 @@ class CurveConversionViewModel extends ViewModel {
     super.addPopovers(POPOVERS);
 
     ko.applyBindings(this, document.getElementById("CurveConversionView"));
+  }
+
+  /**
+   * @override
+   */
+  reset() {
+    this.minSegs(DEFAULT_MINSEGS);
+    this.minSegLen(this.unitConverter.fromUnits(DEFAULT_MINSEGLEN, "mm"));
   }
 
   /**
