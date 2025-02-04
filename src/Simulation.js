@@ -1015,11 +1015,11 @@ class Simulation {
    * Promise to initialise the GL context and load all required shaders.
    * GL shaders are defined in external files with a `.shader.txt`
    * extension that are loaded dynamically.
-   * @return {Promise} promise that resolves to undefined
+   * @return {Promise} promise that resolves to undefined when the
+   * simulation is ready to accept new input.
    * @throw {Error} if something goes horribly wrong
    */
   start() {
-
     const gl = this.gl;
 
     // Map from shader name to gl type
