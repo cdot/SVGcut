@@ -186,7 +186,7 @@ export class SVGcut {
       const ang = this.models.Tool.angle();
       const cutterH = uc.fromUnits(1, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
-      console.debug(`Updating simulation of ${toolPath.length} paths`);
+      console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
