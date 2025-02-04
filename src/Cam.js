@@ -124,16 +124,19 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     let firstPoint;
     for (const convexPocket of convexPockets) {
       const rasters = rasteriseConvexPocket(convexPocket, step);
-      if (!firstPoint)
-        firstPoint = rasters[0];
-      if (rasters.length > 0)
+      if (rasters.length > 0) {
+        if (!firstPoint)
+          firstPoint = rasters[0];
         toolPaths.push(rasters);
+      }
     }
     // Find the point on the outline closest to the first point of
     // the rasters, and reshape the outline
-    let cp = poly.closestVertex(firstPoint);
-    if (cp)
-      poly.makeLast(cp.point);
+    if (firstPoint) {
+      let cp = poly.closestVertex(firstPoint);
+      if (cp)
+        poly.makeLast(cp.point);
+    }
     toolPaths.unshift(poly);
   }
 
@@ -181,6 +184,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   }
 
   while (currentWidth <= width) {
+    toolPaths.push(...current);
     let i;
     if (needReverse)
       for (i = 0; i < current.length; ++i)

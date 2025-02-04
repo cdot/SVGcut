@@ -397,7 +397,7 @@ export class CutPaths extends Array {
     while (mergedPaths.length > 0)
       this.push(mergedPaths.shift());
   }
-  
+
   /**
    * The only way to merge open paths is by connecting endpoints. An
    * open path could be merged into a closed path to make a new open
@@ -407,13 +407,13 @@ export class CutPaths extends Array {
   mergeOpenPaths() {
     let p1i = 0;
     while (p1i < this.length - 1) {
-      const p1 = this[p1i];
-      const p1a = p1[0], p1b = p1[p1.length - 1];
+      let p1 = this[p1i];
+      let p1a = p1[0], p1b = p1[p1.length - 1];
       let p2i = p1i + 1;
       while (p2i < this.length) {
-        const p2 = this[p2i];
-        const p2a = p2[0], p2b = p2[p2.length - 1];
-        
+        let p2 = this[p2i];
+        let p2a = p2[0], p2b = p2[p2.length - 1];
+
         if (p1b.X === p2a.X && p1b.Y === p2b.Y) {
           this[p1i] = p1.concat(p2);
           this.splice(p2i, 1);
