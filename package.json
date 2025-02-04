@@ -10,6 +10,7 @@
 		"docdash": "^2.0.2",
 		"eslint": "^9.15.0",
 		"eslint-formatter-unix": "^8.40.0",
+		"eslint-import-resolver-alias": "^1.1.2",
 		"eslint-plugin-import": "^2.31.0",
 		"jsdoc": "^4.0.4",
 		"jsdom": "^26.0.0",

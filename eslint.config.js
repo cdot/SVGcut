@@ -7,9 +7,11 @@ export default [
   {
     settings: {
       'import/resolver': {
-        node: {
-          extensions: ['.js'],
-          moduleDirectory: ['node_modules', 'src/']
+        alias: {
+          map: [
+            [ "flatten-js", "./node_modules/@flatten-js/core/dist/main.mjs" ],
+            [ "gl-matrix", "./node_modules/gl-matrix/esm" ]
+          ]
         }
       }
     },
