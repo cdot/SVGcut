@@ -171,6 +171,7 @@ describe("Gcode", () => {
       cutType: "Cut Type",
       passDepth: 1,
       cutDepth: 3,
+      spinSpeed: 2000,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);
@@ -191,36 +192,42 @@ describe("Gcode", () => {
   '; Plunge rate: 50 mm/min',
   '; Path 1',
   'G0 X0 Y0 Z0 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-1 F50 ; Drill plunge',
-  'G1 X10 Y10 F60',
+      'G1 X10 Y10 F60',
+      'M5 ; Stop spindle',
   'G0 Z10 F1000 ; Clear',
   'G0 X0 Y0 Z-1 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-2 F50 ; Drill plunge',
   'G1 X10 Y10 F60',
+      'M5 ; Stop spindle',
   'G0 Z10 F1000 ; Clear',
   'G0 X0 Y0 Z-2 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-3 F50 ; Drill plunge',
   'G1 X10 Y10 F60',
   'G0 Z10 F1000 ; Path done',
   '; Path 2',
+      'M5 ; Stop spindle',
   'G0 X20 Y20 Z0 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-1 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
+      'M5 ; Stop spindle',
   'G0 Z10 F1000 ; Clear',
   'G0 X20 Y20 Z-1 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-2 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
+      'M5 ; Stop spindle',
   'G0 Z10 F1000 ; Clear',
   'G0 X20 Y20 Z-2 ; Sink',
-  'M3 ; Start spindle',
+  'M3 S2000 ; Start spindle',
   'G1 Z-3 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
   'G0 Z10 F1000 ; Path done',
+      'M5 ; Stop spindle',
   'G0 X0 Y0 ; Return to 0,0',
   'M2 ; end program'
     ];
@@ -252,7 +259,6 @@ describe("Gcode", () => {
       gcode.shift();
     while (gcode[gcode.length - 1][0] === ";")
       gcode.pop();
-    console.log(gcode);
     const expected = [
   '; ** Operation "Test"',
   '; Type:        Cut Type',

@@ -13,11 +13,14 @@ import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
 import * as Cam from "./Cam.js";
 
-/**
- * @typedef {object} RawPath
- * @property {svgSegment[]} path path segments
- * @property {boolean} nonzero winding rule
-*/
+const DEFAULT_COMBINEOP = "Union";
+const DEFAULT_RAMP = false;
+const DEFAULT_DIRECTION = "Conventional";
+const DEFAULT_CUTDEPTH = 0;
+const DEFAULT_MARGIN = 0;
+const DEFAULT_SPACING = 1;
+const DEFAULT_SPINDLESPEED = 1000; // rpm
+const DEFAULT_WIDTH = 0;
 
 const POPOVERS = [
   { id: "opEnabled" },
@@ -30,11 +33,14 @@ const POPOVERS = [
   { id: "opVMaxDepth" },
   { id: "opMargin" },
   { id: "opSpacing" },
+  { id: "opSpindleSpeed" },
   { id: "opWidth" }
 ];
 
-const FIELDS = [ "name", "enabled", "combineOp", "operation", "cutDepth",
-                 "width", "direction", "spacing", "ramp", "margin" ];
+const FIELDS = [
+  "name", "enabled", "combineOp", "operation", "cutDepth", "width",
+  "direction", "spacing", "ramp", "margin", "spindleSpeed"
+];
 
 /**
  * ViewModel for an operation in the `Operations` card
@@ -88,7 +94,7 @@ class OperationViewModel extends ViewModel {
      * or "Xor"
      * @member {observable.<string>}
      */
-    this.combineOp = ko.observable("Union");
+    this.combineOp = ko.observable(DEFAULT_COMBINEOP);
     this.combineOp.subscribe(() => this.recombine());
     this.combineOp.subscribe(() => this.projectChanged());
 
@@ -152,7 +158,7 @@ class OperationViewModel extends ViewModel {
      * Enable ramping. See README.md
      * @member {observable.<boolean>}
      */
-    this.ramp = ko.observable(false);
+    this.ramp = ko.observable(DEFAULT_RAMP);
     this.ramp.subscribe(() => this.updateGcode());
     this.ramp.subscribe(() => this.projectChanged());
 
@@ -160,7 +166,7 @@ class OperationViewModel extends ViewModel {
      * Either "Conventional" or "Climb". See README.md
      * @member {observable.<string>}
      */
-    this.direction = ko.observable("Conventional");
+    this.direction = ko.observable(DEFAULT_DIRECTION);
     this.direction.subscribe(() =>
       document.dispatchEvent(new Event("UPDATE_GCODE")));
     this.direction.subscribe(() => this.projectChanged());
@@ -176,7 +182,7 @@ class OperationViewModel extends ViewModel {
      * Maximum depth to cut to.
      * @member {observable.<number>}
      */
-    this.cutDepth = ko.observable(0);
+    this.cutDepth = ko.observable(DEFAULT_CUTDEPTH);
     unitConverter.add(this.cutDepth);
     this.cutDepth(App.models.Tool.passDepth());
     this.cutDepth.subscribe(() => this.updateGcode());
@@ -186,7 +192,7 @@ class OperationViewModel extends ViewModel {
      * Amount of material to leave uncut.
      * @member {observable.<number>}
      */
-    this.margin = ko.observable(0);
+    this.margin = ko.observable(DEFAULT_MARGIN);
     unitConverter.add(this.margin);
     this.margin.subscribe(() => this.recombine());
     this.margin.subscribe(() => this.projectChanged());
@@ -195,17 +201,26 @@ class OperationViewModel extends ViewModel {
      * Spacing of perforations.
      * @member {observable.<number>}
      */
-    this.spacing = ko.observable(1);
+    this.spacing = ko.observable(DEFAULT_SPACING);
     unitConverter.add(this.spacing);
     this.spacing.subscribe(() => this.recombine());
     this.spacing.subscribe(() => this.projectChanged());
+
+    /**
+     * Spindle speed (only one supported)
+     * @member {observable.<number>}
+     */
+    this.spindleSpeed = ko.observable(DEFAULT_SPINDLESPEED);
+    this.spindleSpeed.subscribe(
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.spindleSpeed.subscribe(() => this.projectChanged());
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
      * it will be rounded up.
      * @member {observable.<number>}
      */
-    this.width = ko.observable(0);
+    this.width = ko.observable(DEFAULT_WIDTH);
     unitConverter.add(this.width);
     this.width.subscribe(() => this.recombine());
     this.width.subscribe(() => this.projectChanged());

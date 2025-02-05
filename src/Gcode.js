@@ -422,7 +422,7 @@ export class Generator {
    * @private
    */
   startSpindle(spin) {
-    if (this.last.spin === 0)
+    if (this.last.spin !== spin)
       this.M(3, { spin: spin, rem: "Start spindle" });
   }
 
@@ -567,7 +567,7 @@ export class Generator {
             f: this.rapidFeed, pt: path[0], z: lastCutZ, rem: "Sink" } );
 
         // We're over the start of the path, we can start cutting
-        this.startSpindle();
+        this.startSpindle(op.spinSpeed);
 
         let cutPaths;
         if (targetZ >= tabZ || op.precalculatedZ)

@@ -252,7 +252,7 @@
                     <table class="table">
                       <tr>
                         <td>
-                          <label class="control-label">
+                          <label for="opName" class="control-label">
                             Name
                           </label>
                         </td><td>
@@ -260,7 +260,7 @@
                         </td>
                       </tr><tr data-bind="visible:needs('ramp')">
                         <td>
-                          <label class="control-label">
+                          <label for="opRamp" class="control-label">
                             Ramp
                           </label>
                         </td><td>
@@ -269,7 +269,7 @@
                         </td>
                       </tr><tr>
                         <td>
-                          <label class="control-label">
+                          <label for="opCombine" class="control-label">
                             Combine
                           </label>
                         </td><td>
@@ -282,7 +282,7 @@
                         </td>
                       </tr><tr data-bind="visible:needs('direction')">
                         <td>
-                          <label class="control-label">
+                          <label for="opDirection" class="control-label">
                             Direction
                           </label>
                         </td><td>
@@ -292,9 +292,22 @@
                             <option value="Climb">Climb</option>
                           </select>
                         </td>
+                      </tr><tr data-bind="visible:needs('spindleSpeed')">
+                        <td>
+                          <label for="opSpindleSpeed" class="control-label">
+                            Spindle speed
+                          </label>
+                        </td><td>
+                          <input id="opSpindleSpeed" type="number"
+                                 step="any" min="0"
+                                 data-bind="value: spindleSpeed">
+                          rpm
+                        </td>
                       </tr><tr data-bind="visible:needs('margin')">
                         <td>
-                          <label class="control-label">Margin</label>
+                          <label for="opMargin" class="control-label">
+                            Margin
+                          </label>
                         </td><td>
                           <input id="opMargin" type="number"
                                  step="any"
@@ -303,7 +316,9 @@
                         </td>
                       </tr><tr data-bind="visible:needs('spacing')">
                         <td>
-                          <label class="control-label">Spacing</label>
+                          <label for="opSpacing" class="control-label">
+                            Spacing
+                          </label>
                         </td><td>
                           <input id="opSpacing" type="number"
                                  step="any" min="0"
@@ -313,12 +328,15 @@
                       </tr>
                       <tr data-bind="visible:needs('width')">
                         <td>
-                          <label class="control-label">Width</label>
+                          <label for="opWidth" class="control-label">
+                            Width
+                          </label>
                         </td><td>
                           <input id="opWidth" type="number"
                                  step="any" min="0"
                                  data-bind="value: width">
-                          <span data-bind="text: App.models.Project.units"></span>
+                          <span data-bind="text: App.models.Project.units">
+                          </span>
                         </td>
                       </tr>
                       <tr>
@@ -679,8 +697,7 @@
                            step="any" min="0" max="1"
                            data-bind="value: stepover"> [0..1]
                   </td>
-                </tr>
-                <tr>
+                </tr><tr>
                   <td><label for="toolRapidRate" class="control-label">
                       Rapid</label>
                   </td><td>
@@ -894,6 +911,8 @@
     <span name="opCombine">How to combine multiple paths into this operation</span>
     <span name="opDirection">What direction the cutter should travel.
       See README for an explanation</span>
+    <span name="opSpindleSpeed">How fast the spindle should run while
+      completing this operation</span>
     <span name="opCutDepth">How deep this operation should cut in total</span>
     <div name="opOperation">Operation to perform on the selected paths.
       <ul>

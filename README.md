@@ -198,12 +198,13 @@ Development of `jscut` was abandoned over 10 years ago, leaving a number
 of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
-+ Uses G0 rather than G1 for travel
-+ Select all on a double-click
++ Select all paths on a double-click
++ Zoom and pan on paths
 + Easier to work with XY origins
 + Perforate operation
 + Raster pocket operation
 + Drill operation (for PCBs)
++ Per-operation spindle speed control
 + Gcode text preview
 + Extensive newbie documentation
 + Extensive in-code documentation and literate programming techniques

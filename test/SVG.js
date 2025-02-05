@@ -223,7 +223,6 @@ describe("SVG", () => {
     assert.deepEqual(segs, [ [ 'M', 0, 75 ], [ 'L', 75, 150 ] ]);
   });
 
-    console.log(typeof require);
     it("trans-line", () => {
       const el = document.getElementById("line");
       const segs = segmentsFromElement(el, dParams);

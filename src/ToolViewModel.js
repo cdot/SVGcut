@@ -12,6 +12,7 @@ const POPOVERS = [
   { id: "toolDiameter" },
   { id: "toolAngle" },
   { id: "toolPassDepth" },
+  { id: "toolSpindleSpeed" },
   { id: "toolStepOver" },
   { id: "toolRapidRate" },
   { id: "toolPlungeRate" },
@@ -19,11 +20,11 @@ const POPOVERS = [
 ];
 
 const DEFAULT_STEPOVER = 0.4;
-const DEFAULT_DIAMETER = 3;
-const DEFAULT_PASSDEPTH = 1;
-const DEFAULT_RAPIDRATE = 1000;
-const DEFAULT_PLUNGERATE = 300;
-const DEFAULT_CUTRATE = 300;
+const DEFAULT_DIAMETER = 3; // mm
+const DEFAULT_PASSDEPTH = 1; // mm
+const DEFAULT_RAPIDRATE = 1000; // mm/min
+const DEFAULT_PLUNGERATE = 300; // mm/min
+const DEFAULT_CUTRATE = 300; // mm/min
 const DEFAULT_ANGLE = 180; // degrees, 180=flat
 
 /**

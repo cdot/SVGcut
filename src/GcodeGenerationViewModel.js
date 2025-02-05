@@ -294,6 +294,7 @@ class GcodeGenerationViewModel extends ViewModel {
         ramp: op.ramp(),
         cutDepth: Number(op.cutDepth()),
         direction: op.direction(),
+        spinSpeed: op.spindleSpeed(),
         // Perforation and Drill are always single-pass and cut
         // directly to the maximum operation cut depth
         passDepth: precalc ? Number(op.cutDepth()) : job.passDepth,
