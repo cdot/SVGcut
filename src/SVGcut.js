@@ -114,7 +114,10 @@ export class SVGcut {
     this.simulation = new Simulation(
       "glShaders",
       document.getElementById("simulationCanvas"),
-      document.getElementById('timeControl'));
+      document.getElementById('timeControl'),
+      t => {
+        document.getElementById('stopWatch').textContent = t.toFixed(1);
+      });
 
     // Create view models.
 
@@ -141,9 +144,48 @@ export class SVGcut {
       nel.forEach(e => bootstrap.Dropdown.getInstance(e).hide());
     }));
 
-    // Import an SVG file
+    // If a SVG is imported / project opened when the toolpath is closed,
+    // then the viewbox won't get updated. Detect when we switch back
+    // and update it then. This will reset the zoom level to the default.
+    document.getElementById("activateToolpathsTab")
+    .addEventListener("click", () => {
+      this.updateMainSvgSize();
+    });
+
+    // zooming
+    this.mainSVG
+    .addEventListener("wheel", event => {
+      event.preventDefault();
+
+      // set the scaling factor (and make sure it's at least 10%)
+      let scale = event.deltaY / 1000;
+      scale = Math.abs(scale) < .1 ? .1 * event.deltaY / Math.abs(event.deltaY) : scale;
+
+      // get point in SVG space
+      let pt = new DOMPoint(event.clientX, event.clientY);
+      pt = pt.matrixTransform(this.mainSVG.getScreenCTM().inverse());
+
+      // get viewbox transform
+      let [x, y, width, height] = this.mainSVG
+          .getAttribute('viewBox').split(' ').map(Number);
+
+      // get pt.x as a proportion of width and pt.y as proportion of height
+      let [xPropW, yPropH] = [(pt.x - x) / width, (pt.y - y) / height];
+        
+      // calc new width and height, new x2, y2 (using proportions and new width and height)
+      let [width2, height2] = [width + width * scale, height + height * scale];
+      let x2 = pt.x - xPropW * width2;
+      let y2 = pt.y - yPropH * height2;        
+
+      this.mainSVG.setAttribute('viewBox', `${x2} ${y2} ${width2} ${height2}`);
+    });
+
+    // TODO: Zooming; adjust viewBox values on the master SVG
+    // Presumably pan as well
+
     document.getElementById('chosenImportSVGFile')
     .addEventListener("change", event => {
+      // Import an SVG file
 
       const files = event.target.files;
       for (const file of files) {
@@ -174,6 +216,7 @@ export class SVGcut {
     this.addSVGEventHandlers();
 
     window.addEventListener("resize", () => {
+      console.debug("Main resized");
       this.updateMainSvgSize();
       this.updateSimulationCanvasSize();
     });
@@ -326,11 +369,9 @@ export class SVGcut {
   updateSimulationCanvasSize() {
     // Get the whole middle section for width
     const middleDiv = document.getElementById("Middle");
-    const mSvgW = middleDiv.clientWidth;
+    const mSvgW = middleDiv.clientWidth; // pixels
     // Make the simulation square
-    const canvas = document.getElementById("simulationCanvas");
-    canvas.setAttribute("width", mSvgW);
-    canvas.setAttribute("height", mSvgW);
+    this.simulation.resizeCanvas(mSvgW, mSvgW);
   }
 
   /**

@@ -4,6 +4,7 @@
 /* global App */
 
 import * as Cam from "./Cam.js";
+import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 
@@ -13,13 +14,36 @@ import { CutPaths } from "./CutPaths.js";
  */
 
 /**
- * @typedef {object} CNCPoint
- * @property {number} x X coordinate
- * @property {number} y Y coordinate
- * @property {number} z Z coordinate
- * @property {number} f feed rate
+ * State of the CNC machine, or a CNC coordinate
  * @memberof Gcode
  */
+class CNC {
+  /**
+   * All default to NaN unless otherwise documented.
+   * @param {object?} init initialisation
+   * @param {number?} init.x X coordinate
+   * @param {number?} init.y Y coordinate
+   * @param {number?} init.z Z coordinate
+   * @param {number?} init.f feed rate
+   * @param {number?} init.spin spindle speed (default 0)
+   */
+  constructor(init) {
+    if (init) {
+      this.x = init.x ?? NaN;
+      this.y = init.y ?? NaN;
+      this.z = init.z ?? NaN;
+      this.f = init.f ?? NaN;
+      this.spin = init.spin ?? 0;
+    } else {
+      this.x = this.y = this.z = this.f = NaN;
+      this.spin = 0;
+    }
+  }
+
+  toString() {
+    return `<${this.x},${this.y},${this.z} F${this.f} ${this.spin}>`;
+  }
+}
 
 /**
  * Parse a block of linux-CNC gcode to a path. Only simple G-codes
@@ -39,7 +63,7 @@ export function parse(gcode) {
   const path = [];
   const lines = Array.isArray(gcode) ? gcode : gcode.split(/\r?\n/);
   let lineNo = 0;
-  let last = { x: NaN, y: NaN, z: NaN, f: NaN };
+  let last = new CNC();
   let terminated = false, percents = 0;
   for (const l of lines) {
     if (terminated) // terminated by M2 or M30?
@@ -173,7 +197,20 @@ export function parse(gcode) {
 }
 
 /**
+ * @typedef GCommand
+ * @property {string} code required code e.g. G0
+ * @property {number} optional f
+ * @property {CutPoint} pt optional CutPoint to move to
+ * @property {number} f optional the speed
+ * @property {number} z optional the z coord, undefined means same z, or use
+ * z from pt or same z if pt.z is undefined
+ * @property {string} rem optional remark (comment)
+ * @memberof Gcode
+ */
+
+/**
  * A generator for Gcode
+ * @memberof Gcode
  */
 export class Generator {
 
@@ -206,12 +243,12 @@ export class Generator {
     for (const k of Object.keys(job))
     this[k] = job[k];
 
-    /**
-     * Generate Gcode for the start of a cut job.
-     * @param {JobCard} job the job card
-     * @param {string[]} gcode array of gcode lines
-     */
     const u = this.gunits;
+
+    /**
+     * The gcode, an array of Gcode lines
+     * @member {string[]} array of gcode lines
+     */
     this.gcode = [
       `; Work area:${this.workWidth.toFixed(2)}x${this.workHeight.toFixed(2)} ${u}`,
       `; Offset:   (${this.offsetX.toFixed(2)},${this.offsetY.toFixed(2)}) ${u}`,
@@ -223,14 +260,21 @@ export class Generator {
     default: throw new Error(`${u} units not supported by gcode`);
     }
 
-    this.stopSpindle();
-    this.G(90, { rem: "Absolute positioning" });
+    /**
+     * Number of decimal points for Gcode coords
+     * @member {number}
+     * @private
+     */
     this.decimal = this.decimal ?? 2;
 
-    this.spindleTurning = false;
-    this.lastF = NaN;
-    this.lastX = NaN;
-    this.lastY = NaN;
+    /**
+     * Where the tool is thought to be
+     * @member {CNCPoint}
+     */
+    this.last = new CNC();
+
+    this.G(90, { rem: "Absolute positioning" });
+
     this.G(0, { z: this.safeZ, f: this.rapidFeed, rem: "Move to clearance level" });
   }
 
@@ -246,7 +290,7 @@ export class Generator {
     if (this.returnTo00) {
       this.offsetX = this.offsetY = 0;
       this.xScale = this.yScale = 0;
-      p.pt = { X: 0, Y: 0 };
+      p.pt = new CutPoint(0, 0);
       p.rem = "Return to 0,0";
     }
     this.G(0, p);
@@ -255,54 +299,81 @@ export class Generator {
   }
 
   /**
+   * Add a full-line comment to Gcode
+   * @param remark {string} the comment
    * @private
    */
   rem(remark) {
     this.gcode.push(`; ${remark}`);
   }
 
+  /**
+   * Map a CutPath X to Gcode coords
+   * @param {number} x the coord in CutPath units
+   * @return {number} the coord mapped to CNC units
+   * @private
+   */
   mapX(x) { return x * this.xScale + this.offsetX; }
 
+  /**
+   * Map a CutPath Y to Gcode coords
+   * @param {number} y the coord in CutPath units
+   * @return {number} the coord mapped to CNC
+   * @private
+   */
   mapY(y) { return y * this.yScale + this.offsetY; }
 
+  /**
+   * Map a CutPath point to Gcode coords
+   * @param {CutPoint} pt the point
+   * @return {CNC} the mapped point
+   * @private
+   */
+  map(pt) { return new CNC({ x: this.mapX(pt.X), y: this.mapY(pt.Y) }); }
+
+  /**
+   * Test if the tool is at the given CutPath point
+   * @param {CutPoint} point in Cutpath coords
+   * @return {boolean} wether the tool is at that point
+   * @private
+   */
   toolAt(pt) {
-    return this.lastX !== this.mapX(pt.X) ||
-    this.lastY !== this.mapY(pt.Y);
+    if (this.last.x !== this.mapX(pt.X) ||
+        this.last.y !== this.mapY(pt.Y)) {
+      //this.rem(`${this.map(pt).y},${this.map(pt).y} != ${this.last.y},${this.last.y}`);
+      return false;
+    }
+    return true;
   }
 
   /**
    * Generate a G gcode
-   * @param {string} code the code e.g. G0
-   * @param {object} opts optional data
-   * @param {number} opts.f the speed, undefined means no change
-   * @param {Vector?} opts.pt the position, undefined means no move
-   * @param {number?} opts.z the z coord, undefined means same z
-   * @param {string?} opts.rem optional remark (comment)
+   * @param {GCommand} control
    * @private
    */
-  code(code, opts) {
-    const line = [ code ];
-    if (typeof opts.pt !== "undefined") {
-      const x = this.mapX(opts.pt.X);
-      if (x !== this.lastX) {
+  code(command) {
+    const line = [ command.command ];
+    if (typeof command.pt !== "undefined") {
+      const x = this.mapX(command.pt.X);
+      if (x !== this.last.x) {
         line.push(`X${x.toFixed(this.decimal)}`);
-        this.lastX = x;
+        this.last.x = x;
       }
-      const y = this.mapY(opts.pt.Y);
-      if (y !== this.lastY) {
+      const y = this.mapY(command.pt.Y);
+      if (y !== this.last.y) {
         line.push(`Y${y.toFixed(this.decimal)}`);
-        this.lastY = y;
+        this.last.y = y;
       }
+
+      if (typeof command.z === "undefined"
+          && typeof command.pt.Z !== "undefined")
+        command.z = command.pt.Z * this.zScale + this.topZ;
     }
 
-    if (typeof opts.z === "undefined"
-        && typeof opts.pt !== "undefined" && typeof opts.pt.Z !== "undefined")
-      opts.z = opts.pt.Z * this.zScale + this.topZ;
-
-    if (typeof opts.z !== "undefined" && opts.z !== this.lastZ) {
-      if (opts.z !== this.lastZ) {
-        line.push(`Z${opts.z}`);
-        this.lastZ = opts.z;
+    if (typeof command.z !== "undefined" && command.z !== this.last.z) {
+      if (command.z !== this.last.z) {
+        line.push(`Z${command.z}`);
+        this.last.z = command.z;
       }
     }
 
@@ -310,61 +381,63 @@ export class Generator {
     if (line.join("") === "G0" || line.join("") == "G1")
       return;
 
-    if (typeof opts.f !== "undefined" && opts.f !== this.lastF) {
-      line.push(`F${opts.f}`);
-      this.lastF = opts.f;
+    if (typeof command.f !== "undefined" && command.f !== this.last.f) {
+      line.push(`F${command.f}`);
+      this.last.f = command.f;
     }
 
-    if (typeof opts.rem !== "undefined")
-      line.push(`; ${opts.rem}`);
+    if (typeof command.spin !== "undefined") {
+      line.push(`S${command.spin}`);
+      this.last.spin = command.spin;
+    }
+
+    if (typeof command.rem !== "undefined")
+      line.push(`; ${command.rem}`);
 
     this.gcode.push(line.join(" "));
   }
 
   /**
+   * Add an M command
+   * @param {GCommand} command command complete except for the command string
    * @private
    */
-  M(code, opts) {
-    this.code(`M${code}`, opts);
+  M(code, command) {
+    command.command = `M${code}`;
+    this.code(command);
   }
 
   /**
+   * Add a G command
+   * @param {GCommand} command command complete except for the command string
    * @private
    */
-  G(code, opts) {
-    this.code(`G${code}`, opts);
+  G(code, command) {
+    command.command = `G${code}`;
+    this.code(command);
   }
 
   /**
-   * Get distance between two points in gcode units
+   * Start the spindle
    * @private
    */
-  dist(p1, p2) {
-    const dx = (p2.X - p1.X) * this.xScale;
-    const dy = (p2.Y - p1.Y) * this.yScale;
-    return Math.sqrt(dx * dx + dy * dy);
+  startSpindle(spin) {
+    if (this.last.spin === 0)
+      this.M(3, { spin: spin, rem: "Start spindle" });
   }
 
   /**
-   * @private
-   */
-  startSpindle() {
-    if (!this.spindleTurning)
-      this.M(3, { rem: "Start spindle" });
-    this.spindleTurning = true;
-  }
-
-  /**
+   * Stop the spindle
    * @private
    */
   stopSpindle() {
-    if (this.spindleTurning)
+    if (this.last.spin > 0)
       this.M(5, { rem: "Stop spindle" });
-    this.spindleTurning = false;
+    this.last.spin = 0;
   }
 
   /**
-   * Ramp in by backtracking the path, then turn and cut at
+   * Ramp in by backtracking the path, then turn and cut to
    * that depth.
    * @param {CutPath} path path we are ramping into
    * @param {number} required target Z at the end of the ramp
@@ -387,7 +460,7 @@ export class Generator {
     let totalLen = 0;
     for (end = 1; end < path.length && totalLen < idealDist / 2; end++) {
       // 2 * because it's out and back
-      const edgeLen = this.dist(path[end - 1], path[end]);
+      const edgeLen = path[end - 1].dist(path[end]);
       edgeLens.push(edgeLen);
       totalLen += edgeLen;
     }
@@ -399,7 +472,7 @@ export class Generator {
 
     this.rem('ramp');
 
-    let curZ = this.lastZ;
+    let curZ = this.last.z;
     const dZ = (this.topZ - requiredZ) / (2 * totalLen);
     const feed = Math.min(2 * totalLen / minPlungeTime, this.cutFeed);
     // Out
@@ -412,7 +485,7 @@ export class Generator {
       curZ -= edgeLens[i] * dZ;
       this.G(1, { f: feed, pt: path[i], z: curZ });
     }
-    assert(this.lastZ === requiredZ, `${this.lastZ} != ${requiredZ}`);
+    assert(this.last.z === requiredZ, `${this.last.z} != ${requiredZ}`);
     return true;
   }
 
@@ -471,25 +544,27 @@ export class Generator {
 
       // Loop over the paths until the target cut depth is reached
       let lastCutZ = this.topZ;
-      while (this.lastZ > botZ) {
+      while (this.last.z > botZ) {
         // Calculate cut depth for this pass
         const targetZ = Math.max(lastCutZ - this.passDepth, botZ);
 
         // The current Z is deeper than the safe Z and the path isn't
         // safe to close or there is tab geometry, retract to
         // a safe depth
-        //if (this.lastZ < this.safeZ && (!path.safeToClose || tabGeometry))
+        //if (this.last.z < this.safeZ && (!path.safeToClose || tabGeometry))
         //  this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Z safe" });
 
         // If the tool isn't over the start of the next cut, lift it
         // before moving it there
+        //this.rem(this.last + "," + path[0]);
         if (!this.toolAt(path[0])) {
           this.stopSpindle();
-          this.G(0, { f: this.rapidFeed, z: this.safeZ }); // clear
+          this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
         }
-        // Drop to top of material
-        if (this.lastZ > lastCutZ)
-          this.G(0, { f: this.rapidFeed, pt: path[0], z: lastCutZ } );
+        if (this.last.z > lastCutZ)
+          // Drop to depth of last cut
+          this.G(0, {
+            f: this.rapidFeed, pt: path[0], z: lastCutZ, rem: "Sink" } );
 
         // We're over the start of the path, we can start cutting
         this.startSpindle();
@@ -521,7 +596,7 @@ export class Generator {
           } else {
             this.G(1, { f: this.cutFeed, pt: cutPath[0], z: lastCutZ });
 
-            if (requiredZ < this.lastZ) { // do we need to be deeper?
+            if (requiredZ < this.last.z) { // do we need to be deeper?
               if (!(op.ramp && this.rampIn(cutPath, requiredZ)))
                 // No ramp, so drill plunge
                 this.G(1, { f: this.plungeFeed, z: requiredZ,
@@ -535,7 +610,8 @@ export class Generator {
           for (let i = 1; i < cutPath.length; ++i)
             this.G(1, { f: this.cutFeed, pt: cutPath[i], z: requiredZ });
           if (cutPath.isClosed)
-            this.G(1, { f: this.cutFeed, pt: cutPath[0], z: requiredZ });
+            this.G(1, { f: this.cutFeed, pt: cutPath[0], z: requiredZ,
+                        rem: "close" });
         }
 
         if (op.precalculatedZ)

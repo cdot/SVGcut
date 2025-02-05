@@ -9,6 +9,7 @@ import { ViewModel } from "./ViewModel.js";
 
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
+import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
 import * as Cam from "./Cam.js";
 
@@ -286,7 +287,7 @@ class OperationViewModel extends ViewModel {
    * Get the width of the path to be created by the tool as it cuts.
    * If the user specified width is less than the cutter diameter
    * then it uses the cutter diameter.
-   * @return {number} in internal units
+   * @return {number} in CutPoint units
    */
   toolPathWidth() {
     const td = App.models.Tool.diameter.toUnits("integer");
@@ -464,6 +465,40 @@ class OperationViewModel extends ViewModel {
 
     // Signal this change to other listeners
     document.dispatchEvent(new Event("UPDATE_GCODE"));
+  }
+
+  /**
+   * Get the bounding box of the operation in CutPoint units.
+   * @return {Rect?} bounding box in Cutpath units. Returns undefined
+   * if the operation is not enabled, or doen't generate any paths.
+   */
+  boundingBox() {
+    const paths = this.toolPaths();
+    if (!this.enabled() || paths.length === 0)
+      return undefined;
+
+    let overlap = 0, BB;
+    // Expand the BB if necessary to account for the radius of the
+    // tool cutting outside the tool path, Inside and Pocket ops
+    // should already have accounted for it.
+    const op = this.operation();
+    if (op === App.Ops.Engrave)
+      overlap = this.toolPathWidth() / 2;
+    else if (op === App.Ops.Outside
+             || op === App.Ops.Perforate
+             || op === App.Ops.Drill)
+      overlap = this.toolPathWidth();
+    for (const path of paths) {
+      for (const point of path) {
+        if (BB)
+          BB.enclose(point.X - overlap, point.Y - overlap)
+          .enclose(point.X + overlap, point.Y + overlap);
+        else
+          BB = new Rect(point.X - overlap, point.Y - overlap,
+                        2 * overlap, 2 * overlap);
+      }
+    }
+    return BB;
   }
 
   /**

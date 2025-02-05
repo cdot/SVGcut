@@ -407,11 +407,11 @@
               <div class="form-horizontal">
                 <table class="table">
                   <tr>
-                    <td colspan="2">
+                    <td>
                       <label for="gcodeUnits" class="control-label">
                         Units
                       </label>
-                    </td><td>
+                    </td><td colspan="2">
                       <select id="gcodeUnits" data-bind="value: units">
                         <option>mm</option>
                         <option>inch</option>
@@ -570,7 +570,7 @@
         <div>
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
-              <a class="nav-link active" href="#svgPanel"
+              <a id="activateToolpathsTab" class="nav-link active" href="#svgPanel"
                  data-bs-toggle="tab">
                 Toolpaths
               </a>
@@ -613,14 +613,13 @@
               <canvas id="simulationCanvas" style="border: none;" width="10"
                       height="10"></canvas>
               <p>
-                <b>Simulation time:</b>
+                <b>Simulation time:</b> <span id="stopWatch"></span>s
                 <input id="timeControl" class="form-range" type="range"
                        max="1000" value="1000" />
               </p>
               <ul>
                 <li>Use mouse to rotate view</li>
                 <li>Use slider control to set simulation time</li>
-                <li>Simulation remains blank until you generate toolpaths</li>
               </ul>
             </div>
           </div>

@@ -6,12 +6,14 @@ ClipperLib.use_xyz = true;
 
 import { UNit } from "./TestSupport.js";
 import { UnitConverter } from "../src/UnitConverter.js";
-let CutPath;
+let CutPoint, CutPath;
 
 describe("CutPath", () => {
   // CutPath depends on ClipperLib
-  before(() => import("../src/CutPath.js")
-         .then(mod => CutPath = mod.CutPath));
+  before(() => Promise.all([
+    import("../src/CutPoint.js"),
+    import("../src/CutPath.js")
+  ]).then(mods => { CutPoint = mods[0].CutPoint, CutPath = mods[1].CutPath; }));
 
   it("empty", () => {
     const cp = new CutPath();
@@ -24,7 +26,7 @@ describe("CutPath", () => {
     const cp = new CutPath([ { x: 1, y: 2 }, { x: 3, y: 4 } ]);
     assert(cp instanceof CutPath);
     assert(Array.isArray(cp));
-    assert(cp[0] instanceof ClipperLib.IntPoint);
+    assert(cp[0] instanceof CutPoint);
     assert.equal(cp.isClosed, false);
     assert.equal(cp.length, 2);
   });
@@ -115,26 +117,26 @@ describe("CutPath", () => {
 
   it("closestVertex", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
-    let p = path.closestVertex(new ClipperLib.IntPoint(-1, -1));
+    let p = path.closestVertex(new CutPoint(-1, -1));
     assert.equal(p.point, 0);
     assert.almost(p.dist2, 2);
 
-    p = path.closestVertex(new ClipperLib.IntPoint(0, 200));
+    p = path.closestVertex(new CutPoint(0, 200));
     assert.equal(p.point, 2);
     assert.almost(p.dist2, 100*100);
 
-    p = path.closestVertex(new ClipperLib.IntPoint(300, 200));
+    p = path.closestVertex(new CutPoint(300, 200));
     assert.equal(p.point, 1);
     assert.almost(p.dist2, 200*200+200*200);
   });
 
   it("inside", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
-    assert.equal(path.inside(new ClipperLib.IntPoint(0, 0)), 0);
-    assert.equal(path.inside(new ClipperLib.IntPoint(-1, -1)), -1);
-    assert.equal(path.inside(new ClipperLib.IntPoint(1, 1)), 1);
-    assert.equal(path.inside(new ClipperLib.IntPoint(10, 0)), 0);
-    assert.equal(path.inside(new ClipperLib.IntPoint(0, 10)), 0);
+    assert.equal(path.inside(new CutPoint(0, 0)), 0);
+    assert.equal(path.inside(new CutPoint(-1, -1)), -1);
+    assert.equal(path.inside(new CutPoint(1, 1)), 1);
+    assert.equal(path.inside(new CutPoint(10, 0)), 0);
+    assert.equal(path.inside(new CutPoint(0, 10)), 0);
   });
 
   it("unduplicate inner", () => {

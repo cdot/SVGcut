@@ -2,7 +2,8 @@
 
 /**
  * Class of rectangles. Designed to be reasonably compatible with
- * both DOMRect and SVGRect.
+ * both DOMRect and SVGRect, and agnostic as to the parameter
+ * ranges used.
  * The basic parameters of the rectangle are x, y, width and height.
  * If these are set, there is no check for inside-outness, so caveat
  * emptor.
@@ -14,7 +15,7 @@
 export class Rect {
 
   /**
-   * @param {number|Rect|DOMRect|SVGRect|ClipperLib.IntRect} x x
+   * @param {number|Rect|DOMRect|SVGRect} x x
    * origin, or an object (basically anything that defines
    * x/y/width/height)
    * copy-construct

@@ -2,9 +2,10 @@
 
 /* global assert */
 /* global ClipperLib */
-ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
+
+import { CutPoint } from "./CutPoint.js";
 
 /*
  * Remove path vertices closer than this.
@@ -19,17 +20,6 @@ const CLEAN_PATH_DIST2 = CLEAN_PATH_DIST * CLEAN_PATH_DIST;
  * problem we have to use our own path definiiton.
  */
 export class CutPath extends Array {
-
-  /**
-   * Get the square of the distance between two ClipperLib.IntPoints
-   * @param {ClipperLib.IntPoint} a
-   * @param {ClipperLib.IntPoint} b
-   */
-  static dist2(a, b) {
-    const dx = a.X - b.X;
-    const dy = a.Y - b.Y;
-    return dx * dx + dy * dy;
-  }
 
   /**
    * Convert an array of points to a CutPath if necessary
@@ -62,12 +52,11 @@ export class CutPath extends Array {
       for (const point of path) {
         const x = point.x ?? point.X;
         const y = point.y ?? point.Y;
-        if (ClipperLib.use_xyz) {
-          const z = point.z ?? point.Z ?? 0;
-          // IntPoint defaults Z to 0
-          this.push(new ClipperLib.IntPoint(x, y, z));
+        const z = point.z ?? point.Z;
+        if (typeof z !== "undefined") {
+          this.push(new CutPoint(x, y, z));
         } else
-          this.push(new ClipperLib.IntPoint(x, y));
+          this.push(new CutPoint(x, y));
       }
     }
   }
@@ -113,7 +102,7 @@ export class CutPath extends Array {
 
   /**
    * Find the closest vertex on this path to the given point
-   * @param {ClipperLib.IntPoint} point to test
+   * @param {CutPoint} point to test
    * @return {object?} { point: number, dist2: number } or undefined.
    * point is the index of the closest point, dist2 is the square of the
    * distance
@@ -121,7 +110,7 @@ export class CutPath extends Array {
   closestVertex(pt) {
     let best, i = 0;
     for (const tp of this) {
-      const d2 = CutPath.dist2(pt, tp);
+      const d2 = pt.dist2(tp);
       if (best && d2 < best.dist2) {
         best.point = i;
         best.dist2 = d2;
@@ -140,7 +129,7 @@ export class CutPath extends Array {
       this.push(this[0]);
     let i = 1;
     while (i < this.length) {
-      if (this[i].X === this[i - 1].X && this[i].Y === this[i - 1].Y)
+      if (this[i].equals(this[i - 1]))
         this.splice(i, 1);
       else
         i++;
@@ -175,22 +164,22 @@ export class CutPath extends Array {
   }
 
   /**
-   * Inside test for a point.
-   * @param {ClipperLib.IntPoint} pt point to check
+   * Inside test for a point. This path must be closed.
+   * @param {CutPoint} pt point to check
    * @returns {number} -1: outside, 0: on edge, 1: inside
    */
   inside(pt) {
-    if (!this.isClosed)
-      return false;
+    assert(this.isClosed);
+
     const between = (p, a, b) => p >= a && p <= b || p <= a && p >= b;
     let inside = false;
     for (let i = this.length - 1, j = 0; j < this.length; i = j, j++) {
       const A = this[i];
       const B = this[j];
       // corner cases
-      if (pt.X == A.X && pt.Y == A.Y || pt.X == B.X && pt.Y == B.Y)
+      if (pt.equals(A) || pt.equals(B))
         return 0;
-      if (A.Y == B.Y && pt.Y == A.Y && between(pt.X, A.X, B.X))
+      if (A.Y === B.Y && pt.Y === A.Y && between(pt.X, A.X, B.X))
         return 0;
 
       if (between(pt.Y, A.Y, B.Y)) { // if pt inside the vertical range

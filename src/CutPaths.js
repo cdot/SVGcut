@@ -5,6 +5,7 @@
 ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
+import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 
 /*
@@ -47,6 +48,16 @@ const ARC_TOLERANCE = 0.25 * UnitConverter.from.mm.to.integer;
  * with holes.
  */
 export class CutPaths extends Array {
+
+  /**
+   * Corner join type. See ClipperLib documentation for more.
+   * `jtRound` Approximate acute corners with a series of arc chords.
+   * `jtSquare` Flatten out acute edge joins that would produce
+   * excessively long and narrow 'spikes'.
+   * `jtMiter` where possible extend acute edge joins out, but switch
+   * to `jsSquare` if that would create long thin spikes.
+   */
+  static JoinType = ClipperLib.JoinType;
 
   /**
    * @param {CutPaths|CutPath|Array} paths if defined, initialise from this.
@@ -93,7 +104,7 @@ export class CutPaths extends Array {
    */
   static fromSegments(segments) {
     function px2Integer(x, y) {
-      return new ClipperLib.IntPoint(
+      return new CutPoint(
         x * UnitConverter.from.px.to.integer,
         y * UnitConverter.from.px.to.integer);
     };
@@ -257,8 +268,8 @@ export class CutPaths extends Array {
 
   /**
    * Does the line from p1 to p2 cut a poly?
-   * @param {ClipperLib.IntPoint} p1 line endpoint
-   * @param {ClipperLib.IntPoint} p2 line endpoint
+   * @param {CutPoint} p1 line endpoint
+   * @param {CutPoint} p2 line endpoint
    * @return {boolean} true if the line crossed an edge.
    * @memberof Clipper
    */
@@ -294,7 +305,7 @@ export class CutPaths extends Array {
 
   /**
    * Find the closest point on this geometry to the given point
-   * @param {ClipperLib.IntPoint} point to test
+   * @param {CutPoint} point to test
    * @param {boolean} match must match isClosed
    * @return {object?} { path: number, point: number, dist2: number }
    */

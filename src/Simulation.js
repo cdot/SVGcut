@@ -23,8 +23,15 @@ class Simulation {
    * @param {HTMLElement} timeControl time control input, limited to
    * values between 0 and 1000. This will usually be an
    * `<input type=range>`.
+   * @param {function} stopWatch callback invoked when the simulation
+   * time changes. Passed the new simulation time.
    */
-  constructor(shaderDir, canvas, timeControl) {
+  constructor(shaderDir, canvas, timeControl, stopWatch) {
+
+    /**
+     * Flag set true when the shaders and programs have been loaded
+     */
+    this.ready = false;
 
     /**
      * Canvas being rendered to
@@ -34,11 +41,18 @@ class Simulation {
     this.canvas = canvas;
 
     /**
-     * Simlation time control
+     * Simulation time control
      * @member {HTMLElement}
      * @private
      */
     this.timeControl = timeControl;
+
+    /**
+     * Simulation time report
+     * @member {function}
+     * @private
+     */
+    this.stopWatch = stopWatch;
 
     /**
      * relative directory to load shaders from
@@ -314,6 +328,15 @@ class Simulation {
     this.gl.bufferData(
       this.gl.ARRAY_BUFFER, bufferContent, this.gl.STATIC_DRAW);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+  }
+
+  resizeCanvas(w, h) {
+    this.canvas.setAttribute("width", w);
+    this.canvas.setAttribute("height", h);
+    if (this.ready) {
+      this.needToDrawHeightMap = true;
+      this.requestFrame();
+    }
   }
 
   /**
@@ -926,6 +949,8 @@ class Simulation {
    */
   setStopAtTime(t) {
     this.stopAtTime = t;
+    if (typeof this.stopWatch === "function")
+      this.stopWatch(t);
     // Map the time to a tool position
     this.needToCreatePathTexture = true;
     this.requestFrame();
@@ -975,11 +1000,6 @@ class Simulation {
     let lastX = 0;
     let lastY = 0;
     const origRotate = mat4.create();
-
-    this.canvas.addEventListener("resize", () => {
-      this.needToDrawHeightMap = true;
-      this.requestFrame();
-    });
 
     this.timeControl.addEventListener("input", e => {
       const stopAt = e.target.value / 1000 * this.totalTime;
@@ -1048,6 +1068,8 @@ class Simulation {
       this.setPath([], 0, 0, 180, 0);
 
       this.addEventListeners();
+
+      this.ready = true;
     });
   }
 

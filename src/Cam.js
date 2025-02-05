@@ -1,11 +1,9 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-/* global ClipperLib */
-ClipperLib.use_xyz = true;
-
 /* global App */
 /* global assert */
 
+import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import * as Partition from "./Partition.js";
@@ -83,7 +81,7 @@ function rasteriseConvexPocket(pocket, step) {
       intersections.sort((a, b) => b.x - a.x);
     let up = true;
     for (const intersection of intersections)
-      path.push(new ClipperLib.IntPoint(intersection.x, intersection.y));
+      path.push(new CutPoint(intersection.x, intersection.y));
     y += step;
     // boustrophedonically
     direction = -direction;
@@ -207,7 +205,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
 
 /**
  * Generate path step to create a hole
- * @param {ClipperLib.IntPoint} pt where to drill the hole
+ * @param {CutPoint} pt where to drill the hole
  * @param {number} topZ
  * @param {number} topZ is the top of the hole
  * @param {number} botZ is the bottom of the hole
@@ -258,7 +256,7 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   // Length of the current segment
   let segLen = Math.sqrt(dx * dx + dy * dy);
   // Unit vector for the current segment
-  let segVec = new ClipperLib.IntPoint(dx / segLen, dy / segLen);
+  let segVec = new CutPoint(dx / segLen, dy / segLen);
   while (segi < path.length) {
     // Place a hole here
     //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
@@ -281,7 +279,7 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
     }
     // Next hole is on this segment. Move segStart up to the hole.
     const where = step - gap;
-    segStart = new ClipperLib.IntPoint(segStart.X + segVec.X * where,
+    segStart = new CutPoint(segStart.X + segVec.X * where,
                                        segStart.Y + segVec.Y * where);
     segLen -= where;
     gap += where;
@@ -316,7 +314,7 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
   for (const path of geometry) {
     if (path.isClosed) {
       const bloated = new CutPaths(path)
-            .offset(cutterDia / 2, ClipperLib.JoinType.jtRound)[0];
+            .offset(cutterDia / 2, CutPaths.JoinType.jtRound)[0];
       const ring = perforatePath(bloated, cutterDia, spacing, topZ, botZ);
       toolPaths.push(ring);
     } else { // just follow open paths
@@ -426,7 +424,7 @@ export function separateTabs(toolPath, tabGeometry) {
           //console.debug("\tintersections at ", intersections);
           // Each intersection is the start of a new path
           for (const intersection of intersections) {
-            const ins = new ClipperLib.IntPoint(intersection.x, intersection.y);
+            const ins = new CutPoint(intersection.x, intersection.y);
             //console.debug("\tintersection at ", ins, intersection.distanceTo(p0)[0]);
             currPath.push(ins);
             paths.push(currPath);

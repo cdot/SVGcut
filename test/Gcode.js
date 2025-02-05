@@ -5,14 +5,25 @@ import ClipperLib from "clipper-lib";
 global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
-import * as Gcode from "../src/Gcode.js";
-import { CutPath } from "../src/CutPath.js";
-import { CutPaths } from "../src/CutPaths.js";
 import { UNit } from "./TestSupport.js";
+let CutPoint, CutPath, CutPaths, Gcode;
 
 global.assert = assert;
 
 describe("Gcode", () => {
+  before(() => {
+    return Promise.all([
+      import("../src/CutPoint.js"),
+      import("../src/CutPath.js"),
+      import("../src/CutPaths.js"),
+      import("../src/Gcode.js") ])
+    .then(mods => {
+      CutPoint = mods[0].CutPoint;
+      CutPath = mods[1].CutPath;
+      CutPaths = mods[2].CutPaths;
+      Gcode = mods[3];
+    });
+  });
 
   it("parser neutralises XYZ", () => {
     const res = Gcode.parse("G1");
@@ -143,8 +154,8 @@ describe("Gcode", () => {
     passDepth:   1,
     plungeFeed:  50,
     cutFeed:     60,
-    retractFeed: 70,
-    rapidFeed:   80,
+    retractFeed: 200,
+    rapidFeed:   1000,
     returnTo00:  true,
     workWidth:   300,
     workHeight:  180
@@ -179,29 +190,37 @@ describe("Gcode", () => {
   '; Pass Depth:  1 mm',
   '; Plunge rate: 50 mm/min',
   '; Path 1',
-  'G0 X0 Y0 Z0',
+  'G0 X0 Y0 Z0 ; Sink',
   'M3 ; Start spindle',
   'G1 Z-1 F50 ; Drill plunge',
   'G1 X10 Y10 F60',
-  'G0 X0 Y0 Z0 F80',
+  'G0 Z10 F1000 ; Clear',
+  'G0 X0 Y0 Z-1 ; Sink',
+  'M3 ; Start spindle',
   'G1 Z-2 F50 ; Drill plunge',
   'G1 X10 Y10 F60',
-  'G0 X0 Y0 Z0 F80',
+  'G0 Z10 F1000 ; Clear',
+  'G0 X0 Y0 Z-2 ; Sink',
+  'M3 ; Start spindle',
   'G1 Z-3 F50 ; Drill plunge',
   'G1 X10 Y10 F60',
-  'G0 Z10 F80 ; Path done',
+  'G0 Z10 F1000 ; Path done',
   '; Path 2',
-  'G0 X20 Y20 Z0',
+  'G0 X20 Y20 Z0 ; Sink',
+  'M3 ; Start spindle',
   'G1 Z-1 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
-  'G0 X20 Y20 Z0 F80',
+  'G0 Z10 F1000 ; Clear',
+  'G0 X20 Y20 Z-1 ; Sink',
+  'M3 ; Start spindle',
   'G1 Z-2 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
-  'G0 X20 Y20 Z0 F80',
+  'G0 Z10 F1000 ; Clear',
+  'G0 X20 Y20 Z-2 ; Sink',
+  'M3 ; Start spindle',
   'G1 Z-3 F50 ; Drill plunge',
   'G1 X30 Y30 F60',
-  'G0 Z10 F80 ; Path done',
-  'M5 ; Stop spindle',
+  'G0 Z10 F1000 ; Path done',
   'G0 X0 Y0 ; Return to 0,0',
   'M2 ; end program'
     ];
@@ -233,24 +252,24 @@ describe("Gcode", () => {
       gcode.shift();
     while (gcode[gcode.length - 1][0] === ";")
       gcode.pop();
+    console.log(gcode);
     const expected = [
-      '; ** Operation "Test"',
-      '; Type:        Cut Type',
-      '; Paths:       1',
-      '; Direction:   Conventional',
-      '; Cut Depth:   3 mm',
-      '; Pass Depth:  1 mm',
-      '; Plunge rate: 50 mm/min',
-      '; Path 1',
-      'G0 X0 Y0 Z0',
-      'M3 ; Start spindle',
-      'G1 Z-3 F60 ; Precalculated Z',
-      'G1 X10 Y10 Z0',
-      'G1 Y20 Z-5',
-      'G0 Z10 F80 ; Path done',
-      'M5 ; Stop spindle',
-      'G0 X0 Y0 ; Return to 0,0',
-      'M2 ; end program'
+  '; ** Operation "Test"',
+  '; Type:        Cut Type',
+  '; Paths:       1',
+  '; Direction:   Conventional',
+  '; Cut Depth:   3 mm',
+  '; Pass Depth:  1 mm',
+  '; Plunge rate: 50 mm/min',
+  '; Path 1',
+  'G0 X0 Y0 Z0 ; Sink',
+  'M3 ; Start spindle',
+  'G1 Z-3 F60 ; Precalculated Z',
+  'G1 X10 Y10 Z0',
+  'G1 Y20 Z-5',
+  'G0 Z10 F1000 ; Path done',
+  'G0 X0 Y0 ; Return to 0,0',
+  'M2 ; end program'
     ];
     for (let i = 0; i < expected.length; i++)
       assert.equal(gcode[i], expected[i]);

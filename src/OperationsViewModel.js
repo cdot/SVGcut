@@ -62,13 +62,13 @@ class OperationsViewModel extends ViewModel {
   }
 
   /**
-   * Get the bounding box for all operations. The bounding box wraps
-   * the entire cut path, not just the tool path, so all removed
-   * material should be encompassed.
-   * @return {ClipperLib.IntRect}
+   * Get the bounding box for all operations, in CutPoint coordinates.
+   * The bounding box wraps the entire cut path, not just the tool
+   * path, so all removed material should be encompassed.
+   * @return {Rect}
    */
   getBounds() {
-    return this.boundingBox();
+    return this.boundingBox(); // ask the observable
   }
 
   /**
@@ -78,28 +78,12 @@ class OperationsViewModel extends ViewModel {
   updateBB() {
     let newBB;
     for (const op of this.operations()) {
-      if (op.enabled() && op.toolPaths() != null) {
-        let overlap = 0;
-        // Expand the BB if necessary to account for the radius of the
-        // tool cutting outside the tool path, Inside and Pocket ops
-        // should already have accounted for it.
-        if (op.operation() === App.Ops.Engrave)
-            overlap = op.toolPathWidth() / 2;
-        else if (op.operation() === App.Ops.Outside
-                 || op.operation() === App.Ops.Perforate
-                 || op.operation() === App.Ops.Drill)
-          overlap = op.toolPathWidth();
-        for (const camPath of op.toolPaths()) {
-          for (const point of camPath) {
-            if (!newBB)
-              newBB = new Rect(point.X - overlap, point.Y - overlap,
-                                     2 * overlap, 2 * overlap);
-            else {
-              newBB.enclose(point.X - overlap, point.Y - overlap)
-                   .enclose(point.X + overlap, point.Y + overlap);
-            }
-          }
-        }
+      const opBB = op.boundingBox();
+      if (opBB) {
+        if (newBB)
+          newBB.enclose(opBB);
+        else
+          newBB = opBB;
       }
     }
     if (newBB)
