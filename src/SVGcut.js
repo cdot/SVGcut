@@ -292,6 +292,39 @@ export class SVGcut {
           this.tutorial(3);
       }
     });
+
+    const getSVGPointFromEvent = event => {
+      const point = new DOMPoint(event.clientX,
+                                 event.clientY);
+      const mat = this.mainSVG.getScreenCTM().inverse();
+      return point.matrixTransform(mat);
+    };
+
+    const mouse = {};
+
+    this.mainSVG
+    .addEventListener("mousedown", event => {
+      mouse.viewBox = this.mainSVG.viewBox.baseVal;
+      mouse.start = getSVGPointFromEvent(event);
+      mouse.isDown = true;
+    });
+
+    this.mainSVG
+    .addEventListener("mouseup", event => {
+      mouse.isDown = false;
+    });
+
+    this.mainSVG
+    .addEventListener("mousemove", event => {
+      if (!mouse.isDown)
+        return;
+
+      event.preventDefault();
+
+      const here = getSVGPointFromEvent(event);
+      mouse.viewBox.x -= here.x - mouse.start.x;
+      mouse.viewBox.y -= here.y - mouse.start.y;
+    });
   }
 
   /**
