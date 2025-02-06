@@ -78,11 +78,9 @@ Settings` pane). There are other options that can be set in the
 drop-down that opens when you click ▶.
 + `Name` - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
 + `Ramp Plunge` - Normally a deep cut is started by plunging the tool down into the work - by drilling a hole. Some tools or materials are not suitable for this, so a different approach is required. A ramp plunge is where the tool moves along the tool path while it also descends into the work. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
-+ `Combine` - specifies the boolean operation to apply to the selected paths. Draw a polygon with holes in it in Inkscape, and experiment to understand how this works.
-+ `Direction`
-    + `Conventional`, the cutter rotates against the direction of the feed.
-    + `Climb`, the cutter rotates with the feed. See <a href="https://www.harveyperformance.com/in-the-loupe/conventional-vs-climb-milling/">here</a> for an excellent explanation.
-+ `Margin` - this allows you to add a bit of extra space between the geometry and the tool path. You might need this for a second pass with a finishing tool.
++ `Combine` - specifies the boolean operation to apply to the selected paths. Draw a polygon with holes in it and view the results of the different operations in the simulator to understand how this works.
++ `Direction` - see <a href="https://en.wikipedia.org/wiki/Milling_cutter">Wikipedia</a> for the pros and cons of climb versus conventional milling.
++ `Margin` - this allows you to add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
 + `Width` - some operations can cut a path wider than the tool diameter.
 + `Spacing` - specific to the `Perforate` operation, this is used to set the spacing between drill holes.
 Not all options are appropriate for all operations; the drop-down will

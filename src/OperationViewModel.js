@@ -167,8 +167,7 @@ class OperationViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.direction = ko.observable(DEFAULT_DIRECTION);
-    this.direction.subscribe(() =>
-      document.dispatchEvent(new Event("UPDATE_GCODE")));
+    this.direction.subscribe(() => this.generateToolPaths());
     this.direction.subscribe(() => this.projectChanged());
 
     /**
@@ -185,7 +184,7 @@ class OperationViewModel extends ViewModel {
     this.cutDepth = ko.observable(DEFAULT_CUTDEPTH);
     unitConverter.add(this.cutDepth);
     this.cutDepth(App.models.Tool.passDepth());
-    this.cutDepth.subscribe(() => this.updateGcode());
+    this.cutDepth.subscribe(() => this.generateToolPaths());
     this.cutDepth.subscribe(() => this.projectChanged());
 
     /**

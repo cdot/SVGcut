@@ -46,7 +46,8 @@ class ToolViewModel extends ViewModel {
      * Tool diameter mm, must be > 0
      * @member {observable.<number>}
      */
-    this.diameter = ko.observable(unitConverter.fromUnits(DEFAULT_DIAMETER, "mm"))
+    this.diameter = ko.observable(
+      unitConverter.fromUnits(DEFAULT_DIAMETER, "mm"))
     .extend({ min: unitConverter.fromUnits(0.01, "mm")});
     unitConverter.add(this.diameter);
     this.diameter.subscribe(() => App.models.Operations.recombine());

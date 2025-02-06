@@ -21,7 +21,7 @@ import * as Flatten from 'flatten-js';
  * @param {CutPaths} geometry the geometry to compute for
  * @param {number} cutterDia in "integer" units
  * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true to reverse cutter direction
+ * @param {boolean} climb true for climb milling
  * @return {CutPaths}
  * @memberof Cam
  */
@@ -63,16 +63,26 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
  * Compute tool pocket using rasters.
  * @param {CutPath} pocket the pocket being resterised
  * @param {number} step the gap between rasters
+ * @param {boolean} climb true for climb milling
  * @return {CutPath} rasters
  * @private
  */
-function rasteriseConvexPocket(pocket, step) {
+function rasteriseConvexPocket(pocket, step, climb) {
   // Get the min Y
   const bb = pocket.box;
-  let y = bb.ymin + step;
+  const rasters = bb.height / step;
+  let y = bb.ymax - step; // conventional milling
+  let stepway = -1;
+
+  if (climb) {
+    y = bb.ymin + step;
+    stepway = 1;
+  }
+
   let direction = 1;
   let path = new CutPath();
-  while (y < bb.ymax) {
+  let rc = 0;
+  while (rc++ < rasters) {
     const ray = new Flatten.Segment(bb.xmin - step, y, bb.xmax + step, y);
     const intersections = ray.intersect(pocket);
     if (direction === 1)
@@ -82,7 +92,7 @@ function rasteriseConvexPocket(pocket, step) {
     let up = true;
     for (const intersection of intersections)
       path.push(new CutPoint(intersection.x, intersection.y));
-    y += step;
+    y += step * stepway;
     // boustrophedonically
     direction = -direction;
   }
@@ -96,7 +106,7 @@ function rasteriseConvexPocket(pocket, step) {
  * @param {CutPaths} geometry
  * @param {number} cutterDia is in "integer" units
  * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true to reverse cutter direction
+ * @param {boolean} climb true for climb milling
  * @return {CutPaths} rasters
  * @memberof Cam
  */
@@ -121,7 +131,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     const convexPockets = Partition.convex(pocket);
     let firstPoint;
     for (const convexPocket of convexPockets) {
-      const rasters = rasteriseConvexPocket(convexPocket, step);
+      const rasters = rasteriseConvexPocket(convexPocket, step, climb);
       if (rasters.length > 0) {
         if (!firstPoint)
           firstPoint = rasters[0];
@@ -149,7 +159,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
  * @param {boolean} isInside true to cut inside the path, false to cut outside
  * @param {number} width desired path width (may be wider than the cutter)
  * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true to reverse cutter direction
+ * @param {boolean} climb true for climb milling
  * @return {CutPaths}
  * @memberof Cam
  */
@@ -351,7 +361,8 @@ export function drill(geometry, topZ, botZ) {
  * that follows the outline of the geometry, regardless of the tool
  * diameter. Works on both open and closed paths.
  * @param {CutPaths} geometry the engraving
- * @param {boolean} climb reverse cutter direction
+ * @param {boolean} climb true for climb milling; not that it should make
+ * any difference!
  * @return {CutPaths}
  * @memberof Cam
  */
