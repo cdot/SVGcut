@@ -296,7 +296,6 @@ export function segmentsFromElement(element, params) {
       // viewport-establishing element (also including its transform
       // property).
       const tx = element.getCTM();
-      console.log(tx);
       for (const command of path) {
         // All command parameters are absolute coordinates since linearisation
         for (let i = 1; i < command.length; i += 2) {
@@ -508,9 +507,11 @@ export function getBounds(el) {
     if (system.baseVal &&
         system.baseVal.width > 0 && system.baseVal.height > 0)
       return new Rect(system.baseVal);
-    else if (typeof system.width !== "undefined")
-      return new Rect(system);
-    else
+    else if (typeof system.width !== "undefined"
+             && typeof system.height !== "undefined") {
+      if (system.width > 0 && system.height > 0)
+        return new Rect(system);
+    } else
       throw new Error(`Wierd type from getBBox: ${system}`);
   }
 

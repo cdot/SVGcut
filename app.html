@@ -631,7 +631,11 @@
               <canvas id="simulationCanvas" style="border: none;" width="10"
                       height="10"></canvas>
               <p>
-                <b>Simulation time:</b> <span id="stopWatch"></span>s
+                <b>Simulation time:</b>
+                <span id="stopWatchT"></span>s,
+                X: <span id="stopWatchX"></span>
+                Y: <span id="stopWatchY"></span>
+                Z: <span id="stopWatchZ"></span>
                 <input id="timeControl" class="form-range" type="range"
                        max="1000" value="1000" />
               </p>
@@ -837,7 +841,7 @@
   </div>
 
   <div id="tutorialSteps" style="display:none">
-    <span name="Step1">Open the Project mena and import one or more SVG files.</span>
+    <span name="Step1">Open the Project menu and import one or more SVG files.</span>
     <span name="Step2">Click 1 or more paths</span>
     <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
     <span name="Step4">Customise the operation to your tastes.</span>

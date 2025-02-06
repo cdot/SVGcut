@@ -24,7 +24,8 @@ class Simulation {
    * values between 0 and 1000. This will usually be an
    * `<input type=range>`.
    * @param {function} stopWatch callback invoked when the simulation
-   * time changes. Passed the new simulation time.
+   * time changes. Passed the new simulation time and the x, y, z
+   * location of the tool at that time.
    */
   constructor(shaderDir, canvas, timeControl, stopWatch) {
 
@@ -247,6 +248,12 @@ class Simulation {
      * @private
      */
     this.pathNumPoints = 0;
+
+    /**
+     * Record of time and position
+     * @member {object[]}
+     */
+    this.timeSteps = [];
 
     /**
      * Rendering context
@@ -943,14 +950,40 @@ class Simulation {
   }
 
   /**
+   * @private
+   */
+  interpolateToolPosition(t) {
+    // TODO: use a binary search to find the encompassing timestep
+    if (this.timeSteps.length < 2)
+      return { t: 0, x: 0, y: 0, z: 0 };
+    let prev = this.timeSteps[0];
+    let curr;
+    for (let i = 1; i < this.timeSteps.length; i++) {
+      curr = this.timeSteps[i];
+      if (curr.time >= t)
+        break;
+      prev = curr;
+    }
+    const dt = (t - prev.time) / (curr.time - prev.time);
+    return {
+      time: t,
+      x: prev.x + dt * (curr.x - prev.x),
+      y: prev.y + dt * (curr.y - prev.y),
+      z: prev.z + dt * (curr.z - prev.z)
+    };
+  }
+
+  /**
    * Set the simulation stop time
    * @param {number} t the new stop time
    * @private
    */
   setStopAtTime(t) {
     this.stopAtTime = t;
-    if (typeof this.stopWatch === "function")
-      this.stopWatch(t);
+    if (typeof this.stopWatch === "function") {
+      const pos = this.interpolateToolPosition(t);
+      this.stopWatch(t, pos.x, pos.y, pos.z);
+    }
     // Map the time to a tool position
     this.needToCreatePathTexture = true;
     this.requestFrame();
@@ -1122,6 +1155,7 @@ class Simulation {
 
     let time = 0;
     let prev = startPoint, idx = -1;
+    this.timeSteps = [];
     for (const curr of path) {
       idx++;
       const dist = Math.sqrt((curr.x - prev.x) * (curr.x - prev.x)
@@ -1129,6 +1163,8 @@ class Simulation {
                              + (curr.z - prev.z) * (curr.z - prev.z));
       const beginTime = time;
       time = time + dist / curr.f * 60;
+
+      this.timeSteps.push({ time: time, x: curr.x, y: curr.y, z: curr.z });
 
       min.x = Math.min(min.x, curr.x);
       min.y = Math.min(min.y, curr.y);

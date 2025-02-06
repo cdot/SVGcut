@@ -115,8 +115,11 @@ export class SVGcut {
       "glShaders",
       document.getElementById("simulationCanvas"),
       document.getElementById('timeControl'),
-      t => {
-        document.getElementById('stopWatch').textContent = t.toFixed(1);
+      (t, x, y, z) => {
+        document.getElementById('stopWatchT').textContent = t.toFixed(1);
+        document.getElementById('stopWatchX').textContent = x.toFixed(2);
+        document.getElementById('stopWatchY').textContent = y.toFixed(2);
+        document.getElementById('stopWatchZ').textContent = z.toFixed(2);
       });
 
     // Create view models.

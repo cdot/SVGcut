@@ -31,8 +31,6 @@ class CurveConversionViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.minSegs = ko.observable(DEFAULT_MINSEGS);
-    this.minSegs.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
     this.minSegs.subscribe(() => this.projectChanged());
 
     /**

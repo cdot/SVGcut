@@ -84,11 +84,11 @@ class GcodeGenerationViewModel extends ViewModel {
      */
     this.returnTo00 = ko.observable(DEFAULT_RETURNTO00);
     this.returnTo00.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
     this.returnTo00.subscribe(() => this.projectChanged());
 
     /**
-     * Where the origin isone of "SVG page", "Bounding box" or
+     * Where the origin is one of "SVG page", "Bounding box" or
      * "Centre".
      * In SVG, the origin is at the top left, and Y increases
      * downwards. Internally we use internal coordinates, which follow
@@ -101,7 +101,7 @@ class GcodeGenerationViewModel extends ViewModel {
      */
     this.origin = ko.observable(DEFAULT_ORIGIN);
     this.origin.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
     this.origin.subscribe(() => this.projectChanged());
 
     /**
@@ -110,7 +110,7 @@ class GcodeGenerationViewModel extends ViewModel {
      */
     this.extraOffsetX = ko.observable(DEFAULT_EXTRAOFFSETX);
     this.extraOffsetX.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
     this.extraOffsetX.subscribe(() => this.projectChanged());
     /* @todo generate G10,G54 to do this
      * For future reference:
@@ -131,7 +131,7 @@ class GcodeGenerationViewModel extends ViewModel {
      */
     this.extraOffsetY = ko.observable(DEFAULT_EXTRAOFFSETY);
     this.extraOffsetY.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GEOMETRY")));
+      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
     this.extraOffsetY.subscribe(() => this.projectChanged());
 
     /**
@@ -239,7 +239,7 @@ class GcodeGenerationViewModel extends ViewModel {
         oy += tpBB.height / 2;
       }
     }
-
+    console.log("WANKER", this.origin()," ",ox," ",oy);
     const job = new Gcode.Generator({
       gunits:         gunits,
       // Scaling to apply to internal units in paths, to generate Gcode units.
