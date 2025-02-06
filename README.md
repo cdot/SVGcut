@@ -52,7 +52,7 @@ with. There is popup help on each of the options.
 
 Open the `Project` menu and select `Import SVG` to load your SVG
 file. If you have more than one SVG file you can load them all at
-once, or one after another.
+once, or one after another. You should be able to see your SVG in the `Toolpaths` tab. You can zoom (mouse wheel) and pan.
 
 ## Operations
 
