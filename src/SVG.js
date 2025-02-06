@@ -184,8 +184,8 @@ function linearise(path, params) {
       // rx ry xAngle largeArc sweep p2x p2y
       xp = last.x, yp = last.y;
       for (i = 1; i < segment.length; i += 7) {
-        segment[6] += xp; segment[7] += yp;
-        xp = segment[i + 6], yp = segment[i + 7];
+        segment[i + 5] += xp; segment[i + 6] += yp;
+        xp = segment[i + 5], yp = segment[i + 6];
       }
       // fall through
     case 'A':
@@ -290,13 +290,13 @@ export function segmentsFromElement(element, params) {
 
   function unTransform(path, element) {
     try {
-      // SVG 2 spec: ctm is a matrix that transforms the coordinate
+      // SVG 2 spec: CTM is a matrix that transforms the coordinate
       // space of the current element (including its transform
       // property) to the coordinate space of its closest ancestor
       // viewport-establishing element (also including its transform
       // property).
       const tx = element.getCTM();
-
+      console.log(tx);
       for (const command of path) {
         // All command parameters are absolute coordinates since linearisation
         for (let i = 1; i < command.length; i += 2) {
@@ -439,7 +439,7 @@ export function segmentsFromElement(element, params) {
       if (subsegs.length > 0)
         segs = segs.concat(subsegs);
     }
-    // Don't need to unTransform because for a g, the CTM of the leaf elements
+    // Don't need to unTransform because for a `g`, the CTM of the leaf elements
     // should have already done that to the closest enclosing
     // viewbox i.e. the containing <svg> element. Not sure about an svg
     // within an svg, but going to quietly ignore that.
@@ -452,7 +452,7 @@ export function segmentsFromElement(element, params) {
   }
 
   if (pathString) {
-    // Convert path to M, L and Z
+    // Convert path to M, L and Z in element coordinate space
     const path = linearise(parsePathD(pathString), params);
     try {
       // Apply inverse transforms to get the new path into the viewport
