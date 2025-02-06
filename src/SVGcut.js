@@ -152,37 +152,6 @@ export class SVGcut {
       this.updateMainSvgSize();
     });
 
-    // zooming
-    this.mainSVG
-    .addEventListener("wheel", event => {
-      event.preventDefault();
-
-      // set the scaling factor (and make sure it's at least 10%)
-      let scale = event.deltaY / 1000;
-      scale = Math.abs(scale) < .1 ? .1 * event.deltaY / Math.abs(event.deltaY) : scale;
-
-      // get point in SVG space
-      let pt = new DOMPoint(event.clientX, event.clientY);
-      pt = pt.matrixTransform(this.mainSVG.getScreenCTM().inverse());
-
-      // get viewbox transform
-      let [x, y, width, height] = this.mainSVG
-          .getAttribute('viewBox').split(' ').map(Number);
-
-      // get pt.x as a proportion of width and pt.y as proportion of height
-      let [xPropW, yPropH] = [(pt.x - x) / width, (pt.y - y) / height];
-        
-      // calc new width and height, new x2, y2 (using proportions and new width and height)
-      let [width2, height2] = [width + width * scale, height + height * scale];
-      let x2 = pt.x - xPropW * width2;
-      let y2 = pt.y - yPropH * height2;        
-
-      this.mainSVG.setAttribute('viewBox', `${x2} ${y2} ${width2} ${height2}`);
-    });
-
-    // TODO: Zooming; adjust viewBox values on the master SVG
-    // Presumably pan as well
-
     document.getElementById('chosenImportSVGFile')
     .addEventListener("change", event => {
       // Import an SVG file
@@ -257,8 +226,10 @@ export class SVGcut {
    * Add handlers for evenet in SVG
    */
   addSVGEventHandlers() {
+    // Click to select
     this.mainSVG
     .addEventListener("click", e => setTimeout(() => {
+      // Timeout to give space for double-click
       if (e.detail > 1)
         return false; // ignore dblclick first click
 
@@ -275,6 +246,37 @@ export class SVGcut {
       return false;
     }, 200));
 
+    // Zooming using the mouse wheel
+    this.mainSVG
+    .addEventListener("wheel", event => {
+      event.preventDefault();
+
+      // set the scaling factor (and make sure it's at least 10%)
+      let scale = event.deltaY / 1000;
+      scale = Math.abs(scale) < 0.1
+      ? 0.1 * event.deltaY / Math.abs(event.deltaY) : scale;
+
+      // Get point in SVG space
+      let pt = new DOMPoint(event.clientX, event.clientY);
+      pt = pt.matrixTransform(this.mainSVG.getScreenCTM().inverse());
+
+      // Get viewbox transform
+      let [x, y, width, height] = this.mainSVG
+          .getAttribute('viewBox').split(' ').map(Number);
+
+      // Get pt.x as a proportion of width and pt.y as proportion of height
+      let [xPropW, yPropH] = [(pt.x - x) / width, (pt.y - y) / height];
+        
+      // Calc new width and height, new x2, y2 (using proportions and
+      // new width and height)
+      let [width2, height2] = [width + width * scale, height + height * scale];
+      let x2 = pt.x - xPropW * width2;
+      let y2 = pt.y - yPropH * height2;        
+
+      this.mainSVG.setAttribute('viewBox', `${x2} ${y2} ${width2} ${height2}`);
+    });
+
+    // Double-click select all
     this.mainSVG
     .addEventListener("dblclick", e => {
       // Select everything
@@ -293,15 +295,14 @@ export class SVGcut {
       }
     });
 
+    // Panning
     const getSVGPointFromEvent = event => {
-      const point = new DOMPoint(event.clientX,
-                                 event.clientY);
+      const point = new DOMPoint(event.clientX, event.clientY);
       const mat = this.mainSVG.getScreenCTM().inverse();
       return point.matrixTransform(mat);
     };
 
     const mouse = {};
-
     this.mainSVG
     .addEventListener("mousedown", event => {
       mouse.viewBox = this.mainSVG.viewBox.baseVal;
@@ -309,10 +310,8 @@ export class SVGcut {
       mouse.isDown = true;
     });
 
-    this.mainSVG
-    .addEventListener("mouseup", event => {
-      mouse.isDown = false;
-    });
+    this.mainSVG.addEventListener("mouseleave", () => mouse.isDown = false);
+    this.mainSVG.addEventListener("mouseup", () => mouse.isDown = false);
 
     this.mainSVG
     .addEventListener("mousemove", event => {
