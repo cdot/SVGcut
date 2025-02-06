@@ -630,15 +630,16 @@
             <div class="tab-pane" id="simulatePanel">
               <canvas id="simulationCanvas" style="border: none;" width="10"
                       height="10"></canvas>
-              <p>
-                <b>Simulation time:</b>
-                <span id="stopWatchT"></span>s,
-                X: <span id="stopWatchX"></span>
-                Y: <span id="stopWatchY"></span>
-                Z: <span id="stopWatchZ"></span>
-                <input id="timeControl" class="form-range" type="range"
-                       max="1000" value="1000" />
-              </p>
+              <table width="100%">
+                <tr>
+                  <th>T:</th><td><span id="stopWatchT"></span>s</td>
+                  <th>X:</th><td><span id="stopWatchX"></span></td>
+                  <th>Y:</th><td><span id="stopWatchY"></span></td>
+                  <th>Z:</th><td><span id="stopWatchZ"></span></td>
+                </tr>
+              </table>
+              <input id="timeControl" class="form-range" type="range"
+                     max="1000" value="1000" />
               <ul>
                 <li>Use mouse to rotate view</li>
                 <li>Use slider control to set simulation time</li>
