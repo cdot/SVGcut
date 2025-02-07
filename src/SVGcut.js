@@ -115,11 +115,13 @@ export class SVGcut {
       "glShaders",
       document.getElementById("simulationCanvas"),
       document.getElementById('timeControl'),
-      (t, x, y, z) => {
-        document.getElementById('stopWatchT').textContent = t.toFixed(1);
-        document.getElementById('stopWatchX').textContent = x.toFixed(2);
-        document.getElementById('stopWatchY').textContent = y.toFixed(2);
-        document.getElementById('stopWatchZ').textContent = z.toFixed(2);
+      spot => { // stopWatch callback
+        document.getElementById('stopWatchT').textContent = spot.t.toFixed(1);
+        document.getElementById('stopWatchX').textContent = spot.x.toFixed(2);
+        document.getElementById('stopWatchY').textContent = spot.y.toFixed(2);
+        document.getElementById('stopWatchZ').textContent = spot.z.toFixed(2);
+        document.getElementById('stopWatchF').textContent = Math.floor(spot.f);
+        document.getElementById('stopWatchS').textContent = Math.floor(spot.s);
       });
 
     // Create view models.
@@ -199,16 +201,15 @@ export class SVGcut {
       const topZ = this.models.Material.topZ.toUnits(uc.units());
       const diam = this.models.Tool.diameter.toUnits(uc.units());
       const ang = this.models.Tool.angle();
-      const cutterH = uc.fromUnits(1, "mm");
+      const cutterH = uc.fromUnits(10, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
       console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
     // Complete UI initialisation of the view models
-    for (const m in this.models) {
+    for (const m in this.models)
       this.models[m].initialise();
-    }
 
     this.tutorial(1);
   }
