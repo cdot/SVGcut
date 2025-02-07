@@ -7,7 +7,7 @@ ClipperLib.use_xyz = true;
 import { UNit } from "./TestSupport.js";
 import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
-let CutPath, CutPaths;
+let CutPoint, CutPath, CutPaths;
 
 describe("CutPaths", () => {
   let page;
@@ -15,11 +15,13 @@ describe("CutPaths", () => {
   // CutPath depends on ClipperLib
   before(() => {
     return Promise.all([
+      import("../src/CutPoint.js"),
       import("../src/CutPath.js"),
       import("../src/CutPaths.js") ])
     .then(mods => {
-      CutPath = mods[0].CutPath;
-      CutPaths = mods[1].CutPaths;
+      CutPoint = mods[0].CutPoint;
+      CutPath = mods[1].CutPath;
+      CutPaths = mods[2].CutPaths;
       page = new CutPaths(
         [[{X:-10,Y:-10},{X:140,Y:-10},{X:140,Y:140},{X:-10,Y:140}]]);
     });
@@ -94,6 +96,66 @@ describe("CutPaths", () => {
       [ 'M', 1, 2 ],
       [ 'L', 3, 4, 5, 6 ]
     ]);
+  });
+
+  it("closestVertex", () => {
+    const paths = new CutPaths([
+      [
+        { X: 30, Y: 0, Z: 0 },
+        { X: 40, Y: 10, Z: 0 },
+        { X: 50, Y: 0, Z: 0 },
+      ],
+      [
+        { X: 40, Y: 15, Z: 0 },
+        { X: 50, Y: 25, Z: 0 },
+        { X: 30, Y: 25, Z: 0 },
+      ]
+    ], true);
+    assert.deepEqual(paths.closestVertex(new CutPoint(30,0), true),
+                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+    assert(!paths.closestVertex(new CutPoint(30,0), false));
+    assert.deepEqual(paths.closestVertex(new CutPoint(30,0)),
+                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+    assert.deepEqual(paths.closestVertex(new CutPoint(41,1), true),
+                     { pointIndex: 1, dist2: 82, pathIndex: 0 });
+    assert.deepEqual(paths.closestVertex(new CutPoint(51,26), true),
+                     { pointIndex: 1, dist2: 2, pathIndex: 1 });
+  });
+
+  it("closestEndPoint", () => {
+    const paths = new CutPaths([
+      [
+        { X: 30, Y: 0, Z: 0 },
+        { X: 40, Y: 10, Z: 0 },
+        { X: 50, Y: 0, Z: 0 },
+      ],
+      [
+        { X: 40, Y: 15, Z: 0 },
+        { X: 50, Y: 25, Z: 0 },
+        { X: 30, Y: 25, Z: 0 },
+      ]
+    ], true);
+    assert.deepEqual(paths.closestEndpoint(new CutPoint(30,0), true),
+                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+    assert(!paths.closestEndpoint(new CutPoint(30,0), false));
+    assert.deepEqual(paths.closestEndpoint(new CutPoint(30,0)),
+                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+    assert.deepEqual(paths.closestEndpoint(new CutPoint(41,1), true),
+                     { pointIndex: 2, dist2: 82, pathIndex: 0 });
+    assert.deepEqual(paths.closestEndpoint(new CutPoint(51,26), true),
+                     { pointIndex: 2, dist2: 677, pathIndex: 0 });
+  });
+
+  it("clip", () => {
+  });
+
+  it("diff", () => {
+  });
+
+  it("simplifyAndClean", () => {
+  });
+
+  it("crosses", () => {
   });
 
   /*
@@ -337,19 +399,5 @@ describe("CutPaths", () => {
         ]
       ], true));
   });*/
-  
-  it("clip", () => {
-  });
 
-  it("diff", () => {
-  });
-
-  it("simplifyAndClean", () => {
-  });
-
-  it("crosses", () => {
-  });
-
-  it("closestVertex", () => {
-  });
 });
