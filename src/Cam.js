@@ -216,17 +216,16 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
 /**
  * Generate path step to create a hole
  * @param {CutPoint} pt where to drill the hole
- * @param {number} topZ
- * @param {number} topZ is the top of the hole
+ * @param {number} safeZ is above the top of the hole
  * @param {number} botZ is the bottom of the hole
  * @return {CutPath}
  * @private
  */
-function drillHole(pt, topZ, botZ) {
+function drillHole(pt, safeZ, botZ) {
   return new CutPath([
-    { X: pt.X, Y: pt.Y, Z: topZ },
+    { X: pt.X, Y: pt.Y, Z: safeZ },
     { X: pt.X, Y: pt.Y, Z: botZ },
-    { X: pt.X, Y: pt.Y, Z: topZ }
+    { X: pt.X, Y: pt.Y, Z: safeZ }
   ], false);
 }
 
@@ -235,13 +234,13 @@ function drillHole(pt, topZ, botZ) {
  * @param {CutPath} path
  * @param {number} cutterDia in "integer" units
  * @param {number} spacing is the gap to leave between perforations
- * @param {number} topZ is the Z to which the tool is withdrawn
+ * @param {number} safeZ is the Z to which the tool is withdrawn
  * @param {number} botZ is the depth of the perforations
  * @return {CutPath}
  * @private
  * @memberof Cam
  */
-function perforatePath(path, cutterDia, spacing, topZ, botZ) {
+function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
   assert(path instanceof CutPath);
 
   // Measure the path
@@ -270,7 +269,7 @@ function perforatePath(path, cutterDia, spacing, topZ, botZ) {
   while (segi < path.length) {
     // Place a hole here
     //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
-    newPath.push(...drillHole(segStart, topZ, botZ));
+    newPath.push(...drillHole(segStart, safeZ, botZ));
     gap = 0;
     while (gap + segLen < step) {
       if (++segi === path.length)
@@ -341,16 +340,16 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
  * for a drill hole. The holes are drilled in the order of the edges.
  * Works on both open and closed paths.
  * @param {CutPaths} geometry
- * @param {number} topZ is the Z to which the tool is withdrawn
+ * @param {number} safeZ is the Z to which the tool is withdrawn
  * @param {number} botZ is the depth of the perforations
  * @return {CutPaths}
  * @memberof Cam
  */
-export function drill(geometry, topZ, botZ) {
+export function drill(geometry, safeZ, botZ) {
   const drillPath = new CutPath();
   for (const path of geometry) {
     for (const hole of path) {
-      drillPath.push(...drillHole(hole, topZ, botZ));
+      drillPath.push(...drillHole(hole, safeZ, botZ));
     }
   }
   return new CutPaths(drillPath);
