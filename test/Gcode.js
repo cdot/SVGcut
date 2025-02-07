@@ -27,64 +27,84 @@ describe("Gcode", () => {
 
   it("parser neutralises XYZ", () => {
     const res = Gcode.parse("G1");
-    assert.deepEqual(res, [{ x: 0, y: 0, z: 0, f: 0 }]);
+    assert.deepEqual(res, [{ x: 0, y: 0, z: 0, f: 0, s: 0 }]);
   });
 
   it("parser handles whitespace", () => {
-    const res = Gcode.parse("G1X0 Y1  Z2\tF3");
-    assert.deepEqual(res, [{ x: 0, y: 1, z: 2, f: 3 }]);
+    const res = Gcode.parse("G 1X0 Y1Z 2\tF 3");
+    assert.deepEqual(res, [{ x: 0, y: 1, z: 2, f: 3, s: 0 }]);
   });
 
   it("parser reads forward/back", () => {
-    const res = Gcode.parse("G1 X99\nG0 Y2 Z3 F4\nG1 X5");
+    const res = Gcode.parse("G1 X99\nM0\nG0 Y2 Z3 F4\nM0\nG1 X5");
     assert.deepEqual(res, [
-      { x: 99, y: 2, z: 3, f: 4 },
-      { x: 99, y: 2, z: 3, f: 4 },
-      { x: 5, y: 2, z: 3, f: 4 }
+      { x: 99, y: 2, z: 3, f: 4, s: 0 },
+      { x: 5, y: 2, z: 3, f: 4, s: 0 }
     ]);
   });
 
-  it("handles line numbers", () => {
-    const res = Gcode.parse("N99 G0 X1 Y2 Z3 F4\nN0 G0 X5 Y6 Z7\nN1");
+  it("parse line numbers", () => {
+    const res = Gcode.parse("N99 G0 X1 Y2 Z3 F4\nM0\nN0 G0 X5 Y6 Z7\nN1");
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 },
-      { x: 5, y: 6, z: 7, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 },
+      { x: 5, y: 6, z: 7, f: 4, s: 0 }
     ]);
   });
 
-  it("parser handles blank lines", () => {
+  it("parse spindle change", () => {
+    const res = Gcode.parse("G0 X1 Y2 Z3 F4\nM3 S100\nG0 F4\nN1");
+    assert.deepEqual(res, [
+      { x: 1, y: 2, z: 3, f: 4, s: 0 },
+      { x: 1, y: 2, z: 3, f: 4, s: 100 }
+    ]);
+  });
+
+  it("parse blank lines", () => {
     const res = Gcode.parse("\nG0 X1 Y2 Z3 F4\n\n\nG0 X5 Y6 Z7\n");
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 },
-      { x: 5, y: 6, z: 7, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 },
+      { x: 5, y: 6, z: 7, f: 4, s: 0 }
     ]);
   });
 
   it("parser handles () comments", () => {
     const res = Gcode.parse("(line 1)G0 (line 1) X1 Y2 Z3 F4");
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 }
     ]);
   });
 
   it("parser handles ; comments", () => {
     const res = Gcode.parse("G0 X1; Y2 Z3 F4");
     assert.deepEqual(res, [
-      { x: 1, y: 0, z: 0, f: 0 }
+      { x: 1, y: 0, z: 0, f: 0, s: 0 }
     ]);
   });
 
   it("parser handles %%", () => {
     const res = Gcode.parse("%\nG0 X1 Y2 Z3 F4\n%\nG0 X5 Y6 Z7\n");
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 }
     ]);
   });
 
   it("parser handles M2", () => {
     const res = Gcode.parse("G0 X1 Y2 Z3 F4\nM2\nG0 X5 Y6 Z7\n");
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 }
+    ]);
+  });
+
+  it("parser handles M3/M5", () => {
+    const res = Gcode.parse("M3 S2000\nG0 X1 Y2 Z3 F4\nM3 S50\nG0 X5 Y6\nM5\nG0 X7\n");
+    assert.deepEqual(res, [
+      { x: 1, y: 2, z: 3, f: 4, s: 0 },
+      { x: 1, y: 2, z: 3, f: 4, s: 2000 },
+      { x: 1, y: 2, z: 3, f: 4, s: 50 },
+      { x: 5, y: 6, z: 3, f: 4, s: 50 },
+      { x: 5, y: 6, z: 3, f: 4, s: 0 },
+      { x: 7, y: 6, z: 3, f: 4, s: 0 },
+      
     ]);
   });
 
@@ -92,14 +112,14 @@ describe("Gcode", () => {
     const res = Gcode.parse([
       "G0 X1 Y2 Z3 F4", "M2", "G0 X5 Y6 Z7"]);
     assert.deepEqual(res, [
-      { x: 1, y: 2, z: 3, f: 4 }
+      { x: 1, y: 2, z: 3, f: 4, s: 0 }
     ]);
   });
 
   it("parser handles numbers", () => {
     const res = Gcode.parse("G0 X -1 Y2.0 Z-3.5 F +4");
     assert.deepEqual(res, [
-      { x: -1, y: 2, z: -3.5, f: 4 }
+      { x: -1, y: 2, z: -3.5, f: 4, s: 0 }
     ]);
   });
 

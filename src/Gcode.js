@@ -25,7 +25,7 @@ class CNC {
    * @param {number?} init.y Y coordinate
    * @param {number?} init.z Z coordinate
    * @param {number?} init.f feed rate
-   * @param {number?} init.spin spindle speed (default 0)
+   * @param {number?} init.s spindle speed (default 0)
    */
   constructor(init) {
     if (init) {
@@ -33,15 +33,15 @@ class CNC {
       this.y = init.y ?? NaN;
       this.z = init.z ?? NaN;
       this.f = init.f ?? NaN;
-      this.spin = init.spin ?? 0;
+      this.s = init.s ?? 0;
     } else {
       this.x = this.y = this.z = this.f = NaN;
-      this.spin = 0;
+      this.s = 0;
     }
   }
 
   toString() {
-    return `<${this.x},${this.y},${this.z} F${this.f} ${this.spin}>`;
+    return `<${this.x},${this.y},${this.z} F${this.f} ${this.s}>`;
   }
 }
 
@@ -63,8 +63,36 @@ export function parse(gcode) {
   const path = [];
   const lines = Array.isArray(gcode) ? gcode : gcode.split(/\r?\n/);
   let lineNo = 0;
-  let last = new CNC();
+  let state = new CNC();
   let terminated = false, percents = 0;
+  let last;
+
+  function fieldChanged(from, to, field) {
+    if (isNaN(from)) return !isNaN(to);
+    assert(!isNaN(to));
+    return to !== from;
+  }
+
+  function changed(from, to) {
+    return fieldChanged(from.x, to.x)
+    || fieldChanged(from.y, to.y)
+    || fieldChanged(from.z, to.z)
+    || fieldChanged(from.f, to.f)
+    || fieldChanged(from.s, to.s);
+  }
+
+  function saveState(which) {
+    const last = path[path.length - 1];
+    if (!last || changed(last, state)) {
+
+      path.push({
+        x: state.x, y: state.y, z: state.z, f: state.f, s: state.s
+      });
+    }
+  }
+
+  let updateState = false;
+
   for (const l of lines) {
     if (terminated) // terminated by M2 or M30?
       break;
@@ -91,41 +119,48 @@ export function parse(gcode) {
     }
 
     const re = /(\S)\s*([-+]?[\d.]+)/g;
-    let m, pending, parsingLine = true;
+    let m, parsingLine = true;
+    let spindle = 0, waitingForSpindle = false;
     while (parsingLine && (m = re.exec(line))) {
       const code = m[1].toLowerCase(), value = Number(m[2]);
       switch (code) {
+
+        // Commands
       case 'g':
-        if (pending) {
-          path.push(pending);
-          last = pending;
-        }
+        saveState("G");
         switch (value) {
         case 0: case 1:
-          pending = { x: last.x, y: last.y, z: last.z, f: last.f }; break;
+          updateState = true;
+          break;
         default:
-          //console.debug(`Gcode:${lineNo} ignored g${value}`);
-          pending = undefined;
+          updateState = false; // ignore the rest of 
         }
         break;
 
+      case 'm': // M-code (miscellaneous function)
+        saveState("M");
+        // M2 and M30 terminate the program
+        if (value === 2 || value === 30)
+          terminated = true, parsingLine = false;
+        else if (value === 3) {
+          // start/stop spindle
+          updateState = true;
+        } else if (value === 5)
+          state.s = 0;
+        break;
+
+        // Parameters. These just change the state.
       case 'f': // feed rate
       case 'x': // X axis of machine
       case 'y': // Y axis of machine
       case 'z': // Z axis of machine
-        if (pending)
-          pending[code] = value;
-        else
-          console.debug(`Gcode:${lineNo} lost ${code}`);
-        break;
-
-      case 'm': // M-code (miscellaneous function)
-        // M2 and M30 terminate the program
-        if (value === 2 || value === 30)
-          terminated = true;
+      case 's': // Spindle speed
+        if (updateState)
+          state[code] = value;
         break;
 
       case 'o': // subroutine marker
+        saveState("O");
         // ignore the rest of this line
         parsingLine = false;
         // fall through intended
@@ -156,13 +191,9 @@ export function parse(gcode) {
         console.error(`Gcode:${lineNo} unsupported ${code}${value}`);
       }
     }
-    if (pending) {
-      path.push(pending);
-      last = pending;
-      pending = undefined;
-    }
     lineNo++;
   }
+  saveState("END");
 
   if (percents === 1) // error, see remark above
     // Warn about it, but plough on regardless.
@@ -191,6 +222,15 @@ export function parse(gcode) {
       else
         break;
     }
+  }
+
+  // Remove null steps
+  let prev = path[0], i = 1;
+  while (i < path.length) {
+    if (!changed(prev, path[i]))
+      path.splice(i, 1);
+    else
+      prev = path[i], i++;
   }
 
   return path;
@@ -388,7 +428,7 @@ export class Generator {
 
     if (typeof command.spin !== "undefined") {
       line.push(`S${command.spin}`);
-      this.last.spin = command.spin;
+      this.last.s = command.spin;
     }
 
     if (typeof command.rem !== "undefined")
@@ -422,7 +462,7 @@ export class Generator {
    * @private
    */
   startSpindle(spin) {
-    if (this.last.spin !== spin)
+    if (this.last.s !== spin)
       this.M(3, { spin: spin, rem: "Start spindle" });
   }
 
@@ -431,9 +471,9 @@ export class Generator {
    * @private
    */
   stopSpindle() {
-    if (this.last.spin > 0)
+    if (this.last.s > 0)
       this.M(5, { rem: "Stop spindle" });
-    this.last.spin = 0;
+    this.last.s = 0;
   }
 
   /**
