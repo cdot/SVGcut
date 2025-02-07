@@ -230,16 +230,15 @@ class GcodeGenerationViewModel extends ViewModel {
     let ox = svgBB.left + this.extraOffsetX();
     let oy = svgBB.bottom + this.extraOffsetY();
     if (this.origin() === "Bounding box" || this.origin() === "Centre") {
-      const tpBB = this.unitConverter.fromUnits(
+      const pathsBB = this.unitConverter.fromUnits(
         App.models.Operations.getBounds(), "integer");
-      ox += tpBB.left - svgBB.left;
-      oy += svgBB.bottom - tpBB.bottom;
+      ox -= pathsBB.left - svgBB.left;
+      oy -= svgBB.bottom - pathsBB.bottom;
       if (this.origin() === "Centre") {
-        ox += tpBB.width / 2;
-        oy += tpBB.height / 2;
+        ox -= pathsBB.width / 2;
+        oy -= pathsBB.height / 2;
       }
     }
-    console.log("WANKER", this.origin()," ",ox," ",oy);
     const job = new Gcode.Generator({
       gunits:         gunits,
       // Scaling to apply to internal units in paths, to generate Gcode units.
