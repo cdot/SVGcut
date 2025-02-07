@@ -118,15 +118,15 @@ describe("CutPath", () => {
   it("closestVertex", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
     let p = path.closestVertex(new CutPoint(-1, -1));
-    assert.equal(p.point, 0);
+    assert.equal(p.pointIndex, 0);
     assert.almost(p.dist2, 2);
 
     p = path.closestVertex(new CutPoint(0, 200));
-    assert.equal(p.point, 2);
+    assert.equal(p.pointIndex, 2);
     assert.almost(p.dist2, 100*100);
 
     p = path.closestVertex(new CutPoint(300, 200));
-    assert.equal(p.point, 1);
+    assert.equal(p.pointIndex, 1);
     assert.almost(p.dist2, 200*200+200*200);
   });
 
