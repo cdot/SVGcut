@@ -1,3 +1,7 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+
+// Vertex shader for the cut path
+
 uniform float resolution;
 // Diameter of the cutter bit
 uniform float cutterDia;
@@ -10,17 +14,17 @@ uniform float pathTopZ;
 // Time (in the range 0..1000) the simulation is frozen
 uniform float stopAtTime;
 
-attribute vec3 pos1; // Previous position 0, 1, 2
-attribute vec3 pos2; // Current position 3, 4, 5
-attribute float startTime; // 6
-attribute float endTime; // 7
-attribute float command; // 8
-attribute vec3 rawPos; // 9, optional
+/*in*/attribute vec3 pos1;       // Previous position 0, 1, 2
+/*in*/attribute vec3 pos2;       // Current position 3, 4, 5
+/*in*/attribute float startTime; // 6
+/*in*/attribute float endTime;   // 7
+/*in*/attribute float command;   // 8
+/*in*/attribute vec3 rawPos;     // 9, optional
 
-varying vec4 color;
-varying vec2 center;
-varying float radius;
-varying float enable;
+/*out*/varying vec4 colour;
+/*out*/varying vec2 center;
+/*out*/varying float radius;
+/*out*/varying float enable;
 
 // On each step of the simulation, the cutter makes a hole. This appears
 // to be carving out that hole.
@@ -65,7 +69,7 @@ void main(void) {
     thisPos = upper;
 
   center = (thisPos.xy * resolution + resolution) / 2.0;
-  color = vec4(0.0, 1.0, 1.0, 1.0);
+  colour = vec4(1.0, 1.0, 1.0, 1.0); // CC: doesn't seem to have any effect
   float r = cutterDia * pathScale / 2.0;
 
   if (i < 12) {
@@ -123,8 +127,10 @@ void main(void) {
   if (bottom == pathTopZ)
     bottom = pathTopZ - 1.0;
 
-  // color.r = normalized cut depth
-  color.r = (gl_Position.z - pathTopZ) / (bottom - pathTopZ);
+  // colour.r = normalized cut depth
+  // not clear why the other dimensopns of colour are ignored - only
+  // red seems to have any effect
+  colour.r = (gl_Position.z - pathTopZ) / (bottom - pathTopZ);
 
   gl_Position.z = 1.9999 * (gl_Position.z - bottom)
     / (pathTopZ - bottom) - 1.0;

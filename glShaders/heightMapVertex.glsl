@@ -1,3 +1,7 @@
+/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+
+// A vertex in the heightmap for the surface of the material being worked
+
 uniform float resolution;
 uniform float pathScale;
 uniform float pathMinZ;
@@ -5,17 +9,19 @@ uniform float pathTopZ;
 uniform mat4 rotate;
 uniform sampler2D heightMap;
 
-attribute vec2 pos0;
-attribute vec2 pos1;
-attribute vec2 pos2;
-attribute vec2 thisPos;
-attribute float vertex;
+/*in*/attribute vec2 pos0;
+/*in*/attribute vec2 pos1;
+/*in*/attribute vec2 pos2;
+/*in*/attribute vec2 thisPos;
+/*in*/attribute float vertex;
 
-varying vec4 color;
+/*out*/varying vec4 colour;
 
 vec3 getPos(in vec2 p) {
   return vec3(p * 2.0 / resolution - vec2(1.0, 1.0),
+              // Sample the heightMap to get the colour at this pos
               texture2D(heightMap, p / resolution).r);
+              // V3texture(heightMap, p / resolution).r);
 }
 
 // Draws the height map in the simulation
@@ -25,17 +31,21 @@ void main(void) {
   vec3 p2 = getPos(pos2);
   vec3 tp = getPos(thisPos);
 
-  vec4 topColor = vec4(1.0, 1.0, 1.0, 1.0);
-  vec4 botColor = vec4(0.0, 0.0, 1.0, 1.0);
-  vec4 transitionColor = vec4(0.0, 0.0, 0.0, 1.0);
+  // Colour of the top of the material
+  vec4 topColour = vec4(0.82, 0.69, 0.3, 1.0);
+  // Colour of the deepest point cut to, linearly interpolate from topColour
+  // to get the actual colour
+  vec4 botColour = vec4(0.6, 0.6, 0.6, 1.0);
+  colour = mix(topColour, botColour, tp.z);
 
-  float transition = min(.4, 100.0 * max(abs(p0.z - p1.z), abs(p0.z - p2.z)));
-  color = mix(topColor, botColor, tp.z);
-  color = mix(color, transitionColor, transition);
+  // Some magic?
+  vec4 transitionColour = vec4(0.0, 0.0, 0.0, 1.0);
+  float transition = min(0.4, 100.0 * max(abs(p0.z - p1.z), abs(p0.z - p2.z)));
+  colour = mix(colour, transitionColour, transition);
 
-  // try to make it look like it does to people with red-green color blindness
+  // try to make it look like it does to people with red-green colour blindness
   // for usability testing.
-  //color.rg = vec2((color.r + color.g) / 2.0, (color.r + color.g) / 2.0);
+  //colour.rg = vec2((colour.r + colour.g) / 2.0, (colour.r + colour.g) / 2.0);
 
   vec4 p = vec4(tp.xy, -tp.z * (pathTopZ - pathMinZ) * pathScale, 1.0);
 

@@ -5,7 +5,7 @@ import * as mat4 from "gl-matrix/mat4.js";
 const GPU_MEM = 2 * 1024 * 1024;
 const RESOLUTION = 1024;
 const MESH_STRIDE = 9;
-const CYL_STRIDE = 6;
+const CYL_STRIDE = 3;// 6 with colour;
 const HALF_CIRCLE_SEGMENTS = 5;
 
 /**
@@ -108,10 +108,11 @@ class Simulation {
     this.cutterAngleRad = Math.PI;
 
     /**
-     * @member {number}
+     * Where the user has asked to stop
+     * @member {object} {time,x,y,z,s}
      * @private
      */
-    this.stopAtTime = 9999999;
+    this.stopAt = { time: 0, x: 0, y: 0, z: 0, s: 0 };
 
     /**
      * @member {number}
@@ -250,17 +251,19 @@ class Simulation {
     this.pathNumPoints = 0;
 
     /**
-     * Record of time and position
-     * @member {object[]}
+     * Record of time and position. When a path is added to the simulation,
+     * an entry is added here that records time, x, y, and z coordinates
+     * so they can be seen during replay.
+     * @member {object[]} array of {t, x, y, z, f, s}
      */
     this.timeSteps = [];
 
     /**
-     * Rendering context
+     * WebGL rendering context. There is no need for a later version.
      * @member {WebGLRenderingContext}
      * @private
      */
-    this.gl = canvas.getContext("webgl"); // don't need webgl2 - yet!
+    this.gl = canvas.getContext("webgl");
   }
 
   /**
@@ -354,26 +357,27 @@ class Simulation {
     const numTriangles = numDivisions * 4;
     this.cylNumVertices = numTriangles * 3;
     const bufferContent = new Float32Array(this.cylNumVertices * CYL_STRIDE);
-    const r = 0.7, g = 0.7, b = 0.0;
+    // Colour of the cutter cylinder
+    const r = 1.0, g = 0.7, b = 0.0;
 
     let pos = 0;
     function addVertex(x, y, z) {
       bufferContent[pos++] = x;
       bufferContent[pos++] = y;
       bufferContent[pos++] = z;
-      bufferContent[pos++] = r;
-      bufferContent[pos++] = g;
-      bufferContent[pos++] = b;
+//      bufferContent[pos++] = r;
+//      bufferContent[pos++] = g;
+//      bufferContent[pos++] = b;
     }
 
-    let lastX = .5 * Math.cos(0);
-    let lastY = .5 * Math.sin(0);
+    let lastX = Math.cos(0) / 2;
+    let lastY = Math.sin(0) / 2;
     for (let i = 0; i < numDivisions; ++i) {
       let j = i + 1;
       if (j === numDivisions)
         j = 0;
-      const x = .5 * Math.cos(j * 2 * Math.PI / numDivisions);
-      const y = .5 * Math.sin(j * 2 * Math.PI / numDivisions);
+      const x = Math.cos(j * 2 * Math.PI / numDivisions) / 2;
+      const y = Math.sin(j * 2 * Math.PI / numDivisions) / 2;
 
       addVertex(lastX, lastY, 0);
       addVertex(x, y, 0);
@@ -394,7 +398,8 @@ class Simulation {
 
     this.cylBuffer = this.gl.createBuffer();
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cylBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, bufferContent, this.gl.STATIC_DRAW);
+    this.gl.bufferData(this.gl.ARRAY_BUFFER, bufferContent,
+                       this.gl.STATIC_DRAW);
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
   }
 
@@ -412,11 +417,16 @@ class Simulation {
       throw new Error("Could not initialise basic shaders");
 
     gl.useProgram(program);
+
+    // Link to shader variables
+    program.vPos = gl.getAttribLocation(program, "vPos");
+    //program.vColour = gl.getAttribLocation(program, "vColour");
+
     program.scale = gl.getUniformLocation(program, "scale");
     program.translate = gl.getUniformLocation(program, "translate");
     program.rotate = gl.getUniformLocation(program, "rotate");
-    program.vPos = gl.getAttribLocation(program, "vPos");
-    program.vColor = gl.getAttribLocation(program, "vColor");
+    program.colour = gl.getUniformLocation(program, "colour");
+
     gl.useProgram(null);
 
     return program;
@@ -670,7 +680,7 @@ class Simulation {
     this.gl.uniform1f(this.programs.path.pathScale, this.pathScale);
     this.gl.uniform1f(this.programs.path.pathMinZ, this.pathMinZ);
     this.gl.uniform1f(this.programs.path.pathTopZ, this.pathTopZ);
-    this.gl.uniform1f(this.programs.path.stopAtTime, this.stopAtTime);
+    this.gl.uniform1f(this.programs.path.stopAtTime, this.stopAt.t);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.pathBuffer);
     this.gl.vertexAttribPointer(
@@ -847,6 +857,7 @@ class Simulation {
    * @private
    */
   drawCutter() {
+
     function lowerBound(data, offset, stride, begin, end, value) {
       while (begin < end) {
         const i = Math.floor((begin + end) / 2);
@@ -858,6 +869,7 @@ class Simulation {
       return end;
     }
 
+    // interpolate between two numbers
     function mix(v0, v1, a) {
       return v0 + (v1 - v0) * a;
     }
@@ -869,7 +881,7 @@ class Simulation {
 
     const i = lowerBound(this.pathBufferContent, 7,
                          this.pathStride * this.pathVerticesPerLine,
-                         0, this.pathNumPoints, this.stopAtTime);
+                         0, this.pathNumPoints, this.stopAt.t);
     let x, y, z;
     if (i < this.pathNumPoints) {
       const offset = i * this.pathStride * this.pathVerticesPerLine;
@@ -879,7 +891,7 @@ class Simulation {
       if (endTime === beginTime)
         ratio = 0;
       else
-        ratio = (this.stopAtTime - beginTime) / (endTime - beginTime);
+        ratio = (this.stopAt.t - beginTime) / (endTime - beginTime);
       x = mix(this.pathBufferContent[offset + 0],
               this.pathBufferContent[offset + 3], ratio);
       y = mix(this.pathBufferContent[offset + 1],
@@ -896,6 +908,7 @@ class Simulation {
 
     this.gl.useProgram(this.programs.basic);
 
+    // Set program variables
     this.gl.uniform3f(this.programs.basic.scale,
                       this.cutterDia * this.pathScale,
                       this.cutterDia * this.pathScale,
@@ -905,23 +918,19 @@ class Simulation {
                       (y + this.pathYOffset) * this.pathScale,
                       (z - this.pathTopZ) * this.pathScale);
     this.gl.uniformMatrix4fv(this.programs.basic.rotate, false, this.rotate);
+    if (this.stopAt.s === 0)
+      this.gl.uniform4fv(this.programs.basic.colour, [0, 1, 0, 1]);
+    else
+      this.gl.uniform4fv(this.programs.basic.colour, [1, 0, 0, 1]);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cylBuffer);
     this.gl.vertexAttribPointer(this.programs.basic.vPos, 3,
                                 this.gl.FLOAT, false,
                                 CYL_STRIDE * Float32Array.BYTES_PER_ELEMENT, 0);
-    this.gl.vertexAttribPointer(this.programs.basic.vColor, 3,
-                                this.gl.FLOAT, false,
-                                CYL_STRIDE * Float32Array.BYTES_PER_ELEMENT,
-                                3 * Float32Array.BYTES_PER_ELEMENT);
 
     this.gl.enableVertexAttribArray(this.programs.basic.vPos);
-    this.gl.enableVertexAttribArray(this.programs.basic.vColor);
-
     this.gl.drawArrays(this.gl.TRIANGLES, 0, this.cylNumVertices);
-
     this.gl.disableVertexAttribArray(this.programs.basic.vPos);
-    this.gl.disableVertexAttribArray(this.programs.basic.vColor);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
     this.gl.useProgram(null);
@@ -954,22 +963,26 @@ class Simulation {
    */
   interpolateToolPosition(t) {
     // TODO: use a binary search to find the encompassing timestep
-    if (this.timeSteps.length < 2)
-      return { t: 0, x: 0, y: 0, z: 0 };
+    if (this.timeSteps.length === 0)
+      return { t: 0, x: 0, y: 0, z: 0, f: 0, s: 0 };
     let prev = this.timeSteps[0];
+    if (this.timeSteps.length === 1)
+      return prev;
     let curr;
     for (let i = 1; i < this.timeSteps.length; i++) {
       curr = this.timeSteps[i];
-      if (curr.time >= t)
+      if (curr.t >= t)
         break;
       prev = curr;
     }
-    const dt = (t - prev.time) / (curr.time - prev.time);
+    const dt = (t - prev.t) / (curr.t - prev.t);
     return {
-      time: t,
+      t: t,
       x: prev.x + dt * (curr.x - prev.x),
       y: prev.y + dt * (curr.y - prev.y),
-      z: prev.z + dt * (curr.z - prev.z)
+      z: prev.z + dt * (curr.z - prev.z),
+      f: prev.f,
+      s: prev.s
     };
   }
 
@@ -979,11 +992,11 @@ class Simulation {
    * @private
    */
   setStopAtTime(t) {
-    this.stopAtTime = t;
-    if (typeof this.stopWatch === "function") {
-      const pos = this.interpolateToolPosition(t);
-      this.stopWatch(t, pos.x, pos.y, pos.z);
-    }
+    const pos = this.interpolateToolPosition(t);
+    this.stopAt = pos;
+    if (typeof this.stopWatch === "function")
+      this.stopWatch(pos);
+
     // Map the time to a tool position
     this.needToCreatePathTexture = true;
     this.requestFrame();
@@ -1109,7 +1122,9 @@ class Simulation {
   /**
    * Set the path that is being simulated. All parameters use
    * gcode units.
-   * @param {object[]} path array of path points, each an object { x, y, z, f}
+   * @param {object[]} path array of path points, each an object { x,
+   * y, z, f, s } where x,y,z are the coords, f is the cutter speed,
+   * and s is the spindle speed.
    * @param {number} topZ top of the material
    * @param {number} cutterDiameter
    * @param {number} cutterAngle angle of V-cutter head, in degrees.
@@ -1117,7 +1132,7 @@ class Simulation {
    * @param {number} cutterHeight height of cutter cylinder, default 1
    */
   setPath(path, topZ,
-          cutterDiameter, cutterAngle = 180, cutterHeight = 1) {
+          cutterDiameter, cutterAngle = 180, cutterHeight = 10) {
 
     this.pathTopZ = topZ;
     this.cutterDia = cutterDiameter;
@@ -1162,9 +1177,10 @@ class Simulation {
                              + (curr.y - prev.y) * (curr.y - prev.y)
                              + (curr.z - prev.z) * (curr.z - prev.z));
       const beginTime = time;
-      time = time + dist / curr.f * 60;
+      time = time + 60.0 * dist / curr.f;
 
-      this.timeSteps.push({ time: time, x: curr.x, y: curr.y, z: curr.z });
+      this.timeSteps.push({
+        t: time, x: curr.x, y: curr.y, z: curr.z, f: curr.f, s: curr.s });
 
       min.x = Math.min(min.x, curr.x);
       min.y = Math.min(min.y, curr.y);
