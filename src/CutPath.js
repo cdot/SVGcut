@@ -103,7 +103,7 @@ export class CutPath extends Array {
   /**
    * Find the closest vertex on this path to the given point
    * @param {CutPoint} point to test
-   * @return {object?} { point: number, dist2: number } or undefined.
+   * @return {object?} { pointIndex: number, dist2: number } or undefined.
    * point is the index of the closest point, dist2 is the square of the
    * distance
    */
@@ -112,12 +112,32 @@ export class CutPath extends Array {
     for (const tp of this) {
       const d2 = pt.dist2(tp);
       if (best && d2 < best.dist2) {
-        best.point = i;
+        best.pointIndex = i;
         best.dist2 = d2;
       } else if (!best)
-        best = { point: i, dist2: d2 };
+        best = { pointIndex: i, dist2: d2 };
       i++;
     }
+    return best;
+  }
+
+  /**
+   * Find the closest endpoint of this path to the given point. While it only
+   * make geometric sense on open paths, it may also be useful when joining
+   * closed paths.
+   * @param {CutPoint} point to test
+   * @return {object?} { pointIndex: number, dist2: number } or undefined.
+   * point is the index of the closest endpoint, dist2 is the square of the
+   * distance
+   */
+  closestEndpoint(pt) {
+    let best;
+    let d2 = pt.dist2(this[0]);
+    if (!best || d2 < best.dist2)
+      best = { dist2: d2, pointIndex: 0 };
+    d2 = pt.dist2(this[this.length - 1]);
+    if (best && d2 < best.dist2)
+      best = { dist2: d2, pointIndex: this.length - 1 };
     return best;
   }
 

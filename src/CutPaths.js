@@ -306,20 +306,42 @@ export class CutPaths extends Array {
   /**
    * Find the closest point on this geometry to the given point
    * @param {CutPoint} point to test
-   * @param {boolean} match must match isClosed
+   * @param {boolean?} closedOnly if defined, must match isClosed. If undefined
+   * will match both open and closed paths.
    * @return {object?} { path: number, point: number, dist2: number }
    */
-  closestVertex(pt, match) {
+  closestVertex(pt, closedOnly) {
     let best;
     for (let i = 0; i < this.length; ++i) {
       const path = this[i];
-      if (path.isClosed === match) {
+      if (typeof closedOnly === "undefined" || path.isClosed === closedOnly) {
         let cp = path.closestVertex(pt);
         if (!cp) continue;
         if ((best && cp.dist2 < best.dist2) || !best) {
           best = cp;
-          best.path = i;
+          best.pathIndex = i;
         }
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Find the closest endpoint in an open path in this geometry to
+   * the given point
+   * @param {CutPoint} point to test
+   * @param {boolean?} closedOnly if defined, must match isClosed. If undefined
+   * will match both open and closed paths.
+   * @return {object?} { pathIndex: number, pointIndex: number, dist2: number }
+   */
+  closestEndpoint(pt, closedOnly) {
+    let best;
+    for (let i = 0; i < this.length; ++i) {
+      const path = this[i];
+      if (typeof closedOnly === "undefined" || path.isClosed === closedOnly) {
+        let test = path.closestEndpoint(pt);
+        if (!best || test.d2 < best.dist2)
+          best = test, test.pathIndex = i;
       }
     }
     return best;
@@ -381,8 +403,8 @@ export class CutPaths extends Array {
       // find the closest point on any of the remaining polys to the
       // current point
       const best = this.closestVertex(currentPoint, true);
-      const closestPathIndex = best.path;
-      const closestPointIndex = best.point;
+      const closestPathIndex = best.pathIndex;
+      const closestPointIndex = best.pointIndex;
 
       const path = this[closestPathIndex];
       this.splice(closestPathIndex, 1);
@@ -417,32 +439,47 @@ export class CutPaths extends Array {
    * @private
    */
   mergeOpenPaths() {
-    let p1i = 0;
-    while (p1i < this.length - 1) {
-      let p1 = this[p1i];
-      let p1a = p1[0], p1b = p1[p1.length - 1];
-      let p2i = p1i + 1;
-      while (p2i < this.length) {
-        let p2 = this[p2i];
-        let p2a = p2[0], p2b = p2[p2.length - 1];
+    if (this.length < 2)
+      return;
 
-        if (p1b.X === p2a.X && p1b.Y === p2b.Y) {
-          this[p1i] = p1.concat(p2);
-          this.splice(p2i, 1);
-          p1b = p2b;
-        } else if (p1a.X === p2b.X && p1a.Y === p2b.Y) {
-          this[p1i] = p2.concat(p1);
-          this.splice(p2i, 1);
-          p1a = p2a;
-        } else if (p1a.X === p2a.x && p1a.Y === p2a.Y) {
-          this[p2i] = p2.reverse();
-          const t = p2a;
-          p2a = p2b;
-          p2b = t;
+    let path = this.pop();
+    let pS = path[0];
+    let pE = path[path.length - 1];
+    const newPaths = [ path ];
+    while (this.length > 0) {
+      const bestS = this.closestEndpoint(pS);
+      const bestE = this.closestEndpoint(pE);
+      if (bestS.dist2 < bestE.dist2) {
+        // Other path is closest to the start point of this path
+        const prevPath = this[bestS.pathIndex];
+        this.splice(bestS.pathIndex, 1);
+        if (bestS.pointIndex === 0)
+          // Other path start is closest to current path start
+          prevPath.reverse();
+        if (bestS.dist2 === 0) {
+          prevPath.pop();
+          newPaths[0] = prevPath.concat(newPaths[0]);
+        } else {
+          newPaths.unshift(prevPath);
+          pS = prevPath[0];
+        }
+      } else {
+        const nextPath = this[bestE.pathIndex];
+        this.splice(bestE.pathIndex, 1);
+        if (bestE.pointIndex > 0)
+          // Other path end is closest to current path end
+          nextPath.reverse();
+        if (bestE.dist2 === 0) {
+          nextPath.shift();
+          newPaths[newPaths.length - 1] =
+          newPaths[newPaths.length - 1].concat(nextPath);
         } else
-          p2i++;
+          newPaths.push(nextPath);
+        pE = nextPath[nextPath.length - 1];
       }
     }
+    while (newPaths.length > 0)
+      this.push(newPaths.shift());
   }
 }
 

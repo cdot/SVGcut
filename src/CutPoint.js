@@ -21,7 +21,7 @@ export class CutPoint extends ClipperLib.IntPoint {
   }
 
   dist(b) {
-    return Math.sqrt(this.dist(b));
+    return Math.sqrt(this.dist2(b));
   }
 
   equals(b) {
