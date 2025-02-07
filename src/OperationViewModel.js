@@ -407,7 +407,8 @@ class OperationViewModel extends ViewModel {
     const climb = (this.direction() === "Climb");
     const zOnTop = App.models.Material.zOrigin() === "Top";
     const cutDepth = this.cutDepth();
-    const topZ = zOnTop ? 0 : cutDepth;
+    const clear = App.models.Material.clearance();
+    const safeZ = zOnTop ? clear : clear + cutDepth;
     const botZ = zOnTop ? -cutDepth : 0;
 
     // inset/outset the geometry as dictated by the margin
@@ -446,11 +447,11 @@ class OperationViewModel extends ViewModel {
     case App.Ops.Perforate:
       paths = Cam.perforate(
         geometry, toolDiameter, this.spacing.toUnits("integer"),
-        topZ, botZ);
+        safeZ, botZ);
       break;
 
     case App.Ops.Drill:
-      paths = Cam.drill(geometry, topZ, botZ);
+      paths = Cam.drill(geometry, safeZ, botZ);
       break;
 
     case App.Ops.Engrave:
