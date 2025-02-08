@@ -13,7 +13,6 @@ uniform sampler2D heightMap;
 /*in*/attribute vec2 pos1;
 /*in*/attribute vec2 pos2;
 /*in*/attribute vec2 thisPos;
-/*in*/attribute float vertex;
 
 /*out*/varying vec4 colour;
 
@@ -24,7 +23,7 @@ vec3 getPos(in vec2 p) {
               // V3texture(heightMap, p / resolution).r);
 }
 
-// Draws the height map in the simulation
+// Calculate vertex position and fragment colour
 void main(void) {
   vec3 p0 = getPos(pos0);
   vec3 p1 = getPos(pos1);
@@ -52,13 +51,12 @@ void main(void) {
   mat4 offset = mat4(1.0,    0.0,    0.0,    0.0,
                      0.0,    1.0,    0.0,    0.0,
                      0.0,    0.0,    1.0,    0.0,
-                     0.0,    0.0,    -3.5,   1.0
-                     );
+                     0.0,    0.0,    -3.5,   1.0);
 
-  float left = -.6;
-  float right = .6;
-  float top = .6;
-  float bot = -.6;
+  float left = -0.6;
+  float right = 0.6;
+  float top = 0.6;
+  float bot = -0.6;
   float near = 2.0;
   float far = 5.0;
   mat4 camera = mat4(2.0 *near / (right - left), 0.0, 0.0, 0.0, 

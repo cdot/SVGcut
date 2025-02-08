@@ -350,6 +350,7 @@ class Simulation {
   }
 
   /**
+   * Allocate cutter shader mesh buffer
    * @private
    */
   constructCylBuffer() {
@@ -357,17 +358,12 @@ class Simulation {
     const numTriangles = numDivisions * 4;
     this.cylNumVertices = numTriangles * 3;
     const bufferContent = new Float32Array(this.cylNumVertices * CYL_STRIDE);
-    // Colour of the cutter cylinder
-    const r = 1.0, g = 0.7, b = 0.0;
 
     let pos = 0;
     function addVertex(x, y, z) {
       bufferContent[pos++] = x;
       bufferContent[pos++] = y;
       bufferContent[pos++] = z;
-//      bufferContent[pos++] = r;
-//      bufferContent[pos++] = g;
-//      bufferContent[pos++] = b;
     }
 
     let lastX = Math.cos(0) / 2;
@@ -420,8 +416,6 @@ class Simulation {
 
     // Link to shader variables
     program.vPos = gl.getAttribLocation(program, "vPos");
-    //program.vColour = gl.getAttribLocation(program, "vColour");
-
     program.scale = gl.getUniformLocation(program, "scale");
     program.translate = gl.getUniformLocation(program, "translate");
     program.rotate = gl.getUniformLocation(program, "rotate");
@@ -456,7 +450,7 @@ class Simulation {
     program.pos1 = gl.getAttribLocation(program, "pos1");
     program.pos2 = gl.getAttribLocation(program, "pos2");
     program.thisPos = gl.getAttribLocation(program, "thisPos");
-    //program.command = gl.getAttribLocation(program, "command");
+
     gl.useProgram(null);
 
     return program;
@@ -485,10 +479,10 @@ class Simulation {
     program.stopAtTime = gl.getUniformLocation(program, "stopAtTime");
     program.pos1 = gl.getAttribLocation(program, "pos1");
     program.pos2 = gl.getAttribLocation(program, "pos2");
-    program.rawPos = gl.getAttribLocation(program, "rawPos");
     program.startTime = gl.getAttribLocation(program, "startTime");
     program.endTime = gl.getAttribLocation(program, "endTime");
     program.command = gl.getAttribLocation(program, "command");
+    program.rawPos = gl.getAttribLocation(program, "rawPos");
     gl.useProgram(null);
 
     return program;
@@ -918,10 +912,12 @@ class Simulation {
                       (y + this.pathYOffset) * this.pathScale,
                       (z - this.pathTopZ) * this.pathScale);
     this.gl.uniformMatrix4fv(this.programs.basic.rotate, false, this.rotate);
+    // Set the colour of the cutter according to the value of s. A stationary
+    // cutter will be green, while a working cutter will be red
     if (this.stopAt.s === 0)
-      this.gl.uniform4fv(this.programs.basic.colour, [0, 1, 0, 1]);
+      this.gl.uniform4fv(this.programs.basic.colour, [0, 0.7, 0, 1]);
     else
-      this.gl.uniform4fv(this.programs.basic.colour, [1, 0, 0, 1]);
+      this.gl.uniform4fv(this.programs.basic.colour, [0.8, 0, 0, 1]);
 
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cylBuffer);
     this.gl.vertexAttribPointer(this.programs.basic.vPos, 3,

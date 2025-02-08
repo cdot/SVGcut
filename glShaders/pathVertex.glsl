@@ -69,7 +69,6 @@ void main(void) {
     thisPos = upper;
 
   center = (thisPos.xy * resolution + resolution) / 2.0;
-  colour = vec4(1.0, 1.0, 1.0, 1.0); // CC: doesn't seem to have any effect
   float r = cutterDia * pathScale / 2.0;
 
   if (i < 12) {
@@ -127,9 +126,10 @@ void main(void) {
   if (bottom == pathTopZ)
     bottom = pathTopZ - 1.0;
 
+  colour = vec4(1.0, 0, 0, 1.0);
   // colour.r = normalized cut depth
-  // not clear why the other dimensopns of colour are ignored - only
-  // red seems to have any effect
+  // Don't understand why the gb of colour are ignored - only
+  // r seems to have any effect
   colour.r = (gl_Position.z - pathTopZ) / (bottom - pathTopZ);
 
   gl_Position.z = 1.9999 * (gl_Position.z - bottom)

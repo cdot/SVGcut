@@ -628,8 +628,6 @@
             </div>
             <!-- simulate tab -->
             <div class="tab-pane" id="simulatePanel">
-              <canvas id="simulationCanvas" style="border: none;" width="10"
-                      height="10"></canvas>
               <table width="100%">
                 <tr>
                   <th>T:</th><td><span id="stopWatchT"></span>s</td>
@@ -642,6 +640,7 @@
               </table>
               <input id="timeControl" class="form-range" type="range"
                      max="1000" value="1000" />
+              <canvas id="simulationCanvas"></canvas>
               <ul>
                 <li>Use mouse to rotate view</li>
                 <li>Use slider control to set simulation time</li>

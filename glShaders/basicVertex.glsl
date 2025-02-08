@@ -11,8 +11,6 @@ uniform mat4 rotate;
 
 /*in*/attribute vec3 vPos;
 
-/*out*/uniform vec4 colour; // does this need to be here?
-
 void main(void) {
   mat4 translateScale = mat4(
         scale.x,        0.0,            0.0,                0.0,

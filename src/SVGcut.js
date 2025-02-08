@@ -405,7 +405,8 @@ export class SVGcut {
   updateSimulationCanvasSize() {
     // Get the whole middle section for width
     const middleDiv = document.getElementById("Middle");
-    const mSvgW = middleDiv.clientWidth; // pixels
+    const mSvgW = Math.min(
+      middleDiv.clientWidth, middleDiv.clientHeight); // pixels
     // Make the simulation square
     this.simulation.resizeCanvas(mSvgW, mSvgW);
   }
@@ -416,8 +417,6 @@ export class SVGcut {
    * @private
    */
   updateMainSvgSize() {
-    // Get the whole middle section that the SVG has to fit in
-    const middleDiv = document.getElementById("Middle");
     // Get the SVG and attribute it accordingly
     const mSvg = this.mainSVG;
     // Get the BB for the main SVG view
