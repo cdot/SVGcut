@@ -53,6 +53,7 @@ function lineariseBezier(curve, params) {
  */
 function linearise(path, params) {
   let last = new Vector(0, 0), lastCP, xp, yp, i, j;
+  let initialPoint = new Vector(0, 0); // coords of the last M or m
   const segments = [];
   for (const segment of path) {
     switch (segment[0]) {
@@ -108,6 +109,8 @@ function linearise(path, params) {
       // fall through
     case 'M': case 'L':
       segments.push([ segment[0], segment[1], segment[2] ]);
+      if (segment[0] === 'M')
+        initialPoint.x = segment[1], initialPoint.y = segment[2];
       for (i = 3; i < segment.length; i += 2)
         segments.push([ "L", segment[i], segment[i + 1] ]);
       last.x = segment[segment.length - 2];
@@ -141,6 +144,7 @@ function linearise(path, params) {
       break;
 
     case 'Z': case 'z': // close path
+      last.x = initialPoint.x, last.y = initialPoint.y;
       segments.push([ "Z" ]);
       break;
 
@@ -540,8 +544,7 @@ export function getBounds(el) {
     r.vbx = above.viewBox.baseVal.width,
     r.vby = above.viewBox.baseVal.height;
 
-  // Linearise all the elements and then measure. Can't use
-  // SVGElement.getBBox because it only works after rendering.
+  // Linearise all the elements and then measure.
   const segs = segmentsFromElement(el, r);
   if (!segs || segs.length === 0) {
     return el.viewBox ? new Rect(el.viewBox.baseVal) :
