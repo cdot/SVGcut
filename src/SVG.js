@@ -33,7 +33,7 @@ import * as EllipticalArc from "./EllipticalArc.js";
 function lineariseBezier(curve, params) {
   // SMELL: not a strict interpretation of "minSigLen" ;-)
   const steps = Math.max(
-    params.curveMinSegs, curve.length() / params.curveMinSegLen);
+    params.curveMinSegs, Math.round(curve.length() / params.curveMinSegLen));
   const lut = curve.getLUT(steps);
   const segment = [ "L" ];
   for (let i = 1; i < lut.length; i++)
