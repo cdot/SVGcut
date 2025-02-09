@@ -30,7 +30,7 @@ class ViewModel {
 
   /**
    * Apply popovers. Locations to attach popovers are identified by
-   * the element id, which is matched in the `#popovers` div in HTML.
+   * the element id, which is matched in the `#Popovers` div in HTML.
    * If `nodes` are passed, then the id's of those nodes (and their
    * descendants) will be matched agains the keys in popovers, and the
    * popovers only applied if there is a match. If nodes are not
@@ -45,7 +45,7 @@ class ViewModel {
 
     // Get the HTML for the popover associated with the given id
     function getHTML(id) {
-      const pot = document.querySelector(`#popovers>[name="${id}"]`);
+      const pot = document.querySelector(`#Popovers>[name="${id}"]`);
       if (!pot)
         throw new Error(`No #popovers>[name="${id}"]`);
       return pot.innerHTML;

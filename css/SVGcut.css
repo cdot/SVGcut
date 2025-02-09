@@ -11,6 +11,10 @@ body > .container {
   margin: 20px 0;
 }
 
+input[type="number"] {
+  width: 5em;
+}
+
 /* Layout of left and right sidebars */
 .sidebar-left {
   padding-left: 6px;
@@ -21,24 +25,24 @@ body > .container {
 }
 
 /* Highlighting in SVG */
-.selectedPath.closedPath {
+.selected-path.closed-path {
   stroke: none;
   fill: rgba(255, 255, 0, 0.5);
 }
-.selectedPath.openPath {
+.selected-path.open-path {
   stroke: rgba(255, 255, 0, 0.5);
   stroke-width: 8px;
   fill: none;
 }
-.combinedGeometry {
+.combined-geometry {
   stroke: none;
   fill: rgba(0, 0, 255, 0.3);
 }
-.tabsGeometry {
+.tabs-geometry {
   stroke: none;
   fill: rgba(230, 160, 0, 0.3);
 }
-.toolPath {
+.tool-path {
   stroke: #ffff00;
   fill: none;
 }
@@ -69,29 +73,34 @@ body > .container {
 .card-title {
   font-size: 1rem;
 }
-.card-body td {
+/* card-table is a table within a card */
+.card-table>tbody>tr>td {
   border-top: none;
   padding: 2px;
 }
-.card-body input[type="number"] {
-  width: 4em;
+
+/* card-list is the list of operations/tabs in the relevant cards */
+.card-list {
+  display: table;
 }
-/* card-table is the list of operations/tabs in the relevant cards */
-.card-table input[type="number"] {
-  width: 4em;
-}
-.card-table-row { /* a row in the card-table */
+.card-list-row {
+  display: table-row;
   background-color: #f5f5f5;
 }
-.operation-table-detail {
+.card-list-cell {
+  display: table-cell;
+  width: 1px; padding-right: 5px;
+}
+.card-list-cell.expand {
   width: 1px;
   text-align:right;
 }
-.card-table-cell {
-  width: 1px; padding-right: 5px;
-}
-.card-table-cell.enable { /* the enabled checkbox in operations/tabs */
+.card-list-cell.enable { /* the enabled checkbox in operations/tabs */
   padding-left: 5px;
+}
+
+/* The detail table for operations and tabs */
+.detail-table {
 }
 
 /* Formatting for a "close x" in alerts */
@@ -110,26 +119,26 @@ body > .container {
 }
 
 /* The canvas that WebGL runs in */
-#simulationCanvas {
+#SimulationCanvas {
   border: none;
   width: 100%;
   height: 100%;
 }
 
 /* The text view in the "View Gcode modal" */
-#gcodeTextView {
+#GcodeTextView {
   white-space: pre;
   font-family: monospace;
   overflow: scroll;
   max-height: 80vh;
 }
 
-#selectionCounts {
+#SelectionCounts {
   margin-left: 2em;
   display: table;
   background-color: #f0f0f0;
 }
-#selectionCounts div {
+#SelectionCounts div {
   padding-left: 0.25em;
   padding-right: 0.25em;
   vertical-align: middle;

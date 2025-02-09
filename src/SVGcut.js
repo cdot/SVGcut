@@ -125,15 +125,15 @@ export class SVGcut {
     // Create the simulation canvas.
     this.simulation = new Simulation(
       "glShaders",
-      document.getElementById("simulationCanvas"),
-      document.getElementById('timeControl'),
+      document.getElementById("SimulationCanvas"),
+      document.getElementById('TimeControl'),
       spot => { // stopWatch callback
-        document.getElementById('stopWatchT').textContent = formatTime(spot.t);
-        document.getElementById('stopWatchX').textContent = spot.x.toFixed(2);
-        document.getElementById('stopWatchY').textContent = spot.y.toFixed(2);
-        document.getElementById('stopWatchZ').textContent = spot.z.toFixed(2);
-        document.getElementById('stopWatchF').textContent = Math.floor(spot.f);
-        document.getElementById('stopWatchS').textContent = Math.floor(spot.s);
+        document.getElementById('StopWatchT').textContent = formatTime(spot.t);
+        document.getElementById('StopWatchX').textContent = spot.x.toFixed(2);
+        document.getElementById('StopWatchY').textContent = spot.y.toFixed(2);
+        document.getElementById('StopWatchZ').textContent = spot.z.toFixed(2);
+        document.getElementById('StopWatchF').textContent = Math.floor(spot.f);
+        document.getElementById('StopWatchS').textContent = Math.floor(spot.s);
       });
 
     // Create view models.
@@ -164,12 +164,12 @@ export class SVGcut {
     // If a SVG is imported / project opened when the toolpath is closed,
     // then the viewbox won't get updated. Detect when we switch back
     // and update it then. This will reset the zoom level to the default.
-    document.getElementById("activateToolpathsTab")
+    document.getElementById("ActivateToolpathsTab")
     .addEventListener("click", () => {
       this.updateMainSvgSize();
     });
 
-    document.getElementById('chosenImportSVGFile')
+    document.getElementById('ChosenImportSVGFile')
     .addEventListener("change", event => {
       // Import an SVG file
 
@@ -179,7 +179,7 @@ export class SVGcut {
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           const svgEl = SVG.loadSVGFromText(e.target.result);
-          document.getElementById("contentSVGGroup").append(svgEl);
+          document.getElementById("ContentSVGGroup").append(svgEl);
           this.updateMainSvgSize();
           lert.remove();
           document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -344,7 +344,7 @@ export class SVGcut {
 
   /**
    * Show an alert
-   * @param {string} id HTML name= of a message in <div id="alerts">
+   * @param {string} id HTML name= of a message in <div id="Alerts">
    * @param {string} alerttype CSS class, e.g. "alert-warning"
    * @param {object[]} params remaining paramsers are used to expan $n in the
    * message
@@ -369,7 +369,7 @@ export class SVGcut {
     alDiv.prepend(a);
     a.addEventListener("click", event => alDiv.remove());
 
-    const alp = document.getElementById('alert_placeholder');
+    const alp = document.getElementById("AlertPlaceholder");
     alp.prepend(alDiv);
 
     return alDiv;
@@ -490,7 +490,7 @@ export class SVGcut {
    * Clean out SVG groups
    */
   emptySVG() {
-    let svgGroups = document.querySelectorAll(".managedSVGGroup");
+    let svgGroups = document.querySelectorAll(".managed-SVG-group");
     for (const svgel of svgGroups)
       svgel.replaceChildren();
   }
@@ -515,7 +515,7 @@ export class SVGcut {
 
     // Reload content
     const svgGroups = document.querySelectorAll(
-      ".managedSVGGroup.serialisable");
+      ".managed-SVG-group.serialisable");
     for (const svgel of svgGroups) {
       if (container.svg[svgel.id]) {
         const el = SVG.loadSVGFromText(container.svg[svgel.id]);

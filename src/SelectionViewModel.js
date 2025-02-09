@@ -38,7 +38,7 @@ class SelectionViewModel extends ViewModel {
     /**
      * The SVG group that is used to display all selected elements
      */
-    this.svgGroup = document.getElementById("selectionSVGGroup");
+    this.svgGroup = document.getElementById("SelectionSVGGroup");
   }
 
   /**
@@ -56,15 +56,15 @@ class SelectionViewModel extends ViewModel {
 
     if (clas) {
       // Filter out App-generated classes
-      if (clas.indexOf("combinedGeometry") >= 0
-          || clas.indexOf("toolPath") >= 0
-          || clas.indexOf("tabsGeometry") >= 0)
+      if (clas.indexOf("combined-geometry") >= 0
+          || clas.indexOf("tool-path") >= 0
+          || clas.indexOf("tabs-geometry") >= 0)
         return false;
 
       // Deselect previously selected path
-      if (clas.indexOf("selectedPath") >= 0) {
+      if (clas.indexOf("selected-path") >= 0) {
         elem.remove();
-        if (clas.indexOf("openPath") >= 0)
+        if (clas.indexOf("open-path") >= 0)
           this.openSelected(this.openSelected() - 1);
         else
           this.closedSelected(this.closedSelected() - 1);
@@ -90,15 +90,15 @@ class SelectionViewModel extends ViewModel {
         const newPath = document.createElementNS(
           'http://www.w3.org/2000/svg', "path");
         newPath.setAttribute("d", SVG.segments2d(segs));
-        let classes = "selectedPath";
+        let classes = "selected-path";
         // .path loses Z, so have to save it somehow
         if (segs[segs.length - 1][0] === 'Z') {
           if (elem.getAttribute("fill-rule") === "evenodd")
             newPath.setAttribute("fill-rule", "evenodd");
-          classes += " closedPath";
+          classes += " closed-path";
           this.closedSelected(this.closedSelected() + 1);
         } else {
-          classes += " openPath";
+          classes += " open-path";
           this.openSelected(this.openSelected() + 1);
         }
         newPath.setAttribute("class", classes);
@@ -134,7 +134,7 @@ class SelectionViewModel extends ViewModel {
       const segments = SVG.parsePathD(element.getAttribute("d"));
       let sps = CutPaths.fromSegments(segments);
       const clazz = element.getAttribute("class") ?? "";
-      const isClosed = (clazz.indexOf("closedPath") >= 0);
+      const isClosed = (clazz.indexOf("closed-path") >= 0);
       for (const p of sps)
         p.isClosed = isClosed;
       sps = sps.simplifyAndClean(element.getAttribute("fill-rule"));

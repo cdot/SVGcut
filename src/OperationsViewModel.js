@@ -41,11 +41,11 @@ class OperationsViewModel extends ViewModel {
   initialise() {
     this.addPopovers([
       {
-        id: "createOperationButton",
+        id: "CreateOperationButton",
         trigger: "manual"
       }]);
 
-    const cob = document.getElementById('createOperationButton');
+    const cob = document.getElementById('CreateOperationButton');
     cob.parentElement.addEventListener("mouseenter", () => {
       if (cob.disabled) {
         const popover = bootstrap.Popover.getInstance(cob);

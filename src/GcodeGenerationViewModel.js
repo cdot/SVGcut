@@ -175,7 +175,7 @@ class GcodeGenerationViewModel extends ViewModel {
       this, document.getElementById("ViewGcodeModal"));
 
     ko.applyBindings(
-      this, document.getElementById("simulatePanel"));
+      this, document.getElementById("SimulatePanel"));
   }
 
   /**

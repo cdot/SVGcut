@@ -133,8 +133,8 @@ export class TabViewModel extends ViewModel {
         const svgel = document.createElementNS(
           'http://www.w3.org/2000/svg', "path");
         svgel.setAttribute("d", segments2d(segs));
-        svgel.setAttribute("class", "tabsGeometry");
-        document.getElementById("tabsSVGGroup").append(svgel);
+        svgel.setAttribute("class", "tabs-geometry");
+        document.getElementById("TabsSVGGroup").append(svgel);
         this.svgPath = svgel;
 
         this.enabled(true);

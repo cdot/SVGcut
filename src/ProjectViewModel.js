@@ -16,7 +16,7 @@ import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
 
 const POPOVERS = [
-  { id: "selectProject" }
+  { id: "SelectProject" }
 ];
 
 /**
@@ -45,7 +45,7 @@ class ProjectViewModel extends ViewModel {
      */
     this.units = ko.observable("mm");
     this.units.subscribe(nu => {
-      document.getElementById("pickedUnits").innerText = nu;
+      document.getElementById("PickedUnits").innerText = nu;
     });
 
     /**
@@ -58,7 +58,7 @@ class ProjectViewModel extends ViewModel {
      * When the App starts up it will try to load this project.
      * @member {observable.<string>}
      */
-    const pn = document.getElementById("projectName").textContent;
+    const pn = document.getElementById("ProjectName").textContent;
     this.projectName = ko.observable(pn);
 
     /**
@@ -109,7 +109,7 @@ class ProjectViewModel extends ViewModel {
 
     ko.applyBindings(
       this,
-      document.getElementById("NavBar"));
+      document.getElementById("Toolbar"));
 
     ko.applyBindings(
       this,
@@ -129,7 +129,7 @@ class ProjectViewModel extends ViewModel {
 
     // Handler for loading a project from disc when a file is chosen
     // in the browser
-    document.getElementById('chosenProjectFile')
+    document.getElementById("ChosenProjectFile")
     .addEventListener("change", event => {
       const file = event.target.files[0];
       this.confirmDataLoss(() => {

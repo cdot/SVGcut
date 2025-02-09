@@ -62,8 +62,7 @@ mocha --experimental-loader=@node-loader/import-maps SVG.js
     + Use camelCase for JS method and function names.
     + Use UPPER_CASE for module-level and static consts.
     + Use dash-separated-names for CSS classes.
-    + Use #CamelCase for DOM ids of major blocks (such as modals)
-    + Use #camelCase for DOM cross-reference ids
+    + Use #CamelCase for DOM ids
 + The use of JS global variables is strongly discouraged. Most "globals" can be encapsulated in the `App` singleton if necessary.
 + 2-space indentation in JS and HTML.
 + Prefer object-oriented code using ES6 syntax.
