@@ -50,7 +50,7 @@ with. There is popup help on each of the options.
 
 ## Import SVG
 
-Open the `Project` menu and select `Import SVG` to load your SVG
+Open the `File` menu and select `Import SVG` to load your SVG
 file. If you have more than one SVG file you can load them all at
 once, or one after another. You should be able to see your SVG in the `Toolpaths` tab. You can zoom (mouse wheel) and pan.
 
@@ -157,13 +157,13 @@ a text view on the Gcode.
 
 ## Saving the Gcode
 
-Once you are happy with the Gcode save it to a file. You can call it
-what you want, though if you use the extension `.nc` it will be easier
-to find in Candle.
+Once you are happy with the Gcode, save it to a file using `Save Gcode` from
+the `File` menu. You can call it what you want, though if you use the
+extension `.nc` it will be easier to find in Candle.
 
 # Projects
 
-The `Project` menu lets you save and reload projects. You can save in
+The `File` menu lets you save and reload projects. You can save in
 a file, or in the browser.
 
 When you start up the app for the first time, it starts up with a

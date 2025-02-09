@@ -197,9 +197,9 @@ class ProjectViewModel extends ViewModel {
 
     const json = JSON.stringify(App.getSaveable(this.templateOnly()));
     const blob = new Blob([ json ], { type: 'text/json' });
-    const fn = `${this.projectName()}.json`;
+    const filename = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
-    saveAs(blob, fn);
+    saveAs(blob, filename);
     this.isChanged = false;
   }
 

@@ -494,20 +494,20 @@
                  data-bs-auto-close="outside"
                  data-toggle="collapse"
                  aria-expanded="false">
-                Project<strong class="caret"></strong>
+                File<strong class="caret"></strong>
               </a>
               <ul class="dropdown-menu"
                   aria-labelledby="projectDropdown">
                 <li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click"
                      data-bind="click: newProject">
-                    New
+                    New Project
                   </a>
                 </li>
                 <li class="dropdown-item dropend">
                   <a href="#" id="OpenMenu" class="nav-link dropdown-toggle"
                      data-bs-toggle="dropdown" aria-expanded="false">
-                    Open
+                    Open Project
                   </a>
                   <ul class="dropdown-menu" aria-labelledby="OpenMenu">
                     <li class="dropdown-item">
@@ -526,7 +526,7 @@
                 <li class="dropdown-item change-activated disabled">
                   <a href="#" class="nav-link close-on-click open-modal"
                      data-bind="click:()=> App.showModal('SaveProjectModal')">
-                    Save
+                    Save Project
                   </a>
                 </li><li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click choose-file">
@@ -534,9 +534,9 @@
                     <input type="file" id="ChosenImportSVGFile" multiple>
                   </a>
                 </li><li class="dropdown-item">
-                  <a href="#" class="nav-link close-on-click choose-file">
-                    Save GCODE
-                    <input type="file" id="ChosenSaveGcodeFile" multiple>
+                  <a href="#" class="nav-link close-on-click open-modal"
+                     data-bind="click:()=> App.showModal('SaveGcodeModal')">
+                    Save Gcode
                   </a>
                 </li>
               </ul> <!-- project menu -->
@@ -837,7 +837,7 @@
   <div class="d-none">
     <!-- Text strings; kept here to contain translation to just the HTML -->
     <div id="TutorialSteps">
-      <span name="Step1">Open the Project menu and import one or more SVG files.</span>
+      <span name="Step1">Open the File menu and import one or more SVG files.</span>
       <span name="Step2">Click 1 or more paths</span>
       <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
       <span name="Step4">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Customise the operation to your tastes. Save your gcode.</span>
