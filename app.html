@@ -22,10 +22,6 @@
       }
     }
   </script>
-  <script>
-    window.assert = (cond, mess) =>
-    { if (!cond) throw new Error(mess||"Assertion failure") };
-  </script>
   <script src="node_modules/knockout/build/output/knockout-latest.debug.js">
   </script>
   <script src="node_modules/knockout.validation/dist/knockout.validation.js">
@@ -158,7 +154,7 @@
                   aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <div style="white-space:pre;font-family:monospace;overflow:scroll;max-height:80vh;" data-bind="text: gcodeS">
+          <div id="gcodeTextView" data-bind="text: gcodeS">
           </div>
         </div>
       </div>
@@ -191,7 +187,7 @@
     <div class="row">
 
       <!-- left card column -->
-      <div id="LeftColumn" class="col-sm-3 left-column">
+      <div id="LeftColumn" class="col-sm-3 sidebar-left">
         <div id="ProjectView">
           <!-- Bound to ProjectViewModel -->
           <span id="projectChanged" data-bind="text:projectChanged"></span>
@@ -207,7 +203,7 @@
           </div>
           <div id="OperationsViewPane" class="collapse show">
             <div class="card-body">
-              <div style="display: inline-block">
+              <div style="display:inline-block">
                 <button
                   id="createOperationButton" class="btn btn-primary"
                   data-bind="click: addOperation, enable: App.models.Selection.isSomethingSelected()">
@@ -216,40 +212,36 @@
               </div>
             </div>
             <div style="display:table">
-              <div data-bind="foreach: {data: operations, afterRender: addSubview}">
+              <div class="card-table" data-bind="foreach: {data: operations, afterRender: addSubview}">
                 <!-- template for operations table row. Instances are
                   bound to OperationViewModel -->
-                <div style="display:table-row" class="entry-row">
-                  <div style="display:table-cell" class="entry-detail">
+                <div style="display:table-row" class="card-table-row">
+                  <div style="display:table-cell" class="operation-table-detail">
                     <label id="opShowDetail"
                            data-bind="click: toggleDetail, text: showDetail() ? '&#x25bc;' : '&#x25b6;'">
                     </label>
                   </div>
-                  <div style="display: table-cell" class="entry-enabled">
+                  <div style="display:table-cell" class="card-table-cell enable">
                     <input id="opEnabled" type="checkbox"
                            data-bind="checked: enabled" />
                   </div>
-                  <div style="display: table-cell" class="entry-mid">
+                  <div style="display:table-cell" class="card-table-cell">
                     <select id="opOperation" data-bind="options: availableOperations, optionsText: function(entry) { return App.longOpName[entry]; }, value: operation">
                     </select>
                   </div>
-                  <div
-                    style="display: table-cell" class="entry-mid">
-                    <input id="opCutDepth"
-                           class="number" type="number"
-                           step="any" min="0"
+                  <div style="display:table-cell" class="card-table-cell">
+                    <input id="opCutDepth" type="number" step="any" min="0"
                            data-bind="value: cutDepth">
                   </div>
-                  <div style="display: table-cell" class="entry-mid">
+                  <div style="display:table-cell" class="card-table-cell">
                     <label class="control-label">
                       <span data-bind="text: App.models.Project.units"></span>
                     </label>
                   </div>
                 </div>
-                <div style="display:table-row" data-bind="visible: showDetail">
-                  <div style="display: table-cell; width: 20px"></div>
-                  <div style="display: table-cell">
-                    <table class="table">
+                <div style="display:table-row" data-bind="visible:showDetail">
+                  <div style="display:table-cell">
+                    <table class="view-table">
                       <tr>
                         <td>
                           <label for="opName" class="control-label">
@@ -365,7 +357,7 @@
           </div>
           <div id="TabsViewPane" class="collapse hide">
             <div class="card-body">
-              <table class="table">
+              <table>
                 <tr>
                   <td><label for="tabsMaxCutDepth" class="control-label">
                       Max Cut Depth</label></td>
@@ -377,7 +369,7 @@
                   </td>
                 </tr>
               </table>
-              <div style="display: inline-block">
+              <div style="display:inline-block">
                 <button
                   id="createTabButton" class="btn btn-primary"
                   data-bind="click: addTab, enable: App.models.Selection.isSomethingSelected()">
@@ -386,20 +378,19 @@
               </div>
             </div>
             <div style="display:table">
-              <div data-bind="foreach: { data: tabs, afterRender: addSubview }">
-                <div style="display:table-row" class="entry-row">
+              <div class="card-table" data-bind="foreach: { data: tabs, afterRender: addSubview }">
+                <div style="display:table-row" class="card-table-row">
                   <!-- template for Tabs table row. Instances are
                        bound to TabViewModel -->
-                  <div style="display: table-cell" class="entry-enabled">
+                  <div style="display:table-cell" class="entry-enabled">
                     <input id="tabEnabled" type="checkbox"
                            data-bind="checked: enabled" />
                   </div>
-                  <div style="display: table-cell" class="entry-mid">
-                    <input id="tabMargin" class="number" type="number"
-                           step="any" min="0"
+                  <div style="display:table-cell" class="card-table-cell">
+                    <input id="tabMargin" type="number" step="any" min="0"
                            data-bind="value: margin">
                   </div>
-                  <div style="display: table-cell">
+                  <div style="display:table-cell">
                     <button class="btn btn-secondary btn-sm"
                             data-bind="click: removeTab">
                       Delete
@@ -423,7 +414,7 @@
           <div id="GcodeGenerationViewPane" class="collapse show">
             <div class="card-body">
               <div class="form-horizontal">
-                <table class="table">
+                <table>
                   <tr>
                     <td>
                       <label for="gcodeUnits" class="control-label">
@@ -573,13 +564,18 @@
                 </li>
               </ul>
             </li>
-            <li class="nav-item centre-text">
-              Selected:&nbsp;
-              <span data-bind="text: App.models.Selection.openSelected"></span>
-              &nbsp;open,&nbsp;
-              <span data-bind="text: App.models.Selection.closedSelected">
-              </span>
-              &nbsp;closed
+            <li id="selectionCounts" class="nav-item"
+                style="display:table">
+              <div style="display:table-row">
+                <div style="display:table-cell">Selected paths:</div>
+                <div style="display:table-cell"
+                     data-bind="text: App.models.Selection.openSelected"></div>
+                <div style="display:table-cell">open,</div>
+                <div style="display:table-cell"
+                     data-bind="text: App.models.Selection.closedSelected">
+                </div>
+                <div style="display:table-cell">closed</div>
+              </div>
             </li>
           </ul>
         </nav>
@@ -617,7 +613,7 @@
                   </filter>
                 </defs>
                 <g id="contentSVGGroup" class="managedSVGGroup serialisable"
-                   filter="#contrastFilter"/>
+                   filter="url(#contrastFilter)"/>
                 <g id="toolPathsSVGGroup"
                    class="managedSVGGroup serialisable" />
                 <g id="combinedGeometrySVGGroup"
@@ -639,7 +635,7 @@
                 </tr>
               </table>
               <input id="timeControl" class="form-range" type="range"
-                     max="1000" value="1000" />
+                     max="1000" value="0" />
               <canvas id="simulationCanvas"></canvas>
               <ul>
                 <li>Use mouse to rotate view</li>
@@ -651,7 +647,7 @@
       </div>
 
       <!-- right -->
-      <div class="col-sm-3 right-column">
+      <div class="col-sm-3 sidebar-right">
 
         <div class="card" id="ToolView">
           <!-- Bound to ToolViewModel -->
@@ -664,7 +660,7 @@
           </div>
           <div id="ToolViewPane" class="collapse">
             <div class="card-body">
-              <table class="table">
+              <table>
                 <tr>
                   <td><label for="toolDiameter" class="control-label">
                       Diameter</label>
@@ -758,7 +754,7 @@
                   </div>
                 </div>
               </div>
-              <table class="table">
+              <table>
                 <tr>
                   <td>
                     <label for="inputMatThickness" class="control-label">
@@ -808,7 +804,7 @@
           <div id="CurveConversionViewPane" class="collapse">
             <div class="card-body">
               <div class="form-horizontal">
-                <table class="table">
+                <table>
                   <tr>
                     <td>
                       <label for="inputMinNumSegments" class="control-label">
@@ -842,129 +838,131 @@
     </div>
   </div>
 
-  <div id="tutorialSteps" style="display:none">
-    <span name="Step1">Open the Project menu and import one or more SVG files.</span>
-    <span name="Step2">Click 1 or more paths</span>
-    <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
-    <span name="Step4">Customise the operation to your tastes.</span>
-    <span name="Step5">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Save your gcode.</span>
-  </div>
-  <div id="popovers" style="display:none">
-    <span name="selectProject">Select a project stored in this browser</span>
-    <!-- Tool -->
-    <span name="toolUnits">Display units, does not affect Gcode generation</span>
-    <span name="toolDiameter">Diameter of cutter. For a V cutter, diameter of the widest part of the bit.</span>
-    <span name="toolAngle">Angle of tapered cutter head. This is the angle
-      at the tip of the tool, so 180 means a flat bottom tool, while 90
-      means a 45&deg; chamfer bit.</span>
-    <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
-      Use a smaller pass depth for harder materials and better quality.
-      Pass depth should never exceed the height of the cutting surface
-      on the tool</span>
-    <span name="toolStepOver">
-      What fraction of the tool diameter the tool should step over each
-      time around a loop. Smaller values produce better cuts and reduce
-      tool wear, but take longer to complete</span>
-    <span name="toolRapidRate">
-      The speed the tool moves while not cutting</span>
-    <span name="toolPlungeRate">
-      The speed the tool plunges downwards into the material</span>
-    <span name="toolCutRate">
-      The speed the tool moves horizontally during cutting</span>
-    <!-- Tabs -->
-    <span name="createTabButton"><p class='bg-danger'>
-        Select one or more paths in the "Toolpaths" pane before clicking
-        here</p></span>
-    <span name="tabEnabled">Enable/disable this holding tab</span>
-    <div name="tabMargin">Margin<br>+ve: how much to expand tab<br>
-      -ve: how much to shrink tab</div>
-    <span name="tabsMaxCutDepth">Maximum depth operations may cut when
-      they pass over holding tabs</span>
-    <!-- Gcode Generation -->
-    <span name="gcodeUnits">
-      The units used by the machine the Gcode is targeted for. The Gcode
-      will try to switch the machine into these units using G20/G21, so
-      you should only need to change this if the machine doesn't support
-      these codes (or you are more comfortable thinking in inches!)
-    </span>
-    <span name="gcodeOrigin">
-      Set the machine origin. "SVG page" will set (0,0) to the bottom
-      left of the SVG page. "Bounding box" will set it to the bottom left
-      of the bounding box around the toolpaths. "Centre" will set it to
-      the middle of the toolpaths. Choose the origin that works best
-      with your CNC machine.
-    </span>
-    <span name="gcodeExtraOffsetX">
-      Extra X offset added to the the machine origin</span>
-    <span name="gcodeExtraOffsetY">
-      Extra Y offset added to the machine origin</span>
-    <span name="gcodeWidth">Width of the work</span>
-    <span name="gcodeHeight">Height of the work</span>
-    <span name="gcodeReturn00">Move the tool to 0,0 after the last
-      operation</span>
-    <!-- Material -->
-    <span name="inputMatThickness">How thick is the material</span>
-    <span name="selectMatZOrigin">Where Z=0 is</span>
-    <span name="inputMatClearance">How high the tool moves over the material.
-      Increase this when using clamps or screws to fasten the material</span>
-    <!-- Operation -->
-    <span name="createOperationButton"><p class='bg-danger'>
-        Select one or more objects in the "Toolpaths" tab before clicking
-        here</p></span>
-    <span name="opEnabled">Enable/disable this operation. Only enabled operation are shown</span>
-    <span name="opName">Name used in gcode comments</span>
-    <span name="opRamp">Ramp the cutter in gradually instead of plunging straight down</span>
-    <span name="opCombine">How to combine multiple paths into this operation</span>
-    <span name="opDirection">What direction the cutter should travel.
-      See README for an explanation</span>
-    <span name="opSpindleSpeed">How fast the spindle should run while
-      completing this operation</span>
-    <span name="opCutDepth">How deep this operation should cut in total</span>
-    <div name="opOperation">Operation to perform on the selected paths.
-      <ul>
-        <li><em>Engrave</em> - middle of the tool follows the paths</li>
-        <li><em>Inside</em> - cuts around the inside of closed paths</li>
-        <li><em>Outside</em> - cuts around the outside of closed paths</li>
-        <li><em>Perforate</em> - drills holes around the outside of closed paths, or along open paths</li>
-        <li><em>Pocket (annular)</em> - carves a pocket using annular rings (closed paths only)</li>
-        <li><em>Pocket (raster</em>) - carves a pocket using side-to-side movement (closed paths only)</li>
-        <li><em>Drill</em> - drills a hole at each vertex of the path</li>
-      </ul>
+  <div class="d-none">
+    <!-- Text strings; kept here to contain translation to just the HTML -->
+    <div id="tutorialSteps">
+      <span name="Step1">Open the Project menu and import one or more SVG files.</span>
+      <span name="Step2">Click 1 or more paths</span>
+      <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
+      <span name="Step4">You're done! Look at the "Simulate" tab. View your Gcode with "View Gcode". Customise the operation to your tastes. Save your gcode.</span>
     </div>
-    <span name="opVMaxDepth">Maximum depth this operation should cut.
-      <p class="bg-danger">not implemented yet; this is ignored</p></span>
-    <div name="opMargin">
-      <p>Positive: how much material to leave uncut</p>
-      <p>Negative: how much extra material to cut</p></div>
-    <div name="opSpacing">
-      How much material to leave uncut between perforations</div>
-    <span name="opWidth">How wide a path to cut. If this is less than the
-      cutter width then it uses the cutter width</span>
-    <!-- Selection -->
-    <span name="inputMinNumSegments">Minimum number of line segments
-      to convert a curve to. Curve conversion is done when something
-      with a curve in it is selected.</span>
-    <span name="inputMinSegmentLength">Minimum length of each line segment
-      when converting curves. Curve conversion is done when something
-      with a curve in it is selected.</span>
-  </div>
-  <div id="alerts" style="display:none">
-    <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
-    <span name="loadingProject">Loading project "$1"</span>
-    <span name="loadedProject">Loaded project "$1"</span>
-    <span name="projectLoadAbort">Aborted reading project "$1"</span>
-    <span name="projectLoadError">Error reading project "$1"</span>
-    <span name="projectSavedInBrowser">"$1" saved in the browser</span>
-    <span name="projectNotInBrowser">Project "$1" not found in the browser</span>
-    <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0</span>
-    <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0</span>
-    <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter</span>
-    <span name="loadingSVG">Loading SVG from $1</span>
-    <span name="loadedSVG">Loaded SVG from $1</span>
-    <span name="svgLoadAbort">Aborted reading $1</span>
-    <span name="svgLoadError">Error reading $1</span>
-    <span name="tutorialStep">Step $1: $2</span>
-    <span name="tabsMustBeClosed">At least one closed path must be selected to create tabs</span>
+    <div id="popovers" style="display:none">
+      <span name="selectProject">Select a project stored in this browser</span>
+      <!-- Tool -->
+      <span name="toolUnits">Display units, does not affect Gcode generation</span>
+      <span name="toolDiameter">Diameter of cutter. For a V cutter, diameter of the widest part of the bit.</span>
+      <span name="toolAngle">Angle of tapered cutter head. This is the angle
+        at the tip of the tool, so 180 means a flat bottom tool, while 90
+        means a 45&deg; chamfer bit.</span>
+      <span name="toolPassDepth">Maximum depth the tool should plunge each pass.
+        Use a smaller pass depth for harder materials and better quality.
+        Pass depth should never exceed the height of the cutting surface
+        on the tool</span>
+      <span name="toolStepOver">
+        What fraction of the tool diameter the tool should step over each
+        time around a loop. Smaller values produce better cuts and reduce
+        tool wear, but take longer to complete</span>
+      <span name="toolRapidRate">
+        The speed the tool moves while not cutting</span>
+      <span name="toolPlungeRate">
+        The speed the tool plunges downwards into the material</span>
+      <span name="toolCutRate">
+        The speed the tool moves horizontally during cutting</span>
+      <!-- Tabs -->
+      <span name="createTabButton"><p class='bg-danger'>
+          Select one or more paths in the "Toolpaths" pane before clicking
+          here</p></span>
+      <span name="tabEnabled">Enable/disable this holding tab</span>
+      <div name="tabMargin">Margin<br>+ve: how much to expand tab<br>
+        -ve: how much to shrink tab</div>
+      <span name="tabsMaxCutDepth">Maximum depth operations may cut when
+        they pass over holding tabs</span>
+      <!-- Gcode Generation -->
+      <span name="gcodeUnits">
+        The units used by the machine the Gcode is targeted for. The Gcode
+        will try to switch the machine into these units using G20/G21, so
+        you should only need to change this if the machine doesn't support
+        these codes (or you are more comfortable thinking in inches!)
+      </span>
+      <span name="gcodeOrigin">
+        Set the machine origin. "SVG page" will set (0,0) to the bottom
+        left of the SVG page. "Bounding box" will set it to the bottom left
+        of the bounding box around the toolpaths. "Centre" will set it to
+        the middle of the toolpaths. Choose the origin that works best
+        with your CNC machine.
+      </span>
+      <span name="gcodeExtraOffsetX">
+        Extra X offset added to the the machine origin</span>
+      <span name="gcodeExtraOffsetY">
+        Extra Y offset added to the machine origin</span>
+      <span name="gcodeWidth">Width of the work</span>
+      <span name="gcodeHeight">Height of the work</span>
+      <span name="gcodeReturn00">Move the tool to 0,0 after the last
+        operation</span>
+      <!-- Material -->
+      <span name="inputMatThickness">How thick is the material</span>
+      <span name="selectMatZOrigin">Where Z=0 is</span>
+      <span name="inputMatClearance">How high the tool moves over the material.
+        Increase this when using clamps or screws to fasten the material</span>
+      <!-- Operation -->
+      <span name="createOperationButton"><p class='bg-danger'>
+          Select one or more objects in the "Toolpaths" tab before clicking
+          here</p></span>
+      <span name="opEnabled">Enable/disable this operation. Only enabled operation are shown</span>
+      <span name="opName">Name used in gcode comments</span>
+      <span name="opRamp">Ramp the cutter in gradually instead of plunging straight down</span>
+      <span name="opCombine">How to combine multiple paths into this operation</span>
+      <span name="opDirection">What direction the cutter should travel.
+        See README for an explanation</span>
+      <span name="opSpindleSpeed">How fast the spindle should run while
+        completing this operation</span>
+      <span name="opCutDepth">How deep this operation should cut in total</span>
+      <div name="opOperation">Operation to perform on the selected paths.
+        <ul>
+          <li><em>Engrave</em> - middle of the tool follows the paths</li>
+          <li><em>Inside</em> - cuts around the inside of closed paths</li>
+          <li><em>Outside</em> - cuts around the outside of closed paths</li>
+          <li><em>Perforate</em> - drills holes around the outside of closed paths, or along open paths</li>
+          <li><em>Pocket (annular)</em> - carves a pocket using annular rings (closed paths only)</li>
+          <li><em>Pocket (raster</em>) - carves a pocket using side-to-side movement (closed paths only)</li>
+          <li><em>Drill</em> - drills a hole at each vertex of the path</li>
+        </ul>
+      </div>
+      <span name="opVMaxDepth">Maximum depth this operation should cut.
+        <p class="bg-danger">not implemented yet; this is ignored</p></span>
+      <div name="opMargin">
+        <p>Positive: how much material to leave uncut</p>
+        <p>Negative: how much extra material to cut</p></div>
+      <div name="opSpacing">
+        How much material to leave uncut between perforations</div>
+      <span name="opWidth">How wide a path to cut. If this is less than the
+        cutter width then it uses the cutter width</span>
+      <!-- Selection -->
+      <span name="inputMinNumSegments">Minimum number of line segments
+        to convert a curve to. Curve conversion is done when something
+        with a curve in it is selected.</span>
+      <span name="inputMinSegmentLength">Minimum length of each line segment
+        when converting curves. Curve conversion is done when something
+        with a curve in it is selected.</span>
+    </div>
+    <div id="alerts">
+      <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
+      <span name="loadingProject">Loading project "$1"</span>
+      <span name="loadedProject">Loaded project "$1"</span>
+      <span name="projectLoadAbort">Aborted reading project "$1"</span>
+      <span name="projectLoadError">Error reading project "$1"</span>
+      <span name="projectSavedInBrowser">"$1" saved in the browser</span>
+      <span name="projectNotInBrowser">Project "$1" not found in the browser</span>
+      <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0</span>
+      <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0</span>
+      <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter</span>
+      <span name="loadingSVG">Loading SVG from $1</span>
+      <span name="loadedSVG">Loaded SVG from $1</span>
+      <span name="svgLoadAbort">Aborted reading $1</span>
+      <span name="svgLoadError">Error reading $1</span>
+      <span name="tutorialStep">Step $1: $2</span>
+      <span name="tabsMustBeClosed">At least one closed path must be selected to create tabs</span>
+    </div>
   </div>
 </body>
 </html>

@@ -1,3 +1,8 @@
+/*
+ * Bootstrap classes used below:
+ * .container
+ * .text-muted
+ */
 body > .container {
   padding: 60px 15px 0;
 }
@@ -6,40 +11,13 @@ body > .container {
   margin: 20px 0;
 }
 
-#content {
-  filter: contrast(50%);
-}
-
-#footer > .container {
-  padding-right: 15px;
-  padding-left: 15px;
-}
-
-#simulationCanvas {
-  border: none;
-  width: 100%;
-  height: 100%;
-}
-
-code {
-  font-size: 80%;
-}
-
-.left-column {
+/* Layout of left and right sidebars */
+.sidebar-left {
   padding-left: 6px;
 }
 
-.right-column {
+.sidebar-right {
   padding-right: 6px;
-}
-
-.table > tbody > tr > td {
-  border-top: none;
-  padding: 2px;
-}
-
-.table > tbody > tr > td > input[type="number"], .number {
-  width: 4em;
 }
 
 /* Highlighting in SVG */
@@ -87,24 +65,33 @@ code {
   display: block;
 }
 
-/* Formatting for items in Operations and Tabs tables */
-.entry-row {
+/* Card (view) layout */
+.card-title {
+  font-size: 1rem;
+}
+.card-body td {
+  border-top: none;
+  padding: 2px;
+}
+.card-body input[type="number"] {
+  width: 4em;
+}
+/* card-table is the list of operations/tabs in the relevant cards */
+.card-table input[type="number"] {
+  width: 4em;
+}
+.card-table-row { /* a row in the card-table */
   background-color: #f5f5f5;
 }
-.entry-detail {
+.operation-table-detail {
   width: 1px;
   text-align:right;
 }
-.entry-enabled {
-  width: 1px; padding-right: 5px; padding-left: 5px;
-}
-.entry-mid {
+.card-table-cell {
   width: 1px; padding-right: 5px;
 }
-
-/* Title of a panel */
-.card-title {
-  font-size: 1rem;
+.card-table-cell.enable { /* the enabled checkbox in operations/tabs */
+  padding-left: 5px;
 }
 
 /* Formatting for a "close x" in alerts */
@@ -116,14 +103,34 @@ code {
   font-weight: bold;
 }
 
-/* Text that must be centred in a precaculated area */
-.centre-text {
-  display: flex;
-  align-items: center;
-}
-
-/* Menu item that is only activated when something has changed */
+/* Menu item that is only activated when something has changed. For example,
+ * the Save button is only enabled when something needs saving */
 .change-activated.disabled {
   filter: contrast(30%);
 }
 
+/* The canvas that WebGL runs in */
+#simulationCanvas {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* The text view in the "View Gcode modal" */
+#gcodeTextView {
+  white-space: pre;
+  font-family: monospace;
+  overflow: scroll;
+  max-height: 80vh;
+}
+
+#selectionCounts {
+  margin-left: 2em;
+  display: table;
+  background-color: #f0f0f0;
+}
+#selectionCounts div {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+  vertical-align: middle;
+}

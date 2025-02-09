@@ -31,7 +31,8 @@ class CurveConversionViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.minSegs = ko.observable(DEFAULT_MINSEGS);
-    this.minSegs.subscribe(() => this.projectChanged());
+    this.minSegs.subscribe(() =>
+      document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
     /**
      * Minimum number of segments in a curve
@@ -39,7 +40,8 @@ class CurveConversionViewModel extends ViewModel {
      */
     this.minSegLen = ko.observable(
       unitConverter.fromUnits(DEFAULT_MINSEGLEN, "mm"));
-    this.minSegLen.subscribe(() => this.projectChanged(true));
+    this.minSegLen.subscribe(() =>
+      document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
     unitConverter.add(this.minSegLen);
   }

@@ -87,14 +87,6 @@ class ViewModel {
   }
 
   /**
-   * Used by subclasses to flag when a parameter has changed
-   * requiring a project save.
-   */
-  projectChanged() {
-    document.dispatchEvent(new Event("PROJECT_CHANGED"));
-  }
-
-  /**
    * Top level views only. This is invoked by knockout
    * via an afterRender handler, to connect popovers to the components
    * of the subview. Note that this is invoked without 'this' being set.

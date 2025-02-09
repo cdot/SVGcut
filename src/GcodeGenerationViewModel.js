@@ -83,9 +83,10 @@ class GcodeGenerationViewModel extends ViewModel {
      * @member {observable.<boolean>}
      */
     this.returnTo00 = ko.observable(DEFAULT_RETURNTO00);
-    this.returnTo00.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.returnTo00.subscribe(() => this.projectChanged());
+    this.returnTo00.subscribe(() => {
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
 
     /**
      * Where the origin is one of "SVG page", "Bounding box" or
@@ -100,18 +101,20 @@ class GcodeGenerationViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.origin = ko.observable(DEFAULT_ORIGIN);
-    this.origin.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.origin.subscribe(() => this.projectChanged());
+    this.origin.subscribe(() => {
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
 
     /**
      * Extra offset of the work origin from the machine origin
      * @member{observable.number}
      */
     this.extraOffsetX = ko.observable(DEFAULT_EXTRAOFFSETX);
-    this.extraOffsetX.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.extraOffsetX.subscribe(() => this.projectChanged());
+    this.extraOffsetX.subscribe(() => {
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
     /* @todo generate G10,G54 to do this
      * For future reference:
      * G10 defines the coordinates of work offsets G54-G59
@@ -130,9 +133,10 @@ class GcodeGenerationViewModel extends ViewModel {
      * @member{observable.number}
      */
     this.extraOffsetY = ko.observable(DEFAULT_EXTRAOFFSETY);
-    this.extraOffsetY.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.extraOffsetY.subscribe(() => this.projectChanged());
+    this.extraOffsetY.subscribe(() => {
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
 
     /**
      * Width of the work BB, irrespective of the origin.
@@ -313,7 +317,7 @@ class GcodeGenerationViewModel extends ViewModel {
 
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
 
-    App.tutorial(5);
+    App.tutorial(4);
   }
 
   haveGcode() {

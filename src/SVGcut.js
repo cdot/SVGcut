@@ -20,6 +20,18 @@ import * as Gcode from "./Gcode.js";
 import * as SVG from "./SVG.js";
 
 /**
+ * Format a time for display in a string e.g
+ * `formatTime(601)` -> `"10:01"`
+ * @param {number} t time period in seconds
+ */
+function formatTime(t) {
+  const s = `0${t % 60}`.slice(-2);
+  t = Math.floor(t / 60);
+  const m = `0${t % 60}`.slice(-2);
+  return `${Math.floor(t / 60)}:${m}:${s}`;
+}
+
+/**
  * Singleton.
  * SVGcut makes extensive use of "knockout" to bind the various parts
  * of the UI together. You will need to understand the basics of
@@ -116,7 +128,7 @@ export class SVGcut {
       document.getElementById("simulationCanvas"),
       document.getElementById('timeControl'),
       spot => { // stopWatch callback
-        document.getElementById('stopWatchT').textContent = spot.t.toFixed(1);
+        document.getElementById('stopWatchT').textContent = formatTime(spot.t);
         document.getElementById('stopWatchX').textContent = spot.x.toFixed(2);
         document.getElementById('stopWatchY').textContent = spot.y.toFixed(2);
         document.getElementById('stopWatchZ').textContent = spot.z.toFixed(2);

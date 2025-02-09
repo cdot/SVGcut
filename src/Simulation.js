@@ -109,10 +109,10 @@ class Simulation {
 
     /**
      * Where the user has asked to stop
-     * @member {object} {time,x,y,z,s}
+     * @member {object} {t,x,y,z,s}
      * @private
      */
-    this.stopAt = { time: 0, x: 0, y: 0, z: 0, s: 0 };
+    this.stopAt = { t: 0, x: 0, y: 0, z: 0, s: 0 };
 
     /**
      * @member {number}
@@ -1202,7 +1202,7 @@ class Simulation {
     this.pathScale = 2 / size;
     this.pathMinZ = min.z;
 
-    this.setStopAtTime(this.totalTime);
+    this.setStopAtTime(0);//this.totalTime);
     this.requestFrame();
   }
 }

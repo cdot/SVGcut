@@ -45,7 +45,7 @@ class ProjectViewModel extends ViewModel {
      */
     this.units = ko.observable("mm");
     this.units.subscribe(nu => {
-     document.getElementById("pickedUnits").innerText = nu;
+      document.getElementById("pickedUnits").innerText = nu;
     });
 
     /**
@@ -154,7 +154,7 @@ class ProjectViewModel extends ViewModel {
     });
 
     document.addEventListener(
-      "PROJECT_CHANGED", () => this.projectChanged("*"));
+      "PROJECT_CHANGED", () => this.isChanged = true);
   }
 
   /**
@@ -183,7 +183,7 @@ class ProjectViewModel extends ViewModel {
     json[name] = App.getSaveable(
       this.templateOnly() || name === DEFAULTS_PROJECT);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
-    this.projectChanged("");
+    this.isChanged(false);
     App.showAlert("projectSavedInBrowser", "alert-info", name);
     this.getBrowserProjectsList();
   }
@@ -200,7 +200,7 @@ class ProjectViewModel extends ViewModel {
     const fn = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, fn);
-    this.projectChanged("");
+    this.isChanged = false;
   }
 
   /**
@@ -210,7 +210,7 @@ class ProjectViewModel extends ViewModel {
   loadDefaults() {
     if (this.importProject(DEFAULTS_PROJECT)) {
       console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
-      this.projectChanged("");
+      this.isChanged = false;
     }
   }
 
@@ -270,10 +270,24 @@ class ProjectViewModel extends ViewModel {
     alert(`Deleted project "${name}" from the browser`, "alert-info");
   }
 
-  isChanged() {
+  /**
+   * True if one of the parameters saved with the project has changed
+   * since the last save.
+   */
+  get isChanged() {
     return this.projectChanged() === "*";
   }
 
+  /**
+   * Set the changed status of the project
+   */
+  set isChanged(tf) {
+    this.projectChanged(tf ? "*" : "");
+  }
+
+  /**
+   * True if there is gcode associated with the project.
+   */
   haveGcode() {
     return App.models.GcodeGenerationModel.haveGcode();
   }
@@ -298,7 +312,7 @@ class ProjectViewModel extends ViewModel {
    * @private
    */
   confirmDataLoss(callback) {
-    if (this.isChanged()) {
+    if (this.isChanged) {
       this.dataLossCallback = callback;
       App.showModal('ConfirmDataLossModal');
     } else

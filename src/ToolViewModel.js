@@ -50,8 +50,10 @@ class ToolViewModel extends ViewModel {
       unitConverter.fromUnits(DEFAULT_DIAMETER, "mm"))
     .extend({ min: unitConverter.fromUnits(0.01, "mm")});
     unitConverter.add(this.diameter);
-    this.diameter.subscribe(() => App.models.Operations.recombine());
-    this.diameter.subscribe(() => this.projectChanged());
+    this.diameter.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      App.models.Operations.recombine();
+    });
 
     /**
      * Depth of each tool pass.
@@ -60,9 +62,10 @@ class ToolViewModel extends ViewModel {
     this.passDepth = ko.observable(
       unitConverter.fromUnits(DEFAULT_PASSDEPTH, "mm"));
     unitConverter.add(this.passDepth);
-    this.passDepth.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.passDepth.subscribe(() => this.projectChanged());
+    this.passDepth.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
 
     /**
      * Rapid movement rate mm/min
@@ -71,9 +74,10 @@ class ToolViewModel extends ViewModel {
     this.rapidRate = ko.observable(
       unitConverter.fromUnits(DEFAULT_RAPIDRATE, "mm"));
     unitConverter.add(this.rapidRate);
-    this.rapidRate.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.rapidRate.subscribe(() => this.projectChanged());
+    this.rapidRate.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
 
     /**
      * Tool plunge rate mm/min
@@ -82,9 +86,10 @@ class ToolViewModel extends ViewModel {
     this.plungeRate = ko.observable(
       unitConverter.fromUnits(DEFAULT_PLUNGERATE, "mm"));
     unitConverter.add(this.plungeRate);
-    this.plungeRate.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.plungeRate.subscribe(() => this.projectChanged());
+    this.plungeRate.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
 
     /**
      * Tool cut rate mm/min
@@ -93,9 +98,10 @@ class ToolViewModel extends ViewModel {
     this.cutRate = ko.observable(
       unitConverter.fromUnits(DEFAULT_CUTRATE, "mm"));
     unitConverter.add(this.cutRate);
-    this.cutRate.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.cutRate.subscribe(() => this.projectChanged());
+    this.cutRate.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
 
     /**
      * Tool v-bit angle
@@ -103,12 +109,12 @@ class ToolViewModel extends ViewModel {
      */
     this.angle = ko.observable(DEFAULT_ANGLE);
     this.angle.subscribe(newValue => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
       if (newValue <= 0 || newValue > 180) {
         this.angle(180);
         document.dispatchEvent(new Event("UPDATE_GCODE"));
       }
     });
-    this.angle.subscribe(() => this.projectChanged());
   }
 
   /**

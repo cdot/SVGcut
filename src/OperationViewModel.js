@@ -95,8 +95,10 @@ class OperationViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.combineOp = ko.observable(DEFAULT_COMBINEOP);
-    this.combineOp.subscribe(() => this.recombine());
-    this.combineOp.subscribe(() => this.projectChanged());
+    this.combineOp.subscribe(() => {
+      this.recombine();
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
 
     /**
      * The available operations. This is based on the
@@ -121,8 +123,10 @@ class OperationViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.operation = ko.observable(App.Ops.Engrave);
-    this.operation.subscribe(() => this.recombine());
-    this.operation.subscribe(() => this.projectChanged());
+    this.operation.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
 
     /**
      * The UI button that opens the detail pane for this operation
@@ -135,8 +139,10 @@ class OperationViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.name = ko.observable("");
-    this.name.subscribe(() => this.updateGcode());
-    this.name.subscribe(() => this.projectChanged());
+    this.name.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.updateGcode();
+    });
 
     /**
      * Operations can be selectively enabled/disabled for Gcode
@@ -150,25 +156,29 @@ class OperationViewModel extends ViewModel {
         this.svgPreviewPath.setAttribute("visibility", v);
       if (this.svgToolPath)
         this.svgToolPath.setAttribute("visibility", v);
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.updateGcode();
     });
-    this.enabled.subscribe(() => this.updateGcode());
-    this.enabled.subscribe(() => this.projectChanged());
 
     /**
      * Enable ramping. See README.md
      * @member {observable.<boolean>}
      */
     this.ramp = ko.observable(DEFAULT_RAMP);
-    this.ramp.subscribe(() => this.updateGcode());
-    this.ramp.subscribe(() => this.projectChanged());
+    this.ramp.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.updateGcode();
+    });
 
     /**
      * Either "Conventional" or "Climb". See README.md
      * @member {observable.<string>}
      */
     this.direction = ko.observable(DEFAULT_DIRECTION);
-    this.direction.subscribe(() => this.generateToolPaths());
-    this.direction.subscribe(() => this.projectChanged());
+    this.direction.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.generateToolPaths();
+    });
 
     /**
      * Paths taken by the tool to execute this operation.
@@ -184,8 +194,10 @@ class OperationViewModel extends ViewModel {
     this.cutDepth = ko.observable(DEFAULT_CUTDEPTH);
     unitConverter.add(this.cutDepth);
     this.cutDepth(App.models.Tool.passDepth());
-    this.cutDepth.subscribe(() => this.generateToolPaths());
-    this.cutDepth.subscribe(() => this.projectChanged());
+    this.cutDepth.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.generateToolPaths();
+    });
 
     /**
      * Amount of material to leave uncut.
@@ -193,8 +205,10 @@ class OperationViewModel extends ViewModel {
      */
     this.margin = ko.observable(DEFAULT_MARGIN);
     unitConverter.add(this.margin);
-    this.margin.subscribe(() => this.recombine());
-    this.margin.subscribe(() => this.projectChanged());
+    this.margin.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
 
     /**
      * Spacing of perforations.
@@ -202,17 +216,20 @@ class OperationViewModel extends ViewModel {
      */
     this.spacing = ko.observable(DEFAULT_SPACING);
     unitConverter.add(this.spacing);
-    this.spacing.subscribe(() => this.recombine());
-    this.spacing.subscribe(() => this.projectChanged());
+    this.spacing.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
 
     /**
      * Spindle speed (only one supported)
      * @member {observable.<number>}
      */
     this.spindleSpeed = ko.observable(DEFAULT_SPINDLESPEED);
-    this.spindleSpeed.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.spindleSpeed.subscribe(() => this.projectChanged());
+    this.spindleSpeed.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
 
     /**
      * How wide a path to cut. If this is less than the cutter diameter
@@ -221,8 +238,10 @@ class OperationViewModel extends ViewModel {
      */
     this.width = ko.observable(DEFAULT_WIDTH);
     unitConverter.add(this.width);
-    this.width.subscribe(() => this.recombine());
-    this.width.subscribe(() => this.projectChanged());
+    this.width.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
 
     /**
      * Flag to lock out recombination, usually because we are in a

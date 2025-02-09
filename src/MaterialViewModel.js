@@ -21,7 +21,7 @@ function formatZ(z) {
   return parseFloat(z).toFixed(3);
 }
 
-class MaterialViewModel extends ViewModel {
+export class MaterialViewModel extends ViewModel {
 
   /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
@@ -37,8 +37,10 @@ class MaterialViewModel extends ViewModel {
       unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
     unitConverter.add(this.thickness);
     this.thickness.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.thickness.subscribe(() => this.projectChanged());
+      () => {
+        document.dispatchEvent(new Event("UPDATE_GCODE"));
+        document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      });
 
     /**
      * Tool clearance level
@@ -48,8 +50,10 @@ class MaterialViewModel extends ViewModel {
       unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
     unitConverter.add(this.clearance);
     this.clearance.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.clearance.subscribe(() => this.projectChanged());
+      () => {
+        document.dispatchEvent(new Event("UPDATE_TOOL_PATHS"));
+        document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      });
 
     /**
      * Z origin, Top or Bottom of the material
@@ -57,8 +61,10 @@ class MaterialViewModel extends ViewModel {
      */
     this.zOrigin = ko.observable("Top");
     this.zOrigin.subscribe(
-      () => document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.zOrigin.subscribe(() => this.projectChanged());
+      () => {
+        document.dispatchEvent(new Event("UPDATE_GCODE"));
+        document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      });
 
     /**
      * Z level for Z origin, computed
@@ -140,9 +146,9 @@ class MaterialViewModel extends ViewModel {
    * @override
    */
   reset() {
-    this.thickness = ko.observable(
+    this.thickness(
       this.unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
-    this.clearance = ko.observable(
+    this.clearance(
       this.unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
     this.zOrigin("Top");
   }
@@ -173,4 +179,3 @@ class MaterialViewModel extends ViewModel {
   };
 }
 
-export { MaterialViewModel }

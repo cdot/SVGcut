@@ -106,8 +106,6 @@ class OperationsViewModel extends ViewModel {
     op.toolPaths.subscribe(() => this.updateBB());
 
     op.generateToolPaths();
-
-    App.tutorial(4);
   };
 
   /**

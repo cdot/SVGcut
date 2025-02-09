@@ -32,9 +32,10 @@ class TabsViewModel extends ViewModel {
     this.maxCutDepth = ko.observable(DEFAULT_MAXCUTDEPTH);
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth(App.models.Material.thickness() / 2);
-    this.maxCutDepth.subscribe(() =>
-      document.dispatchEvent(new Event("UPDATE_GCODE")));
-    this.maxCutDepth.subscribe(() => this.projectChanged());
+    this.maxCutDepth.subscribe(() => {
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+    });
   }
 
   /**
@@ -65,8 +66,8 @@ class TabsViewModel extends ViewModel {
     const tab = new TabViewModel(this.unitConverter, operands);
     tab.recombine();
     this.tabs.push(tab);
-    this.projectChanged();
 
+    document.dispatchEvent(new Event("PROJECT_CHANGED"));
     document.dispatchEvent(new Event("UPDATE_GCODE"));
   };
 
