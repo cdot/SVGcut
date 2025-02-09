@@ -350,7 +350,7 @@ export class SVGcut {
    * message
    */
   showAlert(id, alerttype, ...params) {
-    let s = document.querySelector(`#alerts>[name="${id}"]`);
+    let s = document.querySelector(`#Alerts>[name="${id}"]`);
     if (s) {
       s = s.innerHTML.replace(
         /\$(\d+)/g,
@@ -453,7 +453,7 @@ export class SVGcut {
       if (this.tutorialAlert)
         this.tutorialAlert.remove();
       const messEl = document.querySelector(
-        `#tutorialSteps>[name="Step${step}"]`);
+        `#TutorialSteps>[name="Step${step}"]`);
       if (messEl) {
         const message = messEl.innerHTML;
         this.tutorialAlert = this.showAlert(

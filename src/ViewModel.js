@@ -47,7 +47,7 @@ class ViewModel {
     function getHTML(id) {
       const pot = document.querySelector(`#Popovers>[name="${id}"]`);
       if (!pot)
-        throw new Error(`No #popovers>[name="${id}"]`);
+        throw new Error(`No #Popovers>[name="${id}"]`);
       return pot.innerHTML;
     }
 
