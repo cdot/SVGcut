@@ -212,7 +212,7 @@ export function parse(gcode) {
         break;
       }
     }
-    if (typeof readBack === "undefined") {
+    if (!readBack) {
       console.debug(`Gcode: ${field} never gets a value`);
       readBack = 0;
     }
@@ -393,7 +393,7 @@ export class Generator {
    */
   code(command) {
     const line = [ command.command ];
-    if (typeof command.pt !== "undefined") {
+    if (command.pt) {
       const x = this.mapX(command.pt.X);
       if (x !== this.last.x) {
         line.push(`X${x.toFixed(this.decimal)}`);
@@ -405,12 +405,11 @@ export class Generator {
         this.last.y = y;
       }
 
-      if (typeof command.z === "undefined"
-          && typeof command.pt.Z !== "undefined")
+      if (typeof command.z === "undefined" && typeof command.pt.Z === "number")
         command.z = command.pt.Z * this.zScale + this.topZ;
     }
 
-    if (typeof command.z !== "undefined" && command.z !== this.last.z) {
+    if (typeof command.z === "number" && command.z !== this.last.z) {
       if (command.z !== this.last.z) {
         line.push(`Z${command.z}`);
         this.last.z = command.z;
@@ -421,17 +420,17 @@ export class Generator {
     if (line.join("") === "G0" || line.join("") == "G1")
       return;
 
-    if (typeof command.f !== "undefined" && command.f !== this.last.f) {
+    if (typeof command.f === "number" && command.f !== this.last.f) {
       line.push(`F${command.f}`);
       this.last.f = command.f;
     }
 
-    if (typeof command.spin !== "undefined") {
+    if (typeof command.spin === "number") {
       line.push(`S${command.spin}`);
       this.last.s = command.spin;
     }
 
-    if (typeof command.rem !== "undefined")
+    if (typeof command.rem === "string")
       line.push(`; ${command.rem}`);
 
     this.gcode.push(line.join(" "));
@@ -555,7 +554,7 @@ export class Generator {
 
     if (tabGeometry && tabZ <= botZ) {
       App.showAlert("tabsDeeper", 'alert-warning');
-      tabGeometry = null;
+      tabGeometry = undefined;
     }
 
     this.rem(`** Operation "${op.name}"`);
@@ -596,11 +595,13 @@ export class Generator {
 
         // If the tool isn't over the start of the next cut, lift it
         // before moving it there
-        //this.rem(this.last + "," + path[0]);
         if (!this.toolAt(path[0])) {
           this.stopSpindle();
           this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
+          this.G(0, { f: this.rapidFeed, pt: path[0], z: this.safeZ,
+                      rem: "Hang" });
         }
+
         if (this.last.z > lastCutZ)
           // Drop to depth of last cut
           this.G(0, {
@@ -632,7 +633,7 @@ export class Generator {
           if (op.precalculatedZ) {
             this.G(1, { f: this.cutFeed, pt: cutPath[0],
                         rem: "Precalculated Z" });
-            requiredZ = null; // so G uses the coordinate
+            requiredZ = undefined; // so G uses the coordinate
           } else {
             this.G(1, { f: this.cutFeed, pt: cutPath[0], z: lastCutZ });
 
@@ -663,6 +664,5 @@ export class Generator {
       this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Path done" });
     } // each path
     this.stopSpindle();
-    console.debug(`${this.gcode.length} lines of Gcode generated`);
   }
 }
