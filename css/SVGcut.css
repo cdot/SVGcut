@@ -37,14 +37,17 @@ input[type="number"] {
 .combined-geometry {
   stroke: none;
   fill: rgba(0, 0, 255, 0.3);
+  pointer-events: none;
 }
 .tabs-geometry {
   stroke: none;
   fill: rgba(230, 160, 0, 0.3);
+  pointer-events: none;
 }
 .tool-path {
   stroke: #ffff00;
   fill: none;
+  pointer-events: none;
 }
 
 /** Handling for file pickers */
