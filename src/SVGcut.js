@@ -48,22 +48,7 @@ export class SVGcut {
    */
   constructor(config) {
 
-    /**
-     * Enumeration for supported operations on polygons
-     * @member {object.<name,string>}
-     */
-    this.Ops = {
-      AnnularPocket: 0,
-      Drill: 1,
-      Engrave: 2,
-      Inside: 3,
-      Outside: 4,
-      Perforate: 5,
-      RasterPocket: 6
-    };
-
     // TODO: move these op names to HTML to ease translation
-
     /**
      * Long names for supported operations
      * @member {string[]}
@@ -90,14 +75,14 @@ export class SVGcut {
     /**
      * Simulation render path - there can be only one
      */
-    this.renderPath = undefined;
+    this.renderPath = null;
 
     /**
      * The Element for the alert being used for the next tutorial step
      * @member {Element}
      * @private
      */
-    this.tutorialAlert = undefined;
+    this.tutorialAlert = null;
 
     /**
      * The index of the current tutorial step. -1 indicates
@@ -239,7 +224,7 @@ export class SVGcut {
   }
 
   /**
-   * Add handlers for evenet in SVG
+   * Add handlers for events in SVG
    */
   addSVGEventHandlers() {
     // Click to select
@@ -261,6 +246,25 @@ export class SVGcut {
       }
       return false;
     }, 200));
+
+    // Double-click select all
+    this.mainSVG
+    .addEventListener("dblclick", e => {
+      // Select everything
+
+      if (this.models.Selection.isSomethingSelected())
+        // Deselect current selection
+        this.models.Selection.clearSelection();
+
+      const selectedEls = this.mainSVG.querySelectorAll(
+        'path,rect,circle,ellipse,line,polyline,polygon');
+      if (selectedEls.length > 0) {
+        selectedEls.forEach(element =>
+          this.models.Selection.clickOnSVG(element));
+        if (this.models.Selection.isSomethingSelected())
+          this.tutorial(3);
+      }
+    });
 
     // Zooming using the mouse wheel
     this.mainSVG
@@ -290,25 +294,6 @@ export class SVGcut {
       let y2 = pt.y - yPropH * height2;        
 
       this.mainSVG.setAttribute('viewBox', `${x2} ${y2} ${width2} ${height2}`);
-    });
-
-    // Double-click select all
-    this.mainSVG
-    .addEventListener("dblclick", e => {
-      // Select everything
-
-      if (this.models.Selection.isSomethingSelected())
-        // Deselect current selection
-        this.models.Selection.clearSelection();
-
-      const selectedEls = this.mainSVG.querySelectorAll(
-        'path,rect,circle,ellipse,line,polyline,polygon');
-      if (selectedEls.length > 0) {
-        selectedEls.forEach(element =>
-          this.models.Selection.clickOnSVG(element));
-        if (this.models.Selection.isSomethingSelected())
-          this.tutorial(3);
-      }
     });
 
     // Panning

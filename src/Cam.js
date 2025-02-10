@@ -15,6 +15,20 @@ import * as Flatten from 'flatten-js';
  */
 
 /**
+ * Operations on polygons & paths
+ * @memberof Cam
+ */
+export const OP = {
+  AnnularPocket: 0,
+  Drill:         1,
+  Engrave:       2,
+  Inside:        3,
+  Outside:       4,
+  Perforate:     5,
+  RasterPocket:  6
+};
+
+/**
  * Compute pocket tool paths. The pockets are cleared using annular passes,
  * starting from the outside and working towards the centre. Only works
  * on closed paths.
