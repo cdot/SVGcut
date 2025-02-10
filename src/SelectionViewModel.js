@@ -54,22 +54,16 @@ class SelectionViewModel extends ViewModel {
 
     const clas = elem.getAttribute("class");
 
-    if (clas) {
-      // Filter out App-generated classes
-      if (clas.indexOf("combined-geometry") >= 0
-          || clas.indexOf("tool-path") >= 0
-          || clas.indexOf("tabs-geometry") >= 0)
-        return false;
-
+    // pointer events are disabled for combined-geometry, tool-path and
+    // tabe-geometry in the css.
+    if (clas && clas.indexOf("selected-path") >= 0) {
       // Deselect previously selected path
-      if (clas.indexOf("selected-path") >= 0) {
-        elem.remove();
-        if (clas.indexOf("open-path") >= 0)
-          this.openSelected(this.openSelected() - 1);
-        else
-          this.closedSelected(this.closedSelected() - 1);
-        return true;
-      }
+      elem.remove();
+      if (clas.indexOf("open-path") >= 0)
+        this.openSelected(this.openSelected() - 1);
+      else
+        this.closedSelected(this.closedSelected() - 1);
+      return true;
     }
 
     // When something is selected in the SVG it is automatically linearised
