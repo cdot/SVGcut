@@ -105,24 +105,24 @@ class OperationViewModel extends ViewModel {
      * the mix of open and closed paths in the operandPaths.
      */
     this.availableOperations = ko.observableArray([
-      App.Ops.Engrave,
-      App.Ops.Perforate,
-      App.Ops.Drill
+      Cam.OP.Engrave,
+      Cam.OP.Perforate,
+      Cam.OP.Drill
     ]);
 
     if (operandPaths.filter(p => p.isClosed).length > 0) {
       this.availableOperations.push(
-        App.Ops.Inside,
-        App.Ops.Outside,
-        App.Ops.AnnularPocket,
-        App.Ops.RasterPocket);
+        Cam.OP.Inside,
+        Cam.OP.Outside,
+        Cam.OP.AnnularPocket,
+        Cam.OP.RasterPocket);
     }
 
     /**
      * The operation type. Default is Engrave as it's simplest.
      * @member {observable.<string>}
      */
-    this.operation = ko.observable(App.Ops.Engrave);
+    this.operation = ko.observable(Cam.OP.Engrave);
     this.operation.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.recombine();
@@ -369,19 +369,19 @@ class OperationViewModel extends ViewModel {
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("integer");
 
-      if (oper === App.Ops.AnnularPocket
-          || oper === App.Ops.Inside)
+      if (oper === Cam.OP.AnnularPocket
+          || oper === Cam.OP.Inside)
         off = -off;
 
-      if (oper !== App.Ops.Engrave && off !== 0)
+      if (oper !== Cam.OP.Engrave && off !== 0)
         previewGeometry = previewGeometry.offset(off);
 
-      if (oper === App.Ops.Inside
-          || oper === App.Ops.Outside
-          || oper === App.Ops.Perforate
-          || oper === App.Ops.Drill) {
+      if (oper === Cam.OP.Inside
+          || oper === Cam.OP.Outside
+          || oper === Cam.OP.Perforate
+          || oper === Cam.OP.Drill) {
         const width = this.toolPathWidth();
-        if (oper === App.Ops.Inside) {
+        if (oper === Cam.OP.Inside) {
           previewGeometry =
             previewGeometry.diff(previewGeometry.offset(-width));
         } else // Outside or Perforate or Drill
@@ -432,48 +432,48 @@ class OperationViewModel extends ViewModel {
 
     // inset/outset the geometry as dictated by the margin
     let off = this.margin.toUnits("integer");
-    if (oper === App.Ops.AnnularPocket
-        || oper === App.Ops.RasterPocket
-        || oper === App.Ops.Inside)
+    if (oper === Cam.OP.AnnularPocket
+        || oper === Cam.OP.RasterPocket
+        || oper === Cam.OP.Inside)
       off = -off; // inset
-    if (oper !== App.Ops.Engrave && off !== 0)
+    if (oper !== Cam.OP.Engrave && off !== 0)
       geometry = geometry.offset(off);
 
     let paths, width;
     switch (oper) {
 
-    case App.Ops.AnnularPocket:
+    case Cam.OP.AnnularPocket:
       paths = Cam.annularPocket(geometry, toolDiameter, 1 - stepover, climb);
       break;
 
-    case App.Ops.RasterPocket:
+    case Cam.OP.RasterPocket:
       paths = Cam.rasterPocket(geometry, toolDiameter, 1 - stepover, climb);
       break;
 
-    case App.Ops.Inside:
-    case App.Ops.Outside:
+    case Cam.OP.Inside:
+    case Cam.OP.Outside:
       width = this.width.toUnits("integer");
       if (width < toolDiameter)
         width = toolDiameter;
       paths = Cam.outline(
         geometry, toolDiameter,
-        oper === App.Ops.Inside, // isInside
+        oper === Cam.OP.Inside, // isInside
         width,
         1 - stepover,
         climb);
       break;
 
-    case App.Ops.Perforate:
+    case Cam.OP.Perforate:
       paths = Cam.perforate(
         geometry, toolDiameter, this.spacing.toUnits("integer"),
         safeZ, botZ);
       break;
 
-    case App.Ops.Drill:
+    case Cam.OP.Drill:
       paths = Cam.drill(geometry, safeZ, botZ);
       break;
 
-    case App.Ops.Engrave:
+    case Cam.OP.Engrave:
       paths = Cam.engrave(geometry, climb);
       break;
     }
@@ -516,11 +516,11 @@ class OperationViewModel extends ViewModel {
     // tool cutting outside the tool path, Inside and Pocket ops
     // should already have accounted for it.
     const op = this.operation();
-    if (op === App.Ops.Engrave)
+    if (op === Cam.OP.Engrave)
       overlap = this.toolPathWidth() / 2;
-    else if (op === App.Ops.Outside
-             || op === App.Ops.Perforate
-             || op === App.Ops.Drill)
+    else if (op === Cam.OP.Outside
+             || op === Cam.OP.Perforate
+             || op === Cam.OP.Drill)
       overlap = this.toolPathWidth();
     for (const path of paths) {
       for (const point of path) {
@@ -545,18 +545,18 @@ class OperationViewModel extends ViewModel {
   needs(what) {
     const op = this.operation();
     switch (what) {
-    case "width": return op === App.Ops.Inside
-      || op === App.Ops.Outside;
+    case "width": return op === Cam.OP.Inside
+      || op === Cam.OP.Outside;
 
     case "direction":
-    case "ramp":  return op !== App.Ops.Perforate
-      && op !== App.Ops.Drill;
+    case "ramp":  return op !== Cam.OP.Perforate
+      && op !== Cam.OP.Drill;
 
-    case "margin":  return op !== App.Ops.Perforate
-      && op !== App.Ops.Drill
-      && op !== App.Ops.Engrave;
+    case "margin":  return op !== Cam.OP.Perforate
+      && op !== Cam.OP.Drill
+      && op !== Cam.OP.Engrave;
 
-    case "spacing": return op === App.Ops.Perforate;
+    case "spacing": return op === Cam.OP.Perforate;
     }
     return true;
   }

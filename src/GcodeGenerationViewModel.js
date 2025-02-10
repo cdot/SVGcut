@@ -13,6 +13,7 @@ import * as Gcode from "./Gcode.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
+import * as Cam from "./Cam.js";
 import { Rect } from "./Rect.js";
 
 const POPOVERS = [
@@ -288,8 +289,8 @@ class GcodeGenerationViewModel extends ViewModel {
     job.tabGeometry = tabGeometry;
 
     for (const op of ops) {
-      const precalc = op.operation() === App.Ops.Perforate ||
-            op.operation() === App.Ops.Drill;
+      const precalc = op.operation() === Cam.OP.Perforate ||
+            op.operation() === Cam.OP.Drill;
       const opCard = {
         name: op.name(),
         cutType: op.operation(),
