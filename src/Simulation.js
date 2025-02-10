@@ -146,7 +146,7 @@ class Simulation {
      * @member {WebGLBuffer}
      * @private
      */
-    this.meshBuffer = null;
+    this.meshBuffer = undefined;
 
     /**
      * Number of vertices in mesh buffer
@@ -160,7 +160,7 @@ class Simulation {
      * @member {WebGLBuffer}
      * @private
      */
-    this.cylBuffer = null;
+    this.cylBuffer = undefined;
 
     /**
      * Number of vertices in cylinder buffer
@@ -174,7 +174,7 @@ class Simulation {
      * @member {WebGLBuffer}
      * @private
      */
-    this.pathBuffer = null;
+    this.pathBuffer = undefined;
 
     /**
      * Number of vertices in tool path buffer
@@ -187,7 +187,7 @@ class Simulation {
      * @member {Float32Array}
      * @private
      */
-    this.pathBufferContent = null;
+    this.pathBufferContent = undefined;
 
     /**
      * @member {number}
@@ -205,13 +205,13 @@ class Simulation {
      * @member {WebGLFramebuffer}
      * @private
      */
-    this.pathFramebuffer = null;
+    this.pathFramebuffer = undefined;
 
     /**
      * @member {WebGLTexture}
      * @private
      */
-    this.pathRgbaTexture = null;
+    this.pathRgbaTexture = undefined;
 
     /**
      * @member {number}

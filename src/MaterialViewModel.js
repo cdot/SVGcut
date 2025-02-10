@@ -119,7 +119,7 @@ export class MaterialViewModel extends ViewModel {
      * The little picture at the top of the card
      * @member {observable.<SVGElement>}
      */
-    this.materialSvg = ko.observable(null);
+    this.materialSvg = ko.observable();
     this.materialSvg.subscribe(newValue => {
       setText("matTopZ", formatZ(this.topZ()));
       setText("matBotZ", formatZ(this.botZ()));

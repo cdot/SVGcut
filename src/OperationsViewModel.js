@@ -9,6 +9,7 @@
 /* global App */
 import { OperationViewModel } from "./OperationViewModel.js";
 import { ViewModel } from "./ViewModel.js";
+import { CutPaths } from "./CutPaths.js";
 import { Rect } from "./Rect.js";
 
 /**
@@ -33,17 +34,6 @@ class OperationsViewModel extends ViewModel {
      * @member {observable.<Rect>}
      */
     this.boundingBox = ko.observable(new Rect());
-  }
-
-  /**
-   * @override
-   */
-  initialise() {
-    this.addPopovers([
-      {
-        id: "CreateOperationButton",
-        trigger: "manual"
-      }]);
 
     const cob = document.getElementById('CreateOperationButton');
     cob.parentElement.addEventListener("mouseenter", () => {
@@ -59,6 +49,13 @@ class OperationsViewModel extends ViewModel {
     });
 
     ko.applyBindings(this, document.getElementById("OperationsView"));
+  }
+
+  /**
+   * @override
+   */
+  initialise() {
+    this.addPopovers([ { id: "CreateOperationButton", trigger: "manual" } ]);
   }
 
   /**
@@ -97,15 +94,14 @@ class OperationsViewModel extends ViewModel {
     // Get integer paths from the current selection
     const operands = App.models.Selection.getSelectedPaths();
     const op = new OperationViewModel(this.unitConverter, operands);
-    op.recombine();
-    this.operations.push(op);
-
     // Give it a random name
-    op.name(`Op${this.operations.length + 1}`);
+    op.name(`Op${this.operations().length + 1}`);
+    this.operations.push(op);
     op.enabled.subscribe(() => this.updateBB());
     op.toolPaths.subscribe(() => this.updateBB());
 
-    op.generateToolPaths();
+    // Trigger the toolpath generation pipeline
+    op.recombine();
   };
 
   /**
@@ -169,16 +165,16 @@ class OperationsViewModel extends ViewModel {
   fromJson(json) {
     if (json.operations) {
       for (const opJson of json.operations) {
-        const op = new OperationViewModel(this.unitConverter, []);
+        const op = new OperationViewModel(
+          this.unitConverter,
+          CutPaths.fromJson(opJson.operandPaths));
         op.fromJson(opJson);
-        // Don't need to op.recombine(), it's already in the json
         this.operations.push(op);
         op.enabled.subscribe(() => this.updateBB());
         op.toolPaths.subscribe(() => this.updateBB());
+        op.recombine();
       }
     }
-
-    document.dispatchEvent(new Event("UPDATE_GCODE"));
     this.updateBB();
   }
 }

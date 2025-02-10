@@ -53,11 +53,13 @@ export class CutPath extends Array {
         const x = point.x ?? point.X;
         const y = point.y ?? point.Y;
         const z = point.z ?? point.Z;
-        if (typeof z !== "undefined") {
+        if (typeof z === "number") {
           this.push(new CutPoint(x, y, z));
         } else
           this.push(new CutPoint(x, y));
       }
+      if (typeof path.isClosed !== "undefined")
+        this.isClosed = path.isClosed;
     }
   }
 
@@ -217,5 +219,20 @@ export class CutPath extends Array {
     }
 
     return inside? 1 : -1;
+  }
+
+  toJson() {
+    const a = { isClosed: this.isClosed, pts: [] };
+    this.map(p => a.pts.push(p));
+    return a;
+  }
+
+  /**
+   * Construct from data previously saved using toJson
+   * @param {object} json data
+   * @return {CutPath}
+   */
+  static fromJson(json) {
+    return new CutPath(json.pts, json.isClosed);
   }
 }

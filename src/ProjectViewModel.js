@@ -137,6 +137,7 @@ class ProjectViewModel extends ViewModel {
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           App.loadSaveable(JSON.parse(e.target.result));
+          this.isChanged = false;
           lert.remove();
           App.showAlert("loadedProject", "alert-success", file.name);
         });
@@ -182,8 +183,8 @@ class ProjectViewModel extends ViewModel {
     const name = this.projectName();
     json[name] = App.getSaveable(
       this.templateOnly() || name === DEFAULTS_PROJECT);
-    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, " "));
-    this.isChanged(false);
+    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, 1));
+    this.isChanged = false;
     App.showAlert("projectSavedInBrowser", "alert-info", name);
     this.getBrowserProjectsList();
   }
@@ -195,7 +196,7 @@ class ProjectViewModel extends ViewModel {
   saveProjectInFile() {
     App.hideModals();
 
-    const json = JSON.stringify(App.getSaveable(this.templateOnly()));
+    const json = JSON.stringify(App.getSaveable(this.templateOnly()), null, 1);
     const blob = new Blob([ json ], { type: 'text/json' });
     const filename = `${this.projectName()}.json`;
     // No way to get a status report back, we just have to hope
@@ -241,6 +242,7 @@ class ProjectViewModel extends ViewModel {
     const json = projects[name];
     if (json) {
       App.loadSaveable(json);
+      this.isChanged = false;
       return true;
     }
 
@@ -266,7 +268,7 @@ class ProjectViewModel extends ViewModel {
     const json = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
     const name = this.projectName();
     delete json[name];
-    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json));
+    localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, 1));
     alert(`Deleted project "${name}" from the browser`, "alert-info");
   }
 

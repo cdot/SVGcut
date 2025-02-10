@@ -146,6 +146,24 @@ describe("CutPaths", () => {
                      { pointIndex: 2, dist2: 677, pathIndex: 0 });
   });
 
+  it("to/from json", () => {
+    const paths = new CutPaths([
+      new CutPath([
+        { X: 30, Y: 0, Z: 0 },
+        { X: 40, Y: 10, Z: 0 },
+        { X: 50, Y: 0, Z: 0 },
+      ], false),
+      new CutPath([
+        { X: 40, Y: 15, Z: 0 },
+        { X: 50, Y: 25, Z: 0 },
+        { X: 30, Y: 25, Z: 0 },
+      ], true)
+    ]);
+    const a = paths.toJson();
+    const shtap = CutPaths.fromJson(a);
+    assert.deepEqual(shtap, paths);
+  });
+  
   it("clip", () => {
   });
 

@@ -154,7 +154,7 @@ function linearise(path, params) {
         for (j = 0; j < 4; j += 2)
           segment[i + j] += xp, segment[i + j + 1] += yp;
         xp = segment[i + 2];
-        yp = segment[i + 3];          
+        yp = segment[i + 3];
       }
       // fall through
     case 'Q':

@@ -133,7 +133,7 @@ export function parse(gcode) {
           updateState = true;
           break;
         default:
-          updateState = false; // ignore the rest of 
+          updateState = false; // ignore the rest of
         }
         break;
 
@@ -180,7 +180,6 @@ export function parse(gcode) {
       case 'p': // dwell time
       case 'q': // feed increment, used in drill cycles
       case 'r': // arc radius
-      case 's': // spindle speed (decorator)
       case 't': // tool number
       case 'u': // U axis of machine
       case 'v': // V axis of machine

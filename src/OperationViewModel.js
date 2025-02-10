@@ -78,7 +78,7 @@ class OperationViewModel extends ViewModel {
      * @member {SVGGaphicsElement}
      * @private
      */
-    this.svgPreviewPath = null;
+    this.svgPreviewPath = undefined;
 
     /**
      * SVG path generated to show the tool paths. Will be added to
@@ -86,7 +86,7 @@ class OperationViewModel extends ViewModel {
      * @member {SVGElement}
      * @private
      */
-    this.svgToolPath = null;
+    this.svgToolPath = undefined;
 
     /**
      * The operation used to combine raw paths to generate the resulting
@@ -110,7 +110,7 @@ class OperationViewModel extends ViewModel {
       Cam.OP.Drill
     ]);
 
-    if (operandPaths.filter(p => p.isClosed).length > 0) {
+    if (operandPaths && operandPaths.filter(p => p.isClosed).length > 0) {
       this.availableOperations.push(
         Cam.OP.Inside,
         Cam.OP.Outside,
@@ -297,22 +297,23 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
-   * Remove the geometry contributed by this operation
+   * Remove the combined geometry (and toolpaths) contributed by this operation
    */
   removeCombinedGeometry() {
     if (this.svgPreviewPath)
       this.svgPreviewPath.remove();
-    this.svgPreviewPath = null;
-    this.combinedGeometry = null;
+    this.svgPreviewPath = undefined;
+    this.removeToolPaths();
+    this.combinedGeometry = undefined;
   }
 
   /**
-   * Remove the tool path geometry contributed by this operation
+   * Remove the tool paths contributed by this operation
    */
   removeToolPaths() {
     if (this.svgToolPath)
       this.svgToolPath.remove();
-    this.svgToolPath = null;
+    this.svgToolPath = undefined;
     this.toolPaths(new CutPaths());
   }
 
@@ -343,7 +344,6 @@ class OperationViewModel extends ViewModel {
     const oper = this.operation();
 
     this.removeCombinedGeometry();
-    this.removeToolPaths();
 
     // Combined paths operations are only applied to closed paths
     const closedPaths = this.operandPaths.filter(p => p.isClosed);
@@ -366,6 +366,7 @@ class OperationViewModel extends ViewModel {
 
     let previewGeometry = this.combinedGeometry;
 
+    // TODO: this could be farmed off to an event handler
     if (previewGeometry.length > 0) {
       let off = this.margin.toUnits("integer");
 
@@ -388,20 +389,18 @@ class OperationViewModel extends ViewModel {
           previewGeometry =
             previewGeometry.offset(width).diff(previewGeometry);
       }
-    }
 
-    if (previewGeometry.length > 0) {
-      const segs = previewGeometry.toSegments();
-      if (segs && segs.length > 0) {
-        const svgel = document.createElementNS(
-          'http://www.w3.org/2000/svg', "path");
-        svgel.setAttribute("d", SVG.segments2d(segs));
-        svgel.setAttribute("class", "combined-geometry");
-        document.getElementById("CombinedGeometrySVGGroup")
-        .append(svgel);
-        this.svgPreviewPath = svgel;
-
-        this.enabled(true);
+      if (previewGeometry.length > 0) {
+        const segs = previewGeometry.toSegments();
+        if (segs && segs.length > 0) {
+          const svgel = document.createElementNS(
+            'http://www.w3.org/2000/svg', "path");
+          svgel.setAttribute("d", SVG.segments2d(segs));
+          svgel.setAttribute("class", "combined-geometry");
+          document.getElementById("CombinedGeometrySVGGroup")
+          .append(svgel);
+          this.svgPreviewPath = svgel;
+        }
       }
     }
 
@@ -410,11 +409,16 @@ class OperationViewModel extends ViewModel {
 
   /**
    * (Re)generate the tool path(s) for this operation. The tool paths are
-   * kept in `this.toolPaths`. Generating toolpaths invalidates the Gcode,
+   * kept in `this.toolPaths`. Generating toolPaths invalidates the Gcode,
    * so triggers `UPDATE_GCODE` to signal this.
    */
   generateToolPaths() {
+    if (this.generatingToolpath)
+      return;
+
     this.generatingToolpath = true;
+
+    console.debug(`generateToolpath for the ${this.combinedGeometry.length} paths in ${this.name()}`);
 
     let geometry = this.combinedGeometry;
     const oper = this.operation();
@@ -481,6 +485,13 @@ class OperationViewModel extends ViewModel {
     this.removeToolPaths();
     this.toolPaths(paths);
 
+    console.debug(`generated ${paths.length} tool paths for ${this.name()}`);
+
+    this.generatingToolpath = false;
+
+    // Signal this change to other listeners
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
+
     // Add the toolpaths to the SVG view
     const segs = this.toolPaths().toSegments();
     if (segs && segs.length > 0) {
@@ -490,15 +501,7 @@ class OperationViewModel extends ViewModel {
       svgel.setAttribute("class", "tool-path");
       document.getElementById("ToolPathsSVGGroup").append(svgel);
       this.svgToolPath = svgel;
-    } else {
-      App.showAlert("noToolPaths", "alert-warning", this.name());
     }
-
-    this.enabled(true);
-    this.generatingToolpath = false;
-
-    // Signal this change to other listeners
-    document.dispatchEvent(new Event("UPDATE_GCODE"));
   }
 
   /**
@@ -566,7 +569,7 @@ class OperationViewModel extends ViewModel {
    */
   toJson() {
     const json = {
-      operandPaths: this.operandPaths
+      operandPaths: this.operandPaths.toJson()
     };
 
     for (const f of FIELDS)
@@ -583,9 +586,16 @@ class OperationViewModel extends ViewModel {
     // suppress recombine until we're finished
     this.disableRecombination = true;
 
-    this.operandPaths = json.operandPaths;
     for (const f of FIELDS)
       this.updateObservable(json, f);
+
+    if (this.operandPaths.filter(p => p.isClosed).length > 0) {
+      this.availableOperations.push(
+        Cam.OP.Inside,
+        Cam.OP.Outside,
+        Cam.OP.AnnularPocket,
+        Cam.OP.RasterPocket);
+    }
 
     this.disableRecombination = false;
     this.recombine();

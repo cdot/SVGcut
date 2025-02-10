@@ -22,7 +22,7 @@ class ViewModel {
    */
   constructor(unitConverter) {
     /**
-     * Unit converter for this model. May be null/undefined.
+     * Unit converter for this model. May be undefined.
      * @member {UnitConverter?}
      */
     this.unitConverter = unitConverter;

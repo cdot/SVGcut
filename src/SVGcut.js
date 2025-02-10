@@ -75,14 +75,14 @@ export class SVGcut {
     /**
      * Simulation render path - there can be only one
      */
-    this.renderPath = null;
+    this.renderPath = undefined;
 
     /**
      * The Element for the alert being used for the next tutorial step
      * @member {Element}
      * @private
      */
-    this.tutorialAlert = null;
+    this.tutorialAlert = undefined;
 
     /**
      * The index of the current tutorial step. -1 indicates
@@ -234,8 +234,7 @@ export class SVGcut {
       if (e.detail > 1)
         return false; // ignore dblclick first click
 
-      const element = e.target;
-      if (e.target != null) {
+      if (e.target) {
         // Ignore clicks that are not on SVG elements
         if (this.models.Selection.clickOnSVG(e.target)) {
           if (this.models.Selection.isSomethingSelected()) {
@@ -286,12 +285,12 @@ export class SVGcut {
 
       // Get pt.x as a proportion of width and pt.y as proportion of height
       let [xPropW, yPropH] = [(pt.x - x) / width, (pt.y - y) / height];
-        
+
       // Calc new width and height, new x2, y2 (using proportions and
       // new width and height)
       let [width2, height2] = [width + width * scale, height + height * scale];
       let x2 = pt.x - xPropW * width2;
-      let y2 = pt.y - yPropH * height2;        
+      let y2 = pt.y - yPropH * height2;
 
       this.mainSVG.setAttribute('viewBox', `${x2} ${y2} ${width2} ${height2}`);
     });
@@ -490,6 +489,9 @@ export class SVGcut {
   loadSaveable(container) {
     this.emptySVG();
 
+    // Disable gcode generation until all ops are loaded
+    this.models.GcodeGeneration.disable = true;
+
     // Reload models
     for (const m in this.models) {
       this.models[m].reset();
@@ -498,7 +500,7 @@ export class SVGcut {
         this.models[m].fromJson(json);
     }
 
-    // Reload content
+    // Reload SVG content
     const svgGroups = document.querySelectorAll(
       ".managed-SVG-group.serialisable");
     for (const svgel of svgGroups) {
@@ -507,6 +509,11 @@ export class SVGcut {
         svgel.append(el);
       }
     }
+
+    this.models.GcodeGeneration.disable = false;
+
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
+
     this.updateMainSvgSize();
   }
 }

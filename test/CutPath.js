@@ -31,6 +31,18 @@ describe("CutPath", () => {
     assert.equal(cp.length, 2);
   });
 
+  it("from 2D array (closed)", () => {
+    const a = new Array();
+    a.push({ x: 1, y: 2 }, { x: 3, y: 4 });
+    a.isClosed = true;
+    const cp = new CutPath(a);
+    assert(cp instanceof CutPath);
+    assert(Array.isArray(cp));
+    assert(cp[0] instanceof CutPoint);
+    assert.equal(cp.isClosed, true);
+    assert.equal(cp.length, 2);
+  });
+
   it("from 2D CutPath", () => {
     const old = new CutPath([ { x: 1, y: 2 }, { x: 3, y: 4 } ], true);
     assert(old.isClosed);
@@ -213,6 +225,18 @@ describe("CutPath", () => {
       {X:0,y:100},
       {X:0,y:0}
     ], false));
+  });
+  
+  it("to/from json", () => {
+    const path = new CutPath([
+      {X:0,Y:0},
+      {X:100,y:0},
+      {X:0,y:100},
+      {X:0,y:0}
+    ], true);
+    const j = path.toJson();
+    const htap = CutPath.fromJson(j);
+    assert.deepEqual(htap, path);
   });
 });
 

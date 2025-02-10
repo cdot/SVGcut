@@ -78,7 +78,7 @@ export class TabViewModel extends ViewModel {
      * @member {SVGGaphicsElement}
      * @private
      */
-    this.svgPath = null;
+    this.svgPath = undefined;
 
     this.recombine();
   }
@@ -107,7 +107,7 @@ export class TabViewModel extends ViewModel {
   removeCombinedGeometry() {
     if (this.svgPath)
       this.svgPath.remove();
-    this.svgPath = null;
+    this.svgPath = undefined;
     this.combinedGeometry = new CutPaths();
   }
 
@@ -150,7 +150,7 @@ export class TabViewModel extends ViewModel {
   toJson() {
     // Will never be called with templateOnly
     return {
-      rawPaths: this.rawPaths,
+      tabPaths: this.tabPaths.toJson(),
       enabled: this.enabled(),
       margin: this.margin()
     };
@@ -163,7 +163,6 @@ export class TabViewModel extends ViewModel {
     // suppress recombine until we're finished
     this.disableRecombination = true;
 
-    this.rawPaths = json.rawPaths;
     this.updateObservable(json, 'margin');
     this.updateObservable(json, 'enabled');
 

@@ -481,5 +481,19 @@ export class CutPaths extends Array {
     while (newPaths.length > 0)
       this.push(newPaths.shift());
   }
+
+  /**
+   * Construct serialisable form of this
+   * @return {object}
+   */
+  toJson() {
+    return this.map(p => p.toJson());
+  }
+
+  static fromJson(json) {
+    return new CutPaths(
+      json.map(p => CutPath.fromJson(p))
+    );
+  }
 }
 
