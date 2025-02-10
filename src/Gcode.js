@@ -555,7 +555,7 @@ export class Generator {
 
     if (tabGeometry && tabZ <= botZ) {
       App.showAlert("tabsDeeper", 'alert-warning');
-      tabGeometry = undefined;
+      tabGeometry = null;
     }
 
     this.rem(`** Operation "${op.name}"`);
@@ -632,7 +632,7 @@ export class Generator {
           if (op.precalculatedZ) {
             this.G(1, { f: this.cutFeed, pt: cutPath[0],
                         rem: "Precalculated Z" });
-            requiredZ = undefined; // so G uses the coordinate
+            requiredZ = null; // so G uses the coordinate
           } else {
             this.G(1, { f: this.cutFeed, pt: cutPath[0], z: lastCutZ });
 
