@@ -47,8 +47,8 @@ export class TabViewModel extends ViewModel {
     this.enabled = ko.observable(true);
     this.enabled.subscribe(newValue => {
       const v = newValue ? "visible" : "hidden";
-      if (this.combinedGeometrySvg)
-        this.combinedGeometrySvg.setAttribute("visibility", v);
+      if (this.previewSVG)
+        this.previewSVG.setAttribute("visibility", v);
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
     });
@@ -78,7 +78,7 @@ export class TabViewModel extends ViewModel {
      * @member {SVGGaphicsElement}
      * @private
      */
-    this.svgPath = undefined;
+    this.previewSVG = undefined;
 
     this.recombine();
   }
@@ -105,9 +105,9 @@ export class TabViewModel extends ViewModel {
    * Remove the SVG geometry contributed by this operation
    */
   removeCombinedGeometry() {
-    if (this.svgPath)
-      this.svgPath.remove();
-    this.svgPath = undefined;
+    if (this.previewSVG)
+      this.previewSVG.remove();
+    this.previewSVG = undefined;
     this.combinedGeometry = new CutPaths();
   }
 
@@ -135,7 +135,7 @@ export class TabViewModel extends ViewModel {
         svgel.setAttribute("d", segments2d(segs));
         svgel.setAttribute("class", "tabs-geometry");
         document.getElementById("TabsSVGGroup").append(svgel);
-        this.svgPath = svgel;
+        this.previewSVG = svgel;
 
         this.enabled(true);
       }

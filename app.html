@@ -530,7 +530,8 @@
                      data-bind="click:()=> App.showModal('SaveProjectModal')">
                     Save Project
                   </a>
-                </li><li class="dropdown-item">
+                </li>
+                <li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click"
                                      id="ChooseImportSVGFile">
                     Import SVG File
@@ -538,7 +539,8 @@
                            accept=".svg,image/svg+xml"
                            id="ChosenImportSVGFile" multiple>
                   </a>
-                </li><li class="dropdown-item">
+                </li>
+                <li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click open-modal"
                      data-bind="click:()=> App.showModal('SaveGcodeModal')">
                     Save Gcode
@@ -546,6 +548,42 @@
                 </li>
               </ul> <!-- project menu -->
             </li> <!-- project toolbar item -->
+
+            <li class="dropdown nav-item">
+              <a href="#"
+                 class="nav-link dropdown-toggle"
+                 id="ViewDropdown"
+                 data-bs-toggle="dropdown">
+                View<strong class="caret"></strong>
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="ViewDropdown">
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link"
+                     data-bind="click: App.zoomIn()">
+                    Zoom In
+                  </a>
+                </li>
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link"
+                     data-bind="click: App.zoomOut()">
+                    Zoom Out
+                  </a>
+                </li>
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link"
+                     data-bind="click: App.fitSVG()">
+                    Fit
+                  </a>
+                </li>
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link">
+                    <input id="HideSVG" type="checkbox"
+                           data-bind="checked: App.hideSVG()" />
+                    <label for="HideSVG">Hide SVG</label>
+                  </a>
+                </li>
+              </ul>
+            </li> <!-- /view menu -->
 
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle"
@@ -567,6 +605,7 @@
                 </li>
               </ul>
             </li>
+
             <li id="SelectionCounts" class="nav-item"
                 style="display:table">
               <div style="display:table-row">
@@ -587,7 +626,7 @@
         <div>
           <ul class="nav nav-tabs" role="tablist">
             <li class="nav-item">
-              <a id="ActivateToolpathsTab" class="nav-link active" href="#SvgPanel"
+              <a id="ActivateToolpathsTab" class="nav-link active" href="#SVGPanel"
                  data-bs-toggle="tab">
                 Toolpaths
               </a>
@@ -600,8 +639,8 @@
           </ul>
           <div class="tab-content">
             <!-- toolpaths tab -->
-            <div class="tab-pane active" id="SvgPanel">
-              <svg id="MainSvg" viewBox="0 0 500 500"
+            <div class="tab-pane active" id="SVGPanel">
+              <svg id="MainSVG" viewBox="0 0 500 500"
                    preserveAspectRatio="xMinYMin meet">
                 <defs>
                   <filter id="ContrastFilter" filterUnits="objectBoundingBox">
@@ -751,7 +790,7 @@
               <div class="form-horizontal">
                 <div class="mb-3">
                   <div class="col-sm-10">
-                    <svg id="MaterialSvg" class="autoheight"
+                    <svg id="MaterialSVG" class="autoheight"
                          viewBox="0 0 74 35" internalWidth="74"
                          internalHeight="35" src="images/Material.svg" />
                   </div>

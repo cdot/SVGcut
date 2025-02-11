@@ -78,7 +78,7 @@ class OperationViewModel extends ViewModel {
      * @member {SVGGaphicsElement}
      * @private
      */
-    this.svgPreviewPath = undefined;
+    this.previewSVG = undefined;
 
     /**
      * SVG path generated to show the tool paths. Will be added to
@@ -86,7 +86,7 @@ class OperationViewModel extends ViewModel {
      * @member {SVGElement}
      * @private
      */
-    this.svgToolPath = undefined;
+    this.toolPathSVG = undefined;
 
     /**
      * The operation used to combine raw paths to generate the resulting
@@ -152,10 +152,10 @@ class OperationViewModel extends ViewModel {
     this.enabled = ko.observable(true);
     this.enabled.subscribe(newValue => {
       let v = newValue ? "visible" : "hidden";
-      if (this.svgPreviewPath)
-        this.svgPreviewPath.setAttribute("visibility", v);
-      if (this.svgToolPath)
-        this.svgToolPath.setAttribute("visibility", v);
+      if (this.previewSVG)
+        this.previewSVG.setAttribute("visibility", v);
+      if (this.toolPathSVG)
+        this.toolPathSVG.setAttribute("visibility", v);
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.updateGcode();
     });
@@ -300,9 +300,9 @@ class OperationViewModel extends ViewModel {
    * Remove the combined geometry (and toolpaths) contributed by this operation
    */
   removeCombinedGeometry() {
-    if (this.svgPreviewPath)
-      this.svgPreviewPath.remove();
-    this.svgPreviewPath = undefined;
+    if (this.previewSVG)
+      this.previewSVG.remove();
+    this.previewSVG = undefined;
     this.removeToolPaths();
     this.combinedGeometry = undefined;
   }
@@ -311,9 +311,9 @@ class OperationViewModel extends ViewModel {
    * Remove the tool paths contributed by this operation
    */
   removeToolPaths() {
-    if (this.svgToolPath)
-      this.svgToolPath.remove();
-    this.svgToolPath = undefined;
+    if (this.toolPathSVG)
+      this.toolPathSVG.remove();
+    this.toolPathSVG = undefined;
     this.toolPaths(new CutPaths());
   }
 
@@ -399,7 +399,7 @@ class OperationViewModel extends ViewModel {
           svgel.setAttribute("class", "combined-geometry");
           document.getElementById("CombinedGeometrySVGGroup")
           .append(svgel);
-          this.svgPreviewPath = svgel;
+          this.previewSVG = svgel;
         }
       }
     }
@@ -500,7 +500,7 @@ class OperationViewModel extends ViewModel {
       svgel.setAttribute("d", SVG.segments2d(segs));
       svgel.setAttribute("class", "tool-path");
       document.getElementById("ToolPathsSVGGroup").append(svgel);
-      this.svgToolPath = svgel;
+      this.toolPathSVG = svgel;
     }
   }
 

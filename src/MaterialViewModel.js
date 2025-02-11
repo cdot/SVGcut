@@ -119,18 +119,18 @@ export class MaterialViewModel extends ViewModel {
      * The little picture at the top of the card
      * @member {observable.<SVGElement>}
      */
-    this.materialSvg = ko.observable();
-    this.materialSvg.subscribe(newValue => {
+    this.materialSVG = ko.observable();
+    this.materialSVG.subscribe(newValue => {
       setText("matTopZ", formatZ(this.topZ()));
       setText("matBotZ", formatZ(this.botZ()));
       setText("matZSafeMove", formatZ(this.zSafeMove()));
     });
 
-    const svg = document.getElementById("MaterialSvg");
+    const svg = document.getElementById("MaterialSVG");
     fetch("images/Material.svg")
     .then(response => response.text())
     .then(content => Promise.resolve(loadSVGFromText(content)))
-    .then(dom => { svg.replaceWith(dom); this.materialSvg(dom); });
+    .then(dom => { svg.replaceWith(dom); this.materialSVG(dom); });
   }
 
   /**

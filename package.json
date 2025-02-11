@@ -19,7 +19,8 @@
 		"why-is-node-running": "^2.3.0"
 	},
 	"scripts": {
-		"build": "webpack -c 2d-geometry-webpack.js",
+		"build": "webpack --node-env production -c webpack_config.js",
+		"debug_build": "webpack -c webpack_config.js --stats-modules-space 999",
 		"lint": "eslint src -f unix",
 		"doc": "jsdoc -c jsdoc_config.json src",
 		"test": "mocha --experimental-loader=@node-loader/import-maps test"

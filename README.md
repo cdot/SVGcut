@@ -166,19 +166,21 @@ extension `.nc` it will be easier to find in Candle.
 The `File` menu lets you save and reload projects. You can save in
 a file, or in the browser.
 
+Note that your original SVG files are *not* saved with projects.
+Despite that, projects can still be quite big, and the browser has
+limited storage space, so keep the browser for templates and store
+project files to disc.
+
+## Templates
 When you start up the app for the first time, it starts up with a
-bunch of defaults, many of which you will probably change to create
-your own set of defaults. You can save these defaults for use in other
+number of defaults, many of which you will probably change to suit
+your own machine. You can save your new defaults for use in other
 projects by selecting `Template only` when you save your project. If
 you save a template called `defaults` in the browser, it will
 automatically be loaded whenever you start up. You might have a number
 of different tool configurations; you can save them the same way,
 giving them meaningful names.
 
-(Be warned; projects can be quite big, and the browser has limited
-storage space, so keep the browser for templates and store project
-files to disc.)
-q
 # Holding Tabs
 
 To use

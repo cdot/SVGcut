@@ -105,7 +105,7 @@ export class SVGcut {
      * of 0,0,500,500 before an SVG is loaded.
      * @member {Element}
      */
-    this.mainSVG = document.getElementById("MainSvg");
+    this.mainSVG = document.getElementById("MainSVG");
 
     // Create the simulation canvas.
     this.simulation = new Simulation(
@@ -151,14 +151,14 @@ export class SVGcut {
     // and update it then. This will reset the zoom level to the default.
     document.getElementById("ActivateToolpathsTab")
     .addEventListener("click", () => {
-      this.updateMainSvgSize();
+      this.fitSVG();
     });
 
     this.addSVGEventHandlers();
 
     window.addEventListener("resize", () => {
       console.debug("Main resized");
-      this.updateMainSvgSize();
+      this.fitSVG();
       this.updateSimulationCanvasSize();
     });
 
@@ -186,7 +186,7 @@ export class SVGcut {
    * @return {Promise} promise that resolves to undefined
    */
   start() {
-    this.updateMainSvgSize();
+    this.fitSVG();
     this.updateSimulationCanvasSize();
 
     return this.simulation.start()
@@ -371,10 +371,10 @@ export class SVGcut {
   updateSimulationCanvasSize() {
     // Get the whole middle section for width
     const middleDiv = document.getElementById("Middle");
-    const mSvgW = Math.min(
+    const mSVGW = Math.min(
       middleDiv.clientWidth, middleDiv.clientHeight); // pixels
     // Make the simulation square
-    this.simulation.resizeCanvas(mSvgW, mSvgW);
+    this.simulation.resizeCanvas(mSVGW, mSVGW);
   }
 
   /**
@@ -382,15 +382,15 @@ export class SVGcut {
    * viewing area.
    * @private
    */
-  updateMainSvgSize() {
+  fitSVG() {
     // Get the SVG and attribute it accordingly
-    const mSvg = this.mainSVG;
+    const mSVG = this.mainSVG;
     // Get the BB for the main SVG view
-    const bbox = mSvg.getBBox();
+    const bbox = mSVG.getBBox();
     // Mine; works even when the SVG hasn't been rendered, but is heavy.
     //const bbox = this.getMainSVGBBox();
     // Set the viewBox to view all the contents of the main svg
-    mSvg.setAttribute(
+    mSVG.setAttribute(
       "viewBox",
       `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`);
   }
@@ -470,20 +470,50 @@ export class SVGcut {
         this.models[m].fromJson(json);
     }
 
-    // Reload SVG content
-    const svgGroups = document.querySelectorAll(
-      ".managed-SVG-group.serialisable");
-    for (const svgel of svgGroups) {
-      if (container.svg[svgel.id]) {
-        const el = SVG.loadSVGFromText(container.svg[svgel.id]);
-        svgel.append(el);
-      }
-    }
+    //// Reload SVG content - not currently required
+    //const svgGroups = document.querySelectorAll(
+    //  ".managed-SVG-group.serialisable");
+    //for (const svgel of svgGroups) {
+    //  if (container.svg[svgel.id]) {
+    //    console.debug("**** Reloading SVG", svgel.id);
+    //    const el = SVG.loadSVGFromText(container.svg[svgel.id]);
+    //    svgel.append(el);
+    //  }
+    //}
 
     this.models.GcodeGeneration.disable = false;
 
     document.dispatchEvent(new Event("UPDATE_GCODE"));
 
-    this.updateMainSvgSize();
+    this.fitSVG();
+  }
+
+  /**
+   * Zoom the main SVG by the given factor
+   * @param {number} scale scale amount, <1 to zoom in, >1 to zoom out
+   */
+  zoom(scale) {
+    let [x, y, width, height] = this.mainSVG
+        .getAttribute('viewBox').split(' ').map(Number);
+
+    let [width2, height2] = [width * scale, height * scale];
+    x += (width - width2) / 2;
+    y += (height - height2) / 2;
+
+    this.mainSVG.setAttribute('viewBox', `${x} ${y} ${width2} ${height2}`);
+  }
+
+  zoomOut() {
+    this.zoom(1.1);
+  }
+
+  zoomIn() {
+    this.zoom(0.9);
+  }
+
+  hideSVG() {
+    const control = document.getElementById("HideSVG");
+    document.getElementById("ContentSVGGroup")
+    .setAttribute("visibility", control.checked ? "hidden" : "visible");
   }
 }

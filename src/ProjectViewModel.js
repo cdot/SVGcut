@@ -172,7 +172,7 @@ class ProjectViewModel extends ViewModel {
         reader.addEventListener("load", e => {
           const svgEl = SVG.loadSVGFromText(e.target.result);
           document.getElementById("ContentSVGGroup").append(svgEl);
-          App.updateMainSvgSize();
+          App.fitSVG();
           lert.remove();
           document.dispatchEvent(new Event("PROJECT_CHANGED"));
           App.showAlert("loadedSVG", "alert-success", file.name);
