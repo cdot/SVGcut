@@ -35,19 +35,6 @@ class OperationsViewModel extends ViewModel {
      */
     this.boundingBox = ko.observable(new Rect());
 
-    const cob = document.getElementById('CreateOperationButton');
-    cob.parentElement.addEventListener("mouseenter", () => {
-      if (cob.disabled) {
-        const popover = bootstrap.Popover.getInstance(cob);
-        popover.show();
-      }
-    });
-
-    cob.parentElement.addEventListener("mouseleave", () => {
-      const popover = bootstrap.Popover.getInstance(cob);
-      popover.hide();
-    });
-
     ko.applyBindings(this, document.getElementById("OperationsView"));
   }
 

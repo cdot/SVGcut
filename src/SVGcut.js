@@ -157,10 +157,26 @@ export class SVGcut {
     this.addSVGEventHandlers();
 
     window.addEventListener("resize", () => {
-      console.debug("Main resized");
+      //console.debug("Main resized");
       this.fitSVG();
       this.updateSimulationCanvasSize();
     });
+
+    // handle popovers flagged by trigger:"manual" and class="manual-popover"
+    const mans = document.querySelectorAll('.manual-popover');
+    for (const man of mans) {
+      man.parentElement.addEventListener("mouseenter", () => {
+        if (man.disabled) {
+          const popover = bootstrap.Popover.getInstance(man);
+          popover.show();
+        }
+      });
+
+      man.parentElement.addEventListener("mouseleave", () => {
+        const popover = bootstrap.Popover.getInstance(man);
+        popover.hide();
+      });
+    }
 
     document.addEventListener("UPDATE_SIMULATION", () => {
       // Set the simulation path from the Gcode
