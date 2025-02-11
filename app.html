@@ -511,9 +511,11 @@
                   </a>
                   <ul class="dropdown-menu" aria-labelledby="OpenMenu">
                     <li class="dropdown-item">
-                      <a href="#" class="nav-link close-on-click choose-file">
+                      <a href="#" class="nav-link close-on-click"
+                         id="ChooseProjectFile">
                         ... from File
-                        <input type="file" id="ChosenProjectFile">
+                        <input type="file" style="display:none"
+                               accept=".svgcut" id="ChosenProjectFile">
                       </a>
                     </li><li class="dropdown-item">
                       <a href="#" class="nav-link close-on-click open-modal"
@@ -529,9 +531,12 @@
                     Save Project
                   </a>
                 </li><li class="dropdown-item">
-                  <a href="#" class="nav-link close-on-click choose-file">
+                  <a href="#" class="nav-link close-on-click"
+                                     id="ChooseImportSVGFile">
                     Import SVG File
-                    <input type="file" id="ChosenImportSVGFile" multiple>
+                    <input type="file" style="display:none"
+                           accept=".svg,image/svg+xml"
+                           id="ChosenImportSVGFile" multiple>
                   </a>
                 </li><li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click open-modal"

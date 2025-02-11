@@ -50,28 +50,6 @@ input[type="number"] {
   pointer-events: none;
 }
 
-/** Handling for file pickers */
-.choose-file {
-  position: relative;
-  overflow: hidden;
-  display: inline-block;
-}
-.choose-file input[type=file] {
-  position: absolute;
-  top: 0;
-  right: 0;
-  min-width: 100%;
-  min-height: 100%;
-  font-size: 999px;
-  text-align: right;
-  filter: alpha(opacity=0);
-  opacity: 0;
-  outline: none;
-  background: white;
-  cursor: inherit;
-  display: block;
-}
-
 /* Card (view) layout */
 .card-title {
   font-size: 1rem;

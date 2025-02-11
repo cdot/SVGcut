@@ -14,6 +14,7 @@
 
 import { UnitConverter } from "./UnitConverter.js";
 import { ViewModel } from "./ViewModel.js";
+import * as SVG from "./SVG.js";
 
 const POPOVERS = [
   { id: "SelectProject" }
@@ -129,6 +130,9 @@ class ProjectViewModel extends ViewModel {
 
     // Handler for loading a project from disc when a file is chosen
     // in the browser
+    document.getElementById("ChooseProjectFile")
+    .addEventListener("click", () =>
+      document.getElementById("ChosenProjectFile").click());
     document.getElementById("ChosenProjectFile")
     .addEventListener("change", event => {
       const file = event.target.files[0];
@@ -152,6 +156,39 @@ class ProjectViewModel extends ViewModel {
         });
         reader.readAsText(file);
       });
+    });
+
+    document.getElementById('ChooseImportSVGFile')
+    .addEventListener("click", event =>
+      document.getElementById('ChosenImportSVGFile').click());
+    document.getElementById('ChosenImportSVGFile')
+    .addEventListener("change", event => {
+      // Import an SVG file
+
+      const files = event.target.files;
+      for (const file of files) {
+        const lert = App.showAlert("loadingSVG", "alert-info", file.name);
+        const reader = new FileReader();
+        reader.addEventListener("load", e => {
+          const svgEl = SVG.loadSVGFromText(e.target.result);
+          document.getElementById("ContentSVGGroup").append(svgEl);
+          App.updateMainSvgSize();
+          lert.remove();
+          document.dispatchEvent(new Event("PROJECT_CHANGED"));
+          App.showAlert("loadedSVG", "alert-success", file.name);
+          App.tutorial(2);
+        });
+        reader.addEventListener("abort", e => {
+          lert.remove();
+          App.showAlert("svgLoadAbort", "alert-danger", file.name);
+        });
+        reader.addEventListener("error", e => {
+          lert.remove();
+          console.error(e);
+          App.showAlert("svgLoadError", "alert-danger");
+        });
+        reader.readAsText(file);
+      }
     });
 
     document.addEventListener(
@@ -198,7 +235,7 @@ class ProjectViewModel extends ViewModel {
 
     const json = JSON.stringify(App.getSaveable(this.templateOnly()), null, 1);
     const blob = new Blob([ json ], { type: 'text/json' });
-    const filename = `${this.projectName()}.json`;
+    const filename = `${this.projectName()}.svgcut`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, filename);
     this.isChanged = false;

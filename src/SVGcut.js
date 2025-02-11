@@ -154,36 +154,6 @@ export class SVGcut {
       this.updateMainSvgSize();
     });
 
-    document.getElementById('ChosenImportSVGFile')
-    .addEventListener("change", event => {
-      // Import an SVG file
-
-      const files = event.target.files;
-      for (const file of files) {
-        const lert = this.showAlert("loadingSVG", "alert-info", file.name);
-        const reader = new FileReader();
-        reader.addEventListener("load", e => {
-          const svgEl = SVG.loadSVGFromText(e.target.result);
-          document.getElementById("ContentSVGGroup").append(svgEl);
-          this.updateMainSvgSize();
-          lert.remove();
-          document.dispatchEvent(new Event("PROJECT_CHANGED"));
-          this.showAlert("loadedSVG", "alert-success", file.name);
-          this.tutorial(2);
-        });
-        reader.addEventListener("abort", e => {
-          lert.remove();
-          this.showAlert("svgLoadAbort", "alert-danger", file.name);
-        });
-        reader.addEventListener("error", e => {
-          lert.remove();
-          console.error(e);
-          this.showAlert("svgLoadError", "alert-danger");
-        });
-        reader.readAsText(file);
-      }
-    });
-
     this.addSVGEventHandlers();
 
     window.addEventListener("resize", () => {
