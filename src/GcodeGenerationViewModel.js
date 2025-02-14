@@ -232,20 +232,34 @@ class GcodeGenerationViewModel extends ViewModel {
 
     const gunits = this.unitConverter.units();
 
+    // Get enabled tabs
+    let tabGeometry = new CutPaths();
+    const tabs = App.models.Tabs.tabs();
+    const tabsDepth = App.models.Tabs.maxCutDepth.toUnits(gunits);
+    for (const tab of tabs) {
+      if (tab.enabled()) {
+        // Bloat tab geometry by the cutter radius
+        const bloat = App.models.Tool.diameter.toUnits("integer") / 2;
+        const tg = tab.combinedGeometry.offset(bloat);
+        tabGeometry = tabGeometry.union(tg);
+      }
+    }
+
     // Work out origin offset
     const svgBB = this.getSVGBB();
-    let ox = svgBB.left + this.extraOffsetX();
-    let oy = svgBB.bottom + this.extraOffsetY();
+    let offsetX = svgBB.left + this.extraOffsetX();
+    let offsetY = svgBB.bottom + this.extraOffsetY();
     if (this.origin() === "Bounding box" || this.origin() === "Centre") {
       const pathsBB = this.unitConverter.fromUnits(
         App.models.Operations.getBounds(), "integer");
-      ox -= pathsBB.left - svgBB.left;
-      oy -= svgBB.bottom - pathsBB.bottom;
+      offsetX -= pathsBB.left - svgBB.left;
+      offsetY -= svgBB.bottom - pathsBB.bottom;
       if (this.origin() === "Centre") {
-        ox -= pathsBB.width / 2;
-        oy -= pathsBB.height / 2;
+        offsetX -= pathsBB.width / 2;
+        offsetY -= pathsBB.height / 2;
       }
     }
+
     const job = new Gcode.Generator({
       gunits:         gunits,
       // Scaling to apply to internal units in paths, to generate Gcode units.
@@ -264,13 +278,9 @@ class GcodeGenerationViewModel extends ViewModel {
       returnTo00:     this.returnTo00(),
       workWidth:      Number(this.bbWidth()),
       workHeight:     Number(this.bbHeight()),
-      offsetX:        ox,
-      offsetY:        oy
+      offsetX:        offsetX,
+      offsetY:        offsetY
     });
-
-    // tabs
-    const tabCutDepth = App.models.Tabs.maxCutDepth.toUnits(gunits);
-    job.tabZ = job.topZ - tabCutDepth;
 
     if (job.passDepth < 0) {
       App.showAlert("passDepthTooSmall", "alert-warning", job.passDepth);
@@ -278,46 +288,41 @@ class GcodeGenerationViewModel extends ViewModel {
       job.passDepth = 0;
     }
 
-    let tabGeometry = new CutPaths();
-    const tabs = App.models.Tabs.tabs();
-    for (const tab of tabs) {
-      if (tab.enabled()) {
-        // Bloat tab geometry by the cutter radius
-        const bloat = App.models.Tool.diameter.toUnits("integer") / 2;
-        const tg = tab.combinedGeometry.offset(bloat);
-        tabGeometry = tabGeometry.union(tg);
-      }
-    }
-    job.tabGeometry = tabGeometry;
-
     for (const op of ops) {
-      const precalc = op.operation() === Cam.OP.Perforate ||
-            op.operation() === Cam.OP.Drill;
       const opCard = {
         name: op.name(),
         cutType: op.operation(),
-        paths: op.toolPaths(),
         ramp: op.ramp(),
-        cutDepth: Number(op.cutDepth()),
         direction: op.direction(),
-        spinSpeed: op.spindleSpeed(),
-        // Perforation and Drill are always single-pass and cut
-        // directly to the maximum operation cut depth
-        passDepth: precalc ? Number(op.cutDepth()) : job.passDepth,
-        precalculatedZ: precalc
+        spinSpeed: Number(op.spindleSpeed())
       };
-      if (opCard.cutDepth < 0) {
-        App.showAlert("cutDepthTooSmall", "alert-warning");
-        // 0 cut depth might be right for plotting
-        opCard.cutDepth = 0;
+      const precalculatedZ = op.operation() === Cam.OP.Perforate
+            || op.operation() === Cam.OP.Drill;
+
+      let paths = op.toolPaths();
+      const cutZ = job.topZ - Number(op.cutDepth());
+      const tabZ = job.topZ - tabsDepth;
+
+      // tabZ must be > the cutZ depth of the Operation. If it isn't,
+      // or Z's were precalculated, then ignore the tab geometry
+      let tg = (tabZ <= cutZ || precalculatedZ) ? undefined : tabGeometry;
+
+      // Split paths over tab geometry and assign Z's where not
+      // already defined in Cam.
+      let cutPaths = new CutPaths();
+      for (const path of paths) {
+        cutPaths = cutPaths.concat(
+          Cam.splitPathOverTabs(path, tg, cutZ, tabZ));
       }
+      opCard.paths = cutPaths;
 
       job.addOperation(opCard);
     }
-    console.debug(`${this.gcode.length} lines of Gcode generated`);
 
     // Save the gcode to the observable
     this.gcode(job.end());
+
+    console.debug(`${this.gcode().length} lines of Gcode generated`);
 
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
 

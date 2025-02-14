@@ -13,14 +13,14 @@ import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
 import * as Cam from "./Cam.js";
 
-const DEFAULT_COMBINEOP = "Union";
 const DEFAULT_RAMP = false;
+const DEFAULT_COMBINEOP = "Union";
 const DEFAULT_DIRECTION = "Conventional";
-const DEFAULT_CUTDEPTH = 0;
-const DEFAULT_MARGIN = 0;
-const DEFAULT_SPACING = 1;
+const DEFAULT_CUTDEPTH = 1;        // mm
+const DEFAULT_MARGIN = 0;          // mm
+const DEFAULT_SPACING = 1;         //mm
 const DEFAULT_SPINDLESPEED = 1000; // rpm
-const DEFAULT_WIDTH = 0;
+const DEFAULT_WIDTH = 0;           //mm
 
 const POPOVERS = [
   { id: "OpEnabled" },
@@ -414,6 +414,9 @@ class OperationViewModel extends ViewModel {
    */
   generateToolPaths() {
     if (this.generatingToolpath)
+      return;
+
+    if (!this.combinedGeometry)
       return;
 
     this.generatingToolpath = true;

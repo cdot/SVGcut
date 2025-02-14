@@ -7,6 +7,7 @@ ClipperLib.use_xyz = true;
 import { UnitConverter } from "./UnitConverter.js";
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
+import { BBox3D } from "./BBox3D.js";
 
 /*
  * The distance parameter's default value is approximately √2 so that
@@ -327,21 +328,47 @@ export class CutPaths extends Array {
   }
 
   /**
+   * Assign a single Z value to all CutPoints in all paths that
+   * don't already have a Z.
+   * @param {boolean} force force the new Z value even if the point already
+   * has a Z.
+   */
+  Z(z, force) {
+    for (const p of this)
+      p.Z(z, force);
+  }
+
+  /**
+   * Get the 3D BB of the paths
+   * @return {BBox3D}
+   */
+  bbox3D() {
+    const bb = this[0].bbox3D();
+    for (let i = 1; i < this.length; i++)
+      bb.expand(this[i].bbox3D());
+    return bb;
+  }
+
+  /**
    * Find the closest endpoint in an open path in this geometry to
    * the given point
    * @param {CutPoint} point to test
    * @param {boolean?} closedOnly if defined, must match isClosed. If undefined
    * will match both open and closed paths.
-   * @return {object?} { pathIndex: number, pointIndex: number, dist2: number }
+   * @return {object?} `{ pathIndex: number, pointIndex: number,
+   * point: CutPoint, dist2: number }` where `pathIndex` is the index of the
+   * closest path in this, and the rest comes from `CutPath.closestEndpoint`.
    */
   closestEndpoint(pt, closedOnly) {
     let best;
-    for (let i = 0; i < this.length; ++i) {
+    for (let i = 0; i < this.length; i++) {
       const path = this[i];
       if (typeof closedOnly === "undefined" || path.isClosed === closedOnly) {
         let test = path.closestEndpoint(pt);
-        if (!best || test.d2 < best.dist2)
-          best = test, test.pathIndex = i;
+        if (!best || test.dist2 < best.dist2) {
+          best = test;
+          best.pathIndex = i;
+        }
       }
     }
     return best;
@@ -357,26 +384,29 @@ export class CutPaths extends Array {
    * @param {CutPaths?} within merge closed polys if the shortest
    * joining edge won't cross these closed polys. This is used when
    * pocketing.
+   * @return {CutPaths} this
    */
   mergePaths(within) {
     assert(!within || within instanceof CutPaths);
     const cp = this.filter(p => p.isClosed);
     if (cp.length === this.length) {
       this.mergeClosedPaths(within);
-      return; // all paths are closed?
+      return this; // all paths are closed?
     }
     if (cp.length === 0) {
       // cp is empty, so all paths must be open
-      this.mergeOpenPaths();
-      return;
+      this.sortPaths(2);
+      return this;
     }
     // mix of open and closed paths
     cp.mergeClosedPaths(within);
     const op = this.filter(p => !p.isClosed);
-    op.mergeOpenPaths();
+    op.sortPaths(2);
     this.splice(0, this.length);
     while (cp.length > 0) this.push(cp.shift());
     while (op.length > 0) this.push(op.shift());
+
+    return this;
   }
 
   /**
@@ -433,18 +463,22 @@ export class CutPaths extends Array {
   }
 
   /**
-   * The only way to merge open paths is by connecting endpoints. An
-   * open path could be merged into a closed path to make a new open
-   * path, but that's not currently done.
-   * @private
+   * Sort/merge open paths by looking at closest endpoints.
+   * @param {number} merge if undefined, keep all the paths separate.
+   * If 2, and the 2D distance between nearest endpoints is 0, merge
+   * the paths.If 3, then merge the paths if the endpoints are
+   * coincident in 3D.
+   * @return {CutPaths} this
    */
-  mergeOpenPaths() {
+  sortPaths(merge) {
     if (this.length < 2)
-      return;
+      return this;
 
+    // pick a path, any path
     let path = this.pop();
     let pS = path[0];
     let pE = path[path.length - 1];
+
     const newPaths = [ path ];
     while (this.length > 0) {
       const bestS = this.closestEndpoint(pS);
@@ -456,21 +490,26 @@ export class CutPaths extends Array {
         if (bestS.pointIndex === 0)
           // Other path start is closest to current path start
           prevPath.reverse();
-        if (bestS.dist2 === 0) {
-          prevPath.pop();
+        if (bestS.dist2 === 0 && merge) {
+          // Merge paths
+          if (merge === 2 || (merge === 3 && bestS.point.Z === pS.Z))
+            prevPath.pop();
           newPaths[0] = prevPath.concat(newPaths[0]);
         } else {
           newPaths.unshift(prevPath);
           pS = prevPath[0];
         }
       } else {
+        // Other path is closest to the end point of this path
         const nextPath = this[bestE.pathIndex];
         this.splice(bestE.pathIndex, 1);
         if (bestE.pointIndex > 0)
           // Other path end is closest to current path end
           nextPath.reverse();
-        if (bestE.dist2 === 0) {
-          nextPath.shift();
+        if (bestE.dist2 === 0 && merge) {
+          // Merge paths
+          if (merge === 2 || (merge === 3 && bestE.point.Z === pE.Z))
+            nextPath.shift();
           newPaths[newPaths.length - 1] =
           newPaths[newPaths.length - 1].concat(nextPath);
         } else
@@ -480,6 +519,8 @@ export class CutPaths extends Array {
     }
     while (newPaths.length > 0)
       this.push(newPaths.shift());
+
+    return this;
   }
 
   /**

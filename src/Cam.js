@@ -2,6 +2,8 @@
 
 /* global App */
 /* global assert */
+/* global ClipperLib */
+ClipperLib.use_xyz = true;
 
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
@@ -10,7 +12,7 @@ import * as Partition from "./Partition.js";
 import * as Flatten from 'flatten-js';
 
 /**
- * Support for different CAM operations
+ * Support for CAM operations
  * @namespace Cam
  */
 
@@ -27,6 +29,20 @@ export const OP = {
   Perforate:     5,
   RasterPocket:  6
 };
+
+/**
+ * Long names for supported operations
+ * @memberof Cam
+ */
+export const LONG_OP_NAME = [
+  "Pocket (annular)",
+  "Drill",
+  "Engrave",
+  "Inside",
+  "Outside",
+  "Perforate",
+  "Pocket (raster)"
+];
 
 /**
  * Compute pocket tool paths. The pockets are cleared using annular passes,
@@ -354,8 +370,8 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
  * for a drill hole. The holes are drilled in the order of the edges.
  * Works on both open and closed paths.
  * @param {CutPaths} geometry
- * @param {number} safeZ is the Z to which the tool is withdrawn
- * @param {number} botZ is the depth of the perforations
+ * @param {number} safeZ is the Z to which the tool is withdrawn (integer units)
+ * @param {number} botZ is the depth of the perforations (integer units)
  * @return {CutPaths}
  * @memberof Cam
  */
@@ -395,78 +411,55 @@ export function engrave(geometry, climb) {
 };
 
 /**
- * Given a single tool path and an array of paths representing a set of
- * disjoint polygons, split the toolpath into a sequence of paths such
- * that where a path enters or leaves one of the polygons it gets
- * split into two paths. In this way it generates a new array of paths
- * where the odd-numbered paths are outside the polygons, while the
- * even numbered paths are inside the polygons.
- * @param {CutPath} toolPath path being followed by the cutter
+ * Given a single tool path and an array of paths representing a set
+ * of disjoint polygons representing tabs, split the toolpath into a
+ * sequence of paths such that where a path enters or leaves one of
+ * the polygons it gets split into two paths. Assign Z values to path
+ * vertices that reflect the depth to which that path segment is to be
+ * cut.
+ * @param {CutPath} toolPath path being followed by the cutter, may be
+ * open or closed.
  * @param {CutPaths} tabGeometry polygons representing tabs, must all
- * be closed paths.
+ * be closed paths and non-overlapping.
+ * @param {number} cutZ the Z to cut to outside of tabs (integer units)
+ * @param {number} tabZ the Z to cut to within tabs (integer units)
+ * @return {CutPaths} array of puts with Z coords assigned
  * @author Crawford Currie
  * @memberof Cam
  */
-export function separateTabs(toolPath, tabGeometry) {
-  assert(toolPath instanceof CutPath);
-  assert(tabGeometry instanceof CutPaths);
-  console.debug(`Cam.separateTabs over ${tabGeometry.length} tab paths`);
-  const tabPolys = new CutPaths();
-  for (const poly of tabGeometry) {
-    const poly2d = new Flatten.Polygon(
-      poly.map(pt => new Flatten.Point(pt.X, pt.Y)));
-    tabPolys.push(poly2d);
-  }
-  let ip0 = toolPath[toolPath.length - 1];
-  let p0 = new Flatten.Point(ip0.X, ip0.Y);
+export function splitPathOverTabs(toolPath, tabGeometry, cutZ, tabZ) {
+  if (toolPath.isClosed)
+    toolPath.push(toolPath[0]);
 
-  // If the first point of the last path is outside a tab poly,
-  // then we need to add a zero-length path so that all even-numbered
-  // paths are tab paths
-  for (const tab of tabPolys) {
-    if (tab.contains(p0)) {
-      // add a zero-length path
-      paths.unshift([ ip0, ip0 ]);
-      break;
-    }
+  if (!tabGeometry) {
+    toolPath.Z(cutZ, true);
+    return new CutPaths([ toolPath ]);
   }
 
-  const paths = new CutPaths();
-  let currPath = [ ip0 ];
-  //console.debug("Path starts at ", ip0);
-  for (const ip1 of toolPath) {
-    if (ip1.X !== ip0.X || ip1.Y !== ip0.Y) {
-      //console.debug("\tnew point at ", ip1);
-      const p1 = new Flatten.Point(ip1.X, ip1.Y);
-      const seg = new Flatten.Segment(p0, p1);
-      for (const tabPoly of tabPolys) {
-        const intersections = seg.intersect(tabPoly);
-        if (intersections.length > 0) {
-          // Sort the intersections by ascending distance from the start point
-          // of the segment
-          intersections.sort((a, b) => a.distanceTo(p0)[0] - b.distanceTo(p0)[0]);
-          //console.debug("\tintersections at ", intersections);
-          // Each intersection is the start of a new path
-          for (const intersection of intersections) {
-            const ins = new CutPoint(intersection.x, intersection.y);
-            //console.debug("\tintersection at ", ins, intersection.distanceTo(p0)[0]);
-            currPath.push(ins);
-            paths.push(currPath);
-            currPath = [ ins ];
-          }
-          currPath.push(ip1);
-        } else {
-          // add the segment to the current path intact
-          currPath.push(ip1);
-        }
-      }
-      p0 = p1;
-      ip0 = ip1;
-    }
-  }
-  if (currPath.length > 1)
-    paths.push(currPath);
+  // Use Difference to extract the cut paths
+  let clpr = new ClipperLib.Clipper();
+  clpr.AddPath(toolPath, ClipperLib.PolyType.ptSubject, false);
+  clpr.AddPaths(tabGeometry, ClipperLib.PolyType.ptClip, true);
+  let solution_polytree = new ClipperLib.PolyTree();
+  clpr.Execute(ClipperLib.ClipType.ctDifference, solution_polytree,
+               ClipperLib.PolyFillType.pftNonZero,
+               ClipperLib.PolyFillType.pftNonZero);
+  const cutDepthPaths = new CutPaths(
+    ClipperLib.Clipper.OpenPathsFromPolyTree(solution_polytree));
+  cutDepthPaths.Z(cutZ, true);
 
-  console.debug(`Cam.separatePaths generated ${paths.length} tool paths`);
-  return paths;
+  // Use intersection to extract the tab paths
+  clpr = new ClipperLib.Clipper();
+  clpr.AddPath(toolPath, ClipperLib.PolyType.ptSubject, false);
+  clpr.AddPaths(tabGeometry, ClipperLib.PolyType.ptClip, true);
+  solution_polytree = new ClipperLib.PolyTree();
+  clpr.Execute(ClipperLib.ClipType.ctIntersection, solution_polytree,
+               ClipperLib.PolyFillType.pftNonZero,
+               ClipperLib.PolyFillType.pftNonZero);
+  const tabDepthPaths = new CutPaths(ClipperLib.Clipper.OpenPathsFromPolyTree(
+    solution_polytree));
+  tabDepthPaths.Z(tabZ, true);
+
+  // Combine and merge the paths
+  return cutDepthPaths.concat(tabDepthPaths).sortPaths(3);
 }

@@ -2,10 +2,11 @@
 
 /* global assert */
 /* global ClipperLib */
+ClipperLib.use_xyz = true;
 
 import { UnitConverter } from "./UnitConverter.js";
-
 import { CutPoint } from "./CutPoint.js";
+import { BBox3D } from "./BBox3D.js";
 
 /*
  * Remove path vertices closer than this.
@@ -47,6 +48,9 @@ export class CutPath extends Array {
       this.isClosed = path.isClosed;
     else if (typeof closed !== "undefined")
       this.isClosed = closed;
+
+    if (path && path instanceof CutPoint)
+      path = [ path ];
 
     if (Array.isArray(path)) {
       for (const point of path) {
@@ -128,19 +132,20 @@ export class CutPath extends Array {
    * make geometric sense on open paths, it may also be useful when joining
    * closed paths.
    * @param {CutPoint} point to test
-   * @return {object?} { pointIndex: number, dist2: number } or undefined.
-   * point is the index of the closest endpoint, dist2 is the square of the
-   * distance
+   * @return {object?} `{ pointIndex: number, point: CutPoint, dist2: number }`
+   * or undefined. `pointIndex` is the index of the closest endpoint,
+   * `point` is the actual endpoint, `dist2` is the square of the distance.
    */
   closestEndpoint(pt) {
-    let best;
-    let d2 = pt.dist2(this[0]);
-    if (!best || d2 < best.dist2)
-      best = { dist2: d2, pointIndex: 0 };
-    d2 = pt.dist2(this[this.length - 1]);
-    if (best && d2 < best.dist2)
-      best = { dist2: d2, pointIndex: this.length - 1 };
-    return best;
+    const s = this[0];
+    const e = this[this.length - 1];
+
+    const ds = pt.dist2(s);
+    const de = pt.dist2(e);
+    if (de < ds)
+      return { dist2: de, pointIndex: this.length - 1, point: e };
+    else
+      return { dist2: ds, pointIndex: 0, point: s };
   }
 
   /**
@@ -219,6 +224,29 @@ export class CutPath extends Array {
     }
 
     return inside? 1 : -1;
+  }
+
+  /**
+   * Assign a single Z value to all CutPoints in this path that
+   * don't already have a Z.
+   * @param {boolean} force force the new Z value even if the point already
+   * has a Z.
+   */
+  Z(z, force) {
+    for (const p of this)
+      if (force || typeof p.Z === "undefined")
+        p.Z = z;
+  }
+
+  /**
+   * Get the 3D BB of the paths
+   * @return {BBox3D}
+   */
+  bbox3D() {
+    const bb = new BBox3D(this[0]);
+    for (let i = 1; i < this.length; i++)
+      bb.expand(this[i]);
+    return bb;
   }
 
   toJson() {

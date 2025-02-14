@@ -27,13 +27,13 @@ describe("CutPaths", () => {
     });
   });
 
-  it("empty", () => {
+  UNit("empty", () => {
     const cp = new CutPaths();
     assert(cp instanceof CutPaths);
     assert(Array.isArray(cp));
   });
 
-  it("from arrays", () => {
+  UNit("from arrays", () => {
     const cp = new CutPaths([
       [ { x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 } ],
       [{X:0,Y:0},{X:100,y:0},{X:0,y:100}]
@@ -42,7 +42,7 @@ describe("CutPaths", () => {
     assert.equal(cp.length, 2);
   });
 
-  it("from CutPath", () => {
+  UNit("from CutPath", () => {
     const cp = new CutPaths([
       [ { x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 } ],
       [{X:0,Y:0},{X:100,y:0},{X:0,y:100}]
@@ -51,13 +51,13 @@ describe("CutPaths", () => {
     assert.equal(cp.length, 2);
   });
 
-  it("from CutPaths", () => {
+  UNit("from CutPaths", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
     const cp = new CutPaths(path);
     assert.deepEqual(cp, [path]);
   });
 
-  it("toSegments", () => {
+  UNit("toSegments", () => {
     const cp = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}], true)
@@ -71,7 +71,7 @@ describe("CutPaths", () => {
     ]);
   });
 
-  it("fromSegments", () => {
+  UNit("fromSegments", () => {
     const cp = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}],
@@ -82,7 +82,7 @@ describe("CutPaths", () => {
     assert.almost(sp, cp);
   });
 
-  it("offset", () => {
+  UNit("offset", () => {
     const cps = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}],
@@ -98,7 +98,7 @@ describe("CutPaths", () => {
     ]);
   });
 
-  it("closestVertex", () => {
+  UNit("closestVertex", () => {
     const paths = new CutPaths([
       [
         { X: 30, Y: 0, Z: 0 },
@@ -122,7 +122,7 @@ describe("CutPaths", () => {
                      { pointIndex: 1, dist2: 2, pathIndex: 1 });
   });
 
-  it("closestEndPoint", () => {
+  UNit("closestEndPoint", () => {
     const paths = new CutPaths([
       [
         { X: 30, Y: 0, Z: 0 },
@@ -136,17 +136,22 @@ describe("CutPaths", () => {
       ]
     ], true);
     assert.deepEqual(paths.closestEndpoint(new CutPoint(30,0), true),
-                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+                     { pointIndex: 0, dist2: 0, pathIndex: 0,
+                       point: { X: 30, Y: 0, Z: 0 }});
     assert(!paths.closestEndpoint(new CutPoint(30,0), false));
     assert.deepEqual(paths.closestEndpoint(new CutPoint(30,0)),
-                     { pointIndex: 0, dist2: 0, pathIndex: 0 });
+                     { pointIndex: 0, dist2: 0, pathIndex: 0,
+                     point: { X: 30, Y: 0, Z: 0 }});
     assert.deepEqual(paths.closestEndpoint(new CutPoint(41,1), true),
-                     { pointIndex: 2, dist2: 82, pathIndex: 0 });
-    assert.deepEqual(paths.closestEndpoint(new CutPoint(51,26), true),
-                     { pointIndex: 2, dist2: 677, pathIndex: 0 });
+                     { pointIndex: 2, dist2: 82, pathIndex: 0,
+                       point: { X: 50, Y: 0, Z: 0 }});
+    // endpoints, so even though 50,25 is closer...
+    assert.deepEqual(paths.closestEndpoint(new CutPoint(51,26)),
+                     { pointIndex: 0, dist2: 242, pathIndex: 1,
+                     point: { X: 40, Y: 15, Z: 0 }});
   });
 
-  it("to/from json", () => {
+  UNit("to/from json", () => {
     const paths = new CutPaths([
       new CutPath([
         { X: 30, Y: 0, Z: 0 },
@@ -164,6 +169,93 @@ describe("CutPaths", () => {
     assert.deepEqual(shtap, paths);
   });
   
+  it("sort open paths 2D", () => {
+    const cps = new CutPaths([
+      [
+        { X: 0, Y: 60, Z: -2 },
+        { X: -10, Y: 60, Z: -2 },
+        { X: -10, Y: 40, Z: -2 }
+      ],
+      [
+        { X:   0, Y: 60, Z: -1 },
+        { X: 100, Y: 60, Z: -1 }
+      ],
+      [
+        { X: 100, Y: 40, Z: -2 },
+        { X: 110, Y: 40, Z: -2 },
+        { X: 110, Y: 60, Z: -2 },
+        { X: 100, Y: 60, Z: -2 }
+      ],
+      [
+        { X:   0, Y: 40, Z: -1 },
+        { X: 100, Y: 40, Z: -1 }
+      ],
+      [
+        { X: -10, Y: 40, Z: -2 },
+        { X: 0, Y: 40, Z: -2 }
+      ]
+    ]);
+    cps.sortPaths(2);
+    assert.deepEqual(cps, new CutPaths([
+      [
+        { X: -10, Y: 40, Z: -2 },
+        { X: 0, Y: 40, Z: -2 },
+        { X: 100, Y: 40, Z: -1 },
+        { X: 110, Y: 40, Z: -2 },
+        { X: 110, Y: 60, Z: -2 },
+        { X: 100, Y: 60, Z: -2 },
+        { X: 0, Y: 60, Z: -1 },
+        { X: -10, Y: 60, Z: -2 },
+        { X: -10, Y: 40, Z: -2 },
+    ]], false));
+  });
+
+  it("sort open paths 3D", () => {
+    const cps = new CutPaths([
+      [
+        { X: 0, Y: 60, Z: -2 },
+        { X: -10, Y: 60, Z: -2 },
+        { X: -10, Y: 40, Z: -2 }
+      ],
+      [
+        { X: 100, Y: 40, Z: -2 },
+        { X: 110, Y: 40, Z: -2 },
+        { X: 110, Y: 60, Z: -2 },
+        { X: 100, Y: 60, Z: -2 }
+      ],
+      [
+        { X:   0, Y: 60, Z: -1 },
+        { X: 100, Y: 60, Z: -1 }
+      ],
+      [
+        { X:   0, Y: 40, Z: -1 },
+        { X: 100, Y: 40, Z: -1 }
+      ],
+      [
+        { X: -10, Y: 40, Z: -2 },
+        { X: 0, Y: 40, Z: -2 }
+      ]
+    ]);
+    cps.sortPaths(3);
+    assert.deepEqual(cps, new CutPaths([
+      [
+        { X: -10, Y: 40, Z: -2 },
+        { X:   0, Y: 40, Z: -2 },
+        { X:   0, Y: 40, Z: -1 },
+        { X: 100, Y: 40, Z: -1 },
+        { X: 100, Y: 40, Z: -2 },
+        { X: 110, Y: 40, Z: -2 },
+        { X: 110, Y: 60, Z: -2 },
+        { X: 100, Y: 60, Z: -2 },
+        { X: 100, Y: 60, Z: -1 },
+        { X:   0, Y: 60, Z: -1 },
+        { X:   0, Y: 60, Z: -2 },
+        { X: -10, Y: 60, Z: -2 },
+        { X: -10, Y: 40, Z: -2 },
+      ]
+    ], false));
+  });
+
   it("clip", () => {
   });
 
@@ -177,24 +269,6 @@ describe("CutPaths", () => {
   });
 
   /*
-    it("mergePaths simple", () => {
-    const cps = new CutPaths([
-      new CutPath([
-        { X:0, Y:0 }, { X:100*d, y:0 }, { X:100*d, Y:100*d }, { X:0,y:100*d }],
-                  true)
-    ]);
-    const off = cps.offset(-d);
-    cps.mergePaths(off);
-    assert.almost(cps.toSegments(), [
-      [ 'M', 0, 0 ],
-      [
-        'L', 100,   0, 100, 100,  0, 100,  0,  0,
-               1,   1,  99,   1, 99,  99,  1, 99, 1, 1
-      ],
-      [ 'Z' ]
-    ]);
-  });
-
   it("mergePaths crossing", () => {
     const big = new CutPaths([
       new CutPath([

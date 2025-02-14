@@ -226,7 +226,7 @@
                   </div>
                   <div class="card-list-cell">
                     <select id="OpOperation"
-                            data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName[entry];},value:operation">
+                            data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName(entry);},value:operation">
                     </select>
                   </div>
                   <div class="card-list-cell">
@@ -350,7 +350,7 @@
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse"
-                 href="#TabsViewPane" class="nav-link">Tabs</a>
+                 href="#TabsViewPane" class="nav-link">Holding Tabs</a>
             </h3>
           </div>
           <div id="TabsViewPane" class="collapse hide">
@@ -371,7 +371,7 @@
               </table>
               <div style="display:inline-block">
                 <button
-                  id="CreateTabButton" class="btn btn-primary manual-popover"
+                  id="CreateTabsButton" class="btn btn-primary manual-popover"
                   data-bind="click:addTab,enable:App.models.Selection.isSomethingSelected()">
                   Create Tabs
                 </button>
@@ -909,7 +909,7 @@
       <span name="ToolCutRate">
         The speed the tool moves horizontally during cutting</span>
       <!-- Tabs -->
-      <span name="CreateTabButton"><p class='bg-danger'>
+      <span name="CreateTabsButton"><p class='bg-danger'>
           Select one or more paths in the "Toolpaths" pane before clicking
           here</p></span>
       <span name="TabEnabled">Enable/disable this holding tab</span>

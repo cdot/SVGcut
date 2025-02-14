@@ -88,8 +88,8 @@ export class TabViewModel extends ViewModel {
    */
   initialise(nodes) {
     this.addPopovers([
-      { id: "tabEnabled" },
-      { id: "tabMargin" }
+      { id: "TabEnabled" },
+      { id: "TabMargin" }
     ], nodes);
   }
 

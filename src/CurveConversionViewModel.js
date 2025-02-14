@@ -44,6 +44,8 @@ class CurveConversionViewModel extends ViewModel {
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
     unitConverter.add(this.minSegLen);
+
+    ko.applyBindings(this, document.getElementById("CurveConversionView"));
   }
 
   /**
@@ -51,8 +53,6 @@ class CurveConversionViewModel extends ViewModel {
    */
   initialise() {
     super.addPopovers(POPOVERS);
-
-    ko.applyBindings(this, document.getElementById("CurveConversionView"));
   }
 
   /**

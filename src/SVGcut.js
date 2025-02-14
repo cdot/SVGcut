@@ -18,6 +18,7 @@ import { Simulation } from "./Simulation.js";
 import { Rect } from "./Rect.js";
 import * as Gcode from "./Gcode.js";
 import * as SVG from "./SVG.js";
+import * as Cam from "./Cam.js";
 
 /**
  * Format a time for display in a string e.g
@@ -47,21 +48,6 @@ export class SVGcut {
    * @param {object} config currently unused, but might be needed again.
    */
   constructor(config) {
-
-    // TODO: move these op names to HTML to ease translation
-    /**
-     * Long names for supported operations
-     * @member {string[]}
-     */
-    this.longOpName = [
-      "Pocket (annular)",
-      "Drill",
-      "Engrave",
-      "Inside",
-      "Outside",
-      "Perforate",
-      "Pocket (raster)"
-    ];
 
     /**
      * Map from model name (e.g. "Operations") to the view model
@@ -207,6 +193,13 @@ export class SVGcut {
 
     return this.simulation.start()
     .then(() => this.models.Project.loadDefaults());
+  }
+
+  /**
+   * Get the long name for a Cam op
+   */
+  longOpName(op) {
+    return Cam.LONG_OP_NAME[op];
   }
 
   /**
