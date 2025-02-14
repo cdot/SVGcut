@@ -96,37 +96,6 @@ class ProjectViewModel extends ViewModel {
      * @member {observable.<string>}
      */
     this.browserProjects = ko.observableArray([]);
-  }
-
-  /**
-   * @override
-   */
-  initialise() {
-    this.addPopovers(POPOVERS);
-
-    ko.applyBindings(
-      this,
-      document.getElementById("ProjectView"));
-
-    ko.applyBindings(
-      this,
-      document.getElementById("Toolbar"));
-
-    ko.applyBindings(
-      this,
-      document.getElementById("SaveProjectModal"));
-
-    ko.applyBindings(
-      this,
-      document.getElementById("LoadProjectFromBrowserModal"));
-
-    ko.applyBindings(
-      this,
-      document.getElementById("DeleteProjectFromBrowserModal"));
-
-    ko.applyBindings(
-      this,
-      document.getElementById("ConfirmDataLossModal"));
 
     // Handler for loading a project from disc when a file is chosen
     // in the browser
@@ -193,6 +162,17 @@ class ProjectViewModel extends ViewModel {
 
     document.addEventListener(
       "PROJECT_CHANGED", () => this.isChanged = true);
+  }
+
+  /**
+   * @override
+   */
+  bind() {
+    for (const id of [ "ProjectView", "Toolbar", "SaveProjectModal",
+                       "LoadProjectFromBrowserModal",
+                       "DeleteProjectFromBrowserModal",
+                       "ConfirmDataLossModal" ])
+      super.bind(id);
   }
 
   /**

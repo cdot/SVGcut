@@ -11,12 +11,6 @@ import { loadSVGFromText } from "./SVG.js";
 const DEFAULT_THICKNESS = 10; //mm
 const DEFAULT_CLEARANCE = 10; //mm
 
-const POPOVERS = [
-  { id:"inputMatThickness" },
-  { id:"selectMatZOrigin" },
-  { id:"inputMatClearance" }
-];
-
 function formatZ(z) {
   return parseFloat(z).toFixed(3);
 }
@@ -131,15 +125,10 @@ export class MaterialViewModel extends ViewModel {
     .then(response => response.text())
     .then(content => Promise.resolve(loadSVGFromText(content)))
     .then(dom => { svg.replaceWith(dom); this.materialSVG(dom); });
-  }
 
-  /**
-   * @override
-   */
-  initialise() {
-    this.addPopovers(POPOVERS);
-
-    ko.applyBindings(this, document.getElementById("MaterialView"));
+    const el = document.getElementById("MaterialView");
+    ko.applyBindings(this, el);
+    this.addPopovers(el);
   }
 
   /**

@@ -7,11 +7,6 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const POPOVERS = [
-  { id: "inputMinNumSegments" },
-  { id: "inputMinSegmentLength" }
-];
-
 const DEFAULT_MINSEGS = 5;
 const DEFAULT_MINSEGLEN = 0.25; //mm
 
@@ -24,7 +19,7 @@ class CurveConversionViewModel extends ViewModel {
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
-    super(unitConverter);
+    super(unitConverter, );
 
     /**
      * Minimum number of segments in a curve
@@ -44,15 +39,13 @@ class CurveConversionViewModel extends ViewModel {
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
     unitConverter.add(this.minSegLen);
-
-    ko.applyBindings(this, document.getElementById("CurveConversionView"));
   }
 
   /**
    * @override
    */
-  initialise() {
-    super.addPopovers(POPOVERS);
+  bind() {
+    super.bind("CurveConversionView");
   }
 
   /**

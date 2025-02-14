@@ -176,9 +176,8 @@ export class SVGcut {
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
-    // Complete UI initialisation of the view models
     for (const m in this.models)
-      this.models[m].initialise();
+      this.models[m].bind();
 
     this.tutorial(1);
   }

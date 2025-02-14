@@ -22,21 +22,6 @@ const DEFAULT_SPACING = 1;         //mm
 const DEFAULT_SPINDLESPEED = 1000; // rpm
 const DEFAULT_WIDTH = 0;           //mm
 
-const POPOVERS = [
-  { id: "OpEnabled" },
-  { id: "OpOperation" },
-  { id: "OpCutDepth" },
-  { id: "OpName" },
-  { id: "OpRamp" },
-  { id: "OpCombine" },
-  { id: "OpDirection" },
-  { id: "OpVMaxDepth" },
-  { id: "OpMargin" },
-  { id: "OpSpacing" },
-  { id: "OpSpindleSpeed" },
-  { id: "OpWidth" }
-];
-
 const FIELDS = [
   "name", "enabled", "combineOp", "operation", "cutDepth", "width",
   "direction", "spacing", "ramp", "margin", "spindleSpeed"
@@ -271,13 +256,6 @@ class OperationViewModel extends ViewModel {
   updateGcode() {
     if (!this.generatingToolpath)
       document.dispatchEvent(new Event("UPDATE_GCODE"));
-  }
-
-  /**
-   * @override
-   */
-  initialise(nodes) {
-    this.addPopovers(POPOVERS, nodes);
   }
 
   /**

@@ -222,16 +222,19 @@
                   </div>
                   <div class="card-list-cell enable">
                     <input id="OpEnabled" type="checkbox"
-                           data-bind="checked: enabled" />
+                           data-bind="checked: enabled"
+                           class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
                     <select id="OpOperation"
-                            data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName(entry);},value:operation">
+                            data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName(entry);},value:operation"
+                            class="auto-popover">
                     </select>
                   </div>
                   <div class="card-list-cell">
                     <input id="OpCutDepth" type="number" step="any" min="0"
-                           data-bind="value: cutDepth">
+                           data-bind="value: cutDepth"
+                           class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
                     <label class="control-label">
@@ -246,7 +249,8 @@
                         Name
                       </label>
                     </td><td>
-                      <input id="OpName" data-bind="value: name">
+                      <input id="OpName" data-bind="value: name"
+                             class="auto-popover" />
                     </td>
                   </tr>
                   <tr data-bind="visible:needs('ramp')">
@@ -256,7 +260,8 @@
                       </label>
                     </td><td>
                       <input id="OpRamp" type="checkbox"
-                             data-bind="checked: ramp" />
+                             data-bind="checked: ramp"
+                             class="auto-popover" />
                     </td>
                   </tr>
                   <tr>
@@ -265,7 +270,8 @@
                         Combine
                       </label>
                     </td><td>
-                      <select id="OpCombine" data-bind="value: combineOp">
+                      <select id="OpCombine" data-bind="value:combineOp"
+                              class="auto-popover">
                         <option value="Union">Union</option>
                         <option value="Intersect">Intersection</option>
                         <option value="Diff">Difference</option>
@@ -279,7 +285,7 @@
                       </label>
                     </td><td>
                       <select id="OpDirection"
-                              data-bind="value: direction">
+                              data-bind="value: direction" class="auto-popover">
                         <option value="Conventional">Conventional</option>
                         <option value="Climb">Climb</option>
                       </select>
@@ -292,7 +298,8 @@
                     </td><td>
                       <input id="OpSpindleSpeed" type="number"
                              step="any" min="0"
-                             data-bind="value: spindleSpeed">
+                             data-bind="value: spindleSpeed"
+                             class="auto-popover" />
                       rpm
                     </td>
                   </tr><tr data-bind="visible:needs('margin')">
@@ -303,7 +310,8 @@
                     </td><td>
                       <input id="OpMargin" type="number"
                              step="any"
-                             data-bind="value: margin">
+                             data-bind="value: margin"
+                             class="auto-popover" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
                   </tr><tr data-bind="visible:needs('spacing')">
@@ -314,7 +322,8 @@
                     </td><td>
                       <input id="OpSpacing" type="number"
                              step="any" min="0"
-                             data-bind="value: spacing">
+                             data-bind="value: spacing"
+                             class="auto-popover" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
                   </tr>
@@ -326,14 +335,16 @@
                     </td><td>
                       <input id="OpWidth" type="number"
                              step="any" min="0"
-                             data-bind="value: width">
+                             data-bind="value: width"
+                             class="auto-popover" />
                       <span data-bind="text: App.models.Project.units">
                       </span>
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">
-                      <button href="#" class="btn btn-secondary btn-sm"
+                      <button href="#"
+                              class="btn btn-secondary btn-sm auto-popover"
                               data-bind="click: removeOperation">
                         Delete Operation
                       </button>
@@ -364,7 +375,8 @@
                   <td>
                     <input id="TabsMaxCutDepth" type="number"
                            step="any" min="0"
-                           data-bind="value: maxCutDepth">
+                           data-bind="value: maxCutDepth"
+                           class="auto-popover">
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
@@ -384,11 +396,11 @@
                 <div class="card-list-row">
                   <div class="card-list-cell enable">
                     <input id="TabEnabled" type="checkbox"
-                           data-bind="checked: enabled" />
+                           data-bind="checked: enabled" class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
                     <input id="TabMargin" type="number" step="any" min="0"
-                           data-bind="value: margin">
+                           data-bind="value: margin" class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
                     <button class="btn btn-secondary btn-sm"
@@ -420,7 +432,8 @@
                       Units
                     </label>
                   </td><td colspan="2">
-                    <select id="GcodeUnits" data-bind="value: units">
+                    <select id="GcodeUnits" data-bind="value: units"
+                            class="auto-popover">
                       <option>mm</option>
                       <option>inch</option>
                     </select>
@@ -432,7 +445,8 @@
                       Origin
                     </label>
                   </td><td colspan="2">
-                    <select id="GcodeOrigin" data-bind="value: origin">
+                    <select id="GcodeOrigin" data-bind="value: origin"
+                            class="auto-popover">
                       <option value="SVG page">SVG page</option>
                       <option value="Bounding box">Bounding box</option>
                       <option value="Centre">Centre</option>
@@ -447,18 +461,22 @@
                   <td>
                     <input type="number" step="any"
                            id="GcodeExtraOffsetX"
-                           data-bind="value: extraOffsetX">
+                           data-bind="value: extraOffsetX"
+                           class="auto-popover" />
                   </td>
                   <td>
                     <input type="number" step="any"
                            id="GcodeExtraOffsetY"
-                           data-bind="value: extraOffsetY">
+                           data-bind="value: extraOffsetY"
+                           class="auto-popover" />
                   </td>
                 </tr>
                 <tr>
                   <td><label>Area</label></td>
-                  <td id="GcodeWidth" data-bind="text: bbWidth"></td>
-                  <td id="GcodeHeight" data-bind="text: bbHeight"></td>
+                  <td id="GcodeWidth" data-bind="text: bbWidth"
+                      class="auto-popover"></td>
+                  <td id="GcodeHeight" data-bind="text: bbHeight"
+                      class="auto-popover"></td>
                 </tr>
                 <tr>
                   <td colspan="2">
@@ -467,7 +485,8 @@
                   </td>
                   <td>
                     <input id="GcodeReturn00" type="checkbox"
-                           data-bind="checked: returnTo00" />
+                           data-bind="checked: returnTo00"
+                           class="auto-popover" />
                   </td>
                 </tr>
               </table> <!-- /card-table -->
@@ -708,7 +727,8 @@
                       Diameter</label>
                   </td><td>
                     <input id="ToolDiameter" type="number" step="any"
-                             data-bind="value: diameter">
+                           data-bind="value: diameter"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
@@ -720,7 +740,8 @@
                   </td><td>
                     <input id="ToolAngle" type="number"
                            step="any" min="1" max="180"
-                           data-bind="value: angle"> &deg;
+                           data-bind="value: angle"
+                           class="auto-popover" /> &deg;
                   </td>
                 </tr>
                 -->
@@ -730,7 +751,8 @@
                   </td><td>
                     <input id="ToolPassDepth" type="number"
                            step="any" min="0"
-                           data-bind="value: passDepth">
+                           data-bind="value: passDepth"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr><tr>
@@ -739,7 +761,8 @@
                   </td><td>
                     <input id="ToolStepOver" type="number"
                            step="any" min="0" max="1"
-                           data-bind="value: stepover"> [0..1]
+                           data-bind="value: stepover"
+                           class="auto-popover"> [0..1]
                   </td>
                 </tr><tr>
                   <td><label for="ToolRapidRate" class="control-label">
@@ -747,7 +770,8 @@
                   </td><td>
                     <input id="ToolRapidRate" type="number"
                            step="any" min="0"
-                           data-bind="value: rapidRate">
+                           data-bind="value: rapidRate"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr><tr>
@@ -756,7 +780,8 @@
                   </td><td>
                     <input id="ToolPlungeRate" type="number"
                            step="any" min="0"
-                           data-bind="value: plungeRate">
+                           data-bind="value: plungeRate"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr>
@@ -766,7 +791,8 @@
                   </td><td>
                     <input id="ToolCutRate" type="number"
                            step="any" min="0"
-                           data-bind="value: cutRate">
+                           data-bind="value: cutRate"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                 </tr>
@@ -804,7 +830,8 @@
                   </td><td>
                     <input type="number" step="any" id="InputMatThickness"
                            data-bind="value: thickness"
-                           placeholder="Thickness">
+                           placeholder="Thickness"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr><tr>
@@ -812,7 +839,8 @@
                     <label for="SelectMatZOrigin" class="control-label">
                       Z Origin</label>
                   </td><td>
-                    <select id="SelectMatZOrigin" data-bind="value: zOrigin">
+                    <select id="SelectMatZOrigin" data-bind="value: zOrigin"
+                            class="auto-popover">
                       <option value="Top">Top</option>
                       <option value="Bottom">Bottom</option>
                     </select>
@@ -824,7 +852,8 @@
                   </td><td>
                     <input type="number" step="any" id="InputMatClearance"
                            data-bind="value: clearance"
-                           placeholder="Clearance">
+                           placeholder="Clearance"
+                           class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
@@ -853,7 +882,7 @@
                   </td><td colspan="2">
                     <input type="number" id="InputMinNumSegments"
                            data-bind="value: minSegs"
-                           placeholder="Segments">
+                           placeholder="Segments" class="auto-popover" />
                   </td>
                 </tr>
                 <tr>
@@ -865,7 +894,7 @@
                     <input type="number" step="any"
                            id="InputMinSegmentLength"
                            data-bind="value: minSegLen"
-                           placeholder="Length">
+                           placeholder="Length" class="auto-popover" />
                   </td><td>
                       <span data-bind="text: App.models.Project.units"></span>
                   </td>

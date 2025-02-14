@@ -38,16 +38,12 @@ class TabsViewModel extends ViewModel {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
     });
   }
-
+  
   /**
    * @override
    */
-  initialise() {
-    this.addPopovers([
-      { id: "CreateTabsButton", trigger: "manual" },
-      { id: "TabsMaxCutDepth" }
-    ]);
-    ko.applyBindings(this, document.getElementById("TabsView"));
+  bind() {
+    super.bind("TabsView");
   }
 
   /**

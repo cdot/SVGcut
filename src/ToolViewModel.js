@@ -7,18 +7,6 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const POPOVERS = [
-  { id: "toolUnits" },
-  { id: "toolDiameter" },
-  { id: "toolAngle" },
-  { id: "toolPassDepth" },
-  { id: "toolSpindleSpeed" },
-  { id: "toolStepOver" },
-  { id: "toolRapidRate" },
-  { id: "toolPlungeRate" },
-  { id: "toolCutRate" }
-];
-
 const DEFAULT_STEPOVER = 0.4;
 const DEFAULT_DIAMETER = 3; // mm
 const DEFAULT_PASSDEPTH = 1; // mm
@@ -115,14 +103,10 @@ class ToolViewModel extends ViewModel {
         document.dispatchEvent(new Event("UPDATE_GCODE"));
       }
     });
-  }
 
-  /**
-   * @override
-   */
-  initialise() {
-    this.addPopovers(POPOVERS);
-    ko.applyBindings(this, document.getElementById("ToolView"));
+    const el = document.getElementById("ToolView");
+    ko.applyBindings(this, el);
+    this.addPopovers(el);
   }
 
   /**

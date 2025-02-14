@@ -84,16 +84,6 @@ export class TabViewModel extends ViewModel {
   }
 
   /**
-   * @override
-   */
-  initialise(nodes) {
-    this.addPopovers([
-      { id: "TabEnabled" },
-      { id: "TabMargin" }
-    ], nodes);
-  }
-
-  /**
    * Invoked from HTML. Operations are bound to this view model, so
    * when removeTab is bound it comes here.
    */

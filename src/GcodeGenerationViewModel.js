@@ -16,16 +16,6 @@ import { ViewModel } from "./ViewModel.js";
 import * as Cam from "./Cam.js";
 import { Rect } from "./Rect.js";
 
-const POPOVERS = [
-  { id: "gcodeUnits" },
-  { id: "gcodeOrigin" },
-  { id: "gcodeExtraOffsetX" },
-  { id: "gcodeExtraOffsetY" },
-  { id: "gcodeWidth" },
-  { id: "gcodeHeight" },
-  { id: "gcodeReturn00" }
-];
-
 const DEFAULT_UNITS = "mm";
 const DEFAULT_ORIGIN = "SVG page";
 const DEFAULT_EXTRAOFFSETX = 0;
@@ -157,25 +147,16 @@ class GcodeGenerationViewModel extends ViewModel {
         this.bbHeight(
           this.unitConverter.fromUnits(bb.height, "integer").toFixed(2));
       });
-
-    ko.applyBindings(
-      this, document.getElementById("GcodeGenerationView"));
-
-    ko.applyBindings(
-      this, document.getElementById("SaveGcodeModal"));
-
-    ko.applyBindings(
-      this, document.getElementById("ViewGcodeModal"));
-
-    ko.applyBindings(
-      this, document.getElementById("SimulatePanel"));
   }
 
   /**
    * @override
    */
-  initialise() {
-    this.addPopovers(POPOVERS);
+  bind() {  
+    for (const id of [
+      "GcodeGenerationView", "SaveGcodeModal", "ViewGcodeModal",
+      "SimulatePanel" ])
+      super.bind(id);
   }
 
   /**

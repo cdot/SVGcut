@@ -31,71 +31,60 @@ class ViewModel {
   /**
    * Apply popovers. Locations to attach popovers are identified by
    * the element id, which is matched in the `#Popovers` div in HTML.
-   * If `nodes` are passed, then the id's of those nodes (and their
-   * descendants) will be matched agains the keys in popovers, and the
-   * popovers only applied if there is a match. If nodes are not
-   * passed, then the id's are looked up in the document.
-   * @param {object?} popovers a map from id to popover info {pos, text}
-   * @param {NodeList} nodes list of nodes to apply the popovers on.
+   * @param {Node|NodeList} nodes (list of) nodes to apply the popovers on.
    * @protected
    */
-  addPopovers(popovers, nodes) {
-    if (!popovers)
-      return;
+  addPopovers(nodes) {
 
-    // Get the HTML for the popover associated with the given id
-    function getHTML(id) {
-      const pot = document.querySelector(`#Popovers>[name="${id}"]`);
+    function connect(node, trigger) {
+      const pot = document.querySelector(`#Popovers>[name="${node.id}"]`);
       if (!pot)
-        throw new Error(`No #Popovers>[name="${id}"]`);
-      return pot.innerHTML;
+        throw new Error(`No #Popovers>[name="${node.id}"]`);
+      new bootstrap.Popover(node, {
+        trigger: trigger,
+        html: true,
+        container: "body",
+        content: pot.innerHTML,
+        placement: "top"
+      });
     }
 
-    // Handle a mousein on a popovered element
-    function popoverHover(element, po) {
-      if (element && po) {
-        new bootstrap.Popover(element, {
-          trigger: po.trigger ?? "hover",
-          html: true,
-          container: "body",
-          content: po.content ?? getHTML(element.id),
-          placement: po.placement ?? "top"
-        });
-      }
-    }
-
-    if (nodes) {
-      // Apply popovers to nodes and their descendants
-      const pol = {};
-      popovers.map(po => pol[po.id] = po);
-
-      // Recursively explore a list of child nodes
-      function explore(nodes) {
-        if (nodes)
-          for (const node of nodes) {
-            if (node.id in pol)
-              popoverHover(node, pol[node.id]);
-            explore(node.childNodes);
-          }
-      }
-      explore(nodes);
-    } else {
-      // Apply popovers to elements found in the document
-      for (const po of popovers)
-        popoverHover(document.getElementById(po.id), po);
+    if (Array.isArray(nodes)) {
+      for (const node of nodes)
+        this.addPopovers(node);
+    } else if (nodes.querySelectorAll) {
+      let candidates = nodes.querySelectorAll(".auto-popover");
+      for (const node of candidates)
+        connect(node, "hover");
+      candidates = nodes.querySelectorAll(".manual-popover");
+      for (const node of candidates)
+        connect(node, "manual");
     }
   }
 
   /**
-   * Top level views only. This is invoked by knockout
-   * via an afterRender handler, to connect popovers to the components
-   * of the subview. Note that this is invoked without 'this' being set.
+   * Apply bindings and create popovers. Inteded to be overridden
+   * in subclasses which know their id's.
+   */
+  bind(id) {
+    if (id) {
+      const el = document.getElementById(id);
+      ko.applyBindings(this, el);
+      this.addPopovers(el);
+    }
+  }
+
+  /**
+   * This is invoked by knockout via an afterRender handler, to
+   * connect popovers to the components of the subview. Note that
+   * it is invoked without 'this' being set.
    * @param {NodeList} nodes nodes to decorate
-   * @param {ViewModel} subview subview model instance
+   * @param {ViewModel} subview subview model instance (OperationViewModel
+   * or TabViewModel)
    * @protected
    */
   addSubview(nodes, subview) {
-    subview.initialise(nodes);
+    subview.addPopovers(nodes);
   }
 
   /**

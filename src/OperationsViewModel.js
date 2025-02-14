@@ -34,15 +34,13 @@ class OperationsViewModel extends ViewModel {
      * @member {observable.<Rect>}
      */
     this.boundingBox = ko.observable(new Rect());
-
-    ko.applyBindings(this, document.getElementById("OperationsView"));
   }
 
   /**
    * @override
    */
-  initialise() {
-    this.addPopovers([ { id: "CreateOperationButton", trigger: "manual" } ]);
+  bind() {
+    super.bind("OperationsView");
   }
 
   /**
