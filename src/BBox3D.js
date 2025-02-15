@@ -17,9 +17,9 @@ export class BBox3D {
    */
   constructor(minX, minY, minZ, maxX, maxY, maxZ) {
     if (typeof minX === "object") {
-      maxX = minX = minX.X;
-      maxY = minY = minX.Y;
       maxZ = minZ = minX.Z;
+      maxY = minY = minX.Y;
+      maxX = minX = minX.X;
     }
     this.minX = minX;
     this.minY = minY;
