@@ -535,8 +535,7 @@ export class Generator {
     assert(typeof op.spinSpeed === "number");
 
     let pathIndex = 0;
-
-    for (const path of op.paths) {
+    for (let path of op.paths) {
       pathIndex++;
 
       if (path.length === 0)
@@ -544,7 +543,6 @@ export class Generator {
 
       let passNum = 0;
       const minZ = path.bbox3D().minZ;
-
       this.rem(`Path ${pathIndex}`);
 
       // Loop over the paths carving away passDepth slices until the
@@ -557,13 +555,20 @@ export class Generator {
         //console.log(`Pass ${pathIndex}:${passNum}`);
         this.followPath(path, targetZ, op);
         lastCutZ = targetZ;
+        if (this.passDepth === 0) break;
+        // For open paths, perform the next run back down the path
+        if (!path.isClosed)
+          path = path.reverse();
       }
+      this.stopSpindle();
+
+      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Retract" });
     }
   }
 
   /**
-   * Cut a path at a maximum of the path depth (as given by the first point
-   * on the path) and the z passed.
+   * Cut a path at a maximum of the Z of the points on the path depth
+   * and the z passed.
    * @param {CutPath} path
    * @param {number?} minZ depth below which we must not cut
    * @param {object} op operation description (see addOperation for members)
@@ -580,7 +585,7 @@ export class Generator {
 
     this.startSpindle(op.spinSpeed);
 
-    const targetZ = Math.max(path[0].Z, minZ);
+    let targetZ = Math.max(path[0].Z, minZ);
 
     let i = 0, direction = 1, thisZ;
     if (op.ramp) {
@@ -628,19 +633,17 @@ export class Generator {
         }
         direction = -direction;
       }
-    } else // plunge
+    }
+    else // plunge
         thisZ = targetZ;
 
-    // Cut the whole path at the target depth
+    // Cut the whole path at the max of point.Z and minZ
     for (let j = 0; j < path.length; j++) {
       this.G(1, { f: this.cutFeed, pt: path[i], z: thisZ });
       i = (i + path.length + direction) % path.length;
+      thisZ = Math.max(path[i].Z, minZ);
     }
     if (path.isClosed)
       this.G(1, { f: this.cutFeed, pt: path[i], z: thisZ, rem: "Close path" });
-
-    this.stopSpindle();
-
-    this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Retract" });
   }
 }

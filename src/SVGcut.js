@@ -176,6 +176,10 @@ export class SVGcut {
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
+    document.addEventListener("UNSUPPORTED_SVG", e =>
+      this.showAlert("unsupportedSVG", "alert-warning",
+                     e.tag, e.attr, e.value));
+
     for (const m in this.models)
       this.models[m].bind();
 
@@ -441,7 +445,8 @@ export class SVGcut {
     if (!template) {
       // Only the content and toolPaths SVG need to be saved, everything
       // else can be regenerated
-      const svgGroups = document.querySelectorAll(".serialisableSVGGroup");
+      const svgGroups = document.querySelectorAll(
+        ".managed-SVG-group.serialisable");
       for (const svgel of svgGroups)
         container.svg[svgel.id] = svgel.innerHTML;
     }
@@ -478,16 +483,16 @@ export class SVGcut {
         this.models[m].fromJson(json);
     }
 
-    //// Reload SVG content - not currently required
-    //const svgGroups = document.querySelectorAll(
-    //  ".managed-SVG-group.serialisable");
-    //for (const svgel of svgGroups) {
-    //  if (container.svg[svgel.id]) {
-    //    console.debug("**** Reloading SVG", svgel.id);
-    //    const el = SVG.loadSVGFromText(container.svg[svgel.id]);
-    //    svgel.append(el);
-    //  }
-    //}
+    // Reload SVG content
+    const svgGroups = document.querySelectorAll(
+      ".managed-SVG-group.serialisable");
+    for (const svgel of svgGroups) {
+      if (container.svg[svgel.id]) {
+        console.debug("**** Reloading SVG", svgel.id);
+        const el = SVG.loadSVGFromText(container.svg[svgel.id]);
+        svgel.append(el);
+      }
+    }
 
     this.models.GcodeGeneration.disable = false;
 

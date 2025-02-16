@@ -267,7 +267,9 @@ export function segmentsFromElement(element, params) {
   function unsupported(attr) {
     const v = element.getAttribute(attr);
     if (v && v !== "none" && v !== "")
-      throw new Error(`<b>${element.tagName}.${attr}=${v}</b> is not supported; try Inkscape's <strong>Object to Path</strong> command`);
+      document.Event(new CustomEvent("UNSUPPORTED_SVG", {
+        detail: { tag: element.tagName, attr: attr, value: v }
+      }));
   }
 
   /*
@@ -451,7 +453,7 @@ export function segmentsFromElement(element, params) {
 
   case "animateMotion": case "animateTransform": case "textPath": case "text":
     // Unsupported
-    throw new Error(`SVGElement "${element.tagName}" is not supported; try Inkscape's "Object to Path" command`);
+    console.warn(`Unsupported element: ${element.tagName}`);
   }
 
   if (pathString) {

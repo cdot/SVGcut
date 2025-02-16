@@ -126,7 +126,7 @@ export class CutPaths extends Array {
       } else if (segment[0] === 'Z')
         currentPath.isClosed = true;
       else
-        throw new Error(`Unsupported path command: ${segment[0]}`);
+        console.warn(`Unsupported path command: ${segment[0]}`);
     }
     if (currentPath)
       cutPaths.push(currentPath);

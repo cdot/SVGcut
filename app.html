@@ -232,7 +232,8 @@
                     </select>
                   </div>
                   <div class="card-list-cell">
-                    <input id="OpCutDepth" type="number" step="any" min="0"
+                    <input id="OpCutDepth"
+                           type="number" step="any" min="0"
                            data-bind="value: cutDepth"
                            class="auto-popover" />
                   </div>
@@ -296,8 +297,8 @@
                         Spindle
                       </label>
                     </td><td>
-                      <input id="OpSpindleSpeed" type="number"
-                             step="any" min="0"
+                      <input id="OpSpindleSpeed"
+                             type="number" step="any" min="0"
                              data-bind="value: spindleSpeed"
                              class="auto-popover" />
                       rpm
@@ -308,8 +309,8 @@
                         Margin
                       </label>
                     </td><td>
-                      <input id="OpMargin" type="number"
-                             step="any"
+                      <input id="OpMargin"
+                             type="number" step="any"
                              data-bind="value: margin"
                              class="auto-popover" />
                       <span data-bind="text: App.models.Project.units"></span>
@@ -320,8 +321,8 @@
                         Spacing
                       </label>
                     </td><td>
-                      <input id="OpSpacing" type="number"
-                             step="any" min="0"
+                      <input id="OpSpacing"
+                             type="number" step="any" min="0.001"
                              data-bind="value: spacing"
                              class="auto-popover" />
                       <span data-bind="text: App.models.Project.units"></span>
@@ -333,8 +334,8 @@
                         Width
                       </label>
                     </td><td>
-                      <input id="OpWidth" type="number"
-                             step="any" min="0"
+                      <input id="OpWidth"
+                             type="number" step="any" min="0"
                              data-bind="value: width"
                              class="auto-popover" />
                       <span data-bind="text: App.models.Project.units">
@@ -373,8 +374,8 @@
                       Tab Depth</label>
                   </td>
                   <td>
-                    <input id="TabsMaxCutDepth" type="number"
-                           step="any" min="0"
+                    <input id="TabsMaxCutDepth"
+                           type="number" step="any" min="0.001"
                            data-bind="value: maxCutDepth"
                            class="auto-popover">
                     <span data-bind="text: App.models.Project.units"></span>
@@ -399,7 +400,8 @@
                            data-bind="checked: enabled" class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
-                    <input id="TabMargin" type="number" step="any" min="0"
+                    <input id="TabMargin"
+                           type="number" step="any" min="0"
                            data-bind="value: margin" class="auto-popover" />
                   </div>
                   <div class="card-list-cell">
@@ -459,14 +461,14 @@
                       Origin Offset</label>
                   </td>
                   <td>
-                    <input type="number" step="any"
-                           id="GcodeExtraOffsetX"
+                    <input id="GcodeExtraOffsetX"
+                           type="number" step="any"
                            data-bind="value: extraOffsetX"
                            class="auto-popover" />
                   </td>
                   <td>
-                    <input type="number" step="any"
-                           id="GcodeExtraOffsetY"
+                    <input id="GcodeExtraOffsetY"
+                           type="number" step="any"
                            data-bind="value: extraOffsetY"
                            class="auto-popover" />
                   </td>
@@ -675,11 +677,9 @@
                 </defs>
                 <g id="ContentSVGGroup" class="managed-SVG-group serialisable"
                    filter="url(#ContrastFilter)"/>
-                <g id="ToolPathsSVGGroup"
-                   class="managed-SVG-group serialisable" />
-                <g id="CombinedGeometrySVGGroup"
-                   class="managed-SVG-group serialisable" />
-                <g id="TabsSVGGroup" class="managed-SVG-group serialisable" />
+                <g id="ToolPathsSVGGroup" class="managed-SVG-group" />
+                <g id="CombinedGeometrySVGGroup" class="managed-SVG-group" />
+                <g id="TabsSVGGroup" class="managed-SVG-group" />
                 <g id="SelectionSVGGroup" class="managed-SVG-group" />
               </svg>
             </div>
@@ -726,7 +726,8 @@
                   <td><label for="ToolDiameter" class="control-label">
                       Diameter</label>
                   </td><td>
-                    <input id="ToolDiameter" type="number" step="any"
+                    <input id="ToolDiameter"
+                           type="number" step="any" min="0.001"
                            data-bind="value: diameter"
                            class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
@@ -738,8 +739,8 @@
                     <label for="ToolAngle" class="control-label">
                       Angle</label>
                   </td><td>
-                    <input id="ToolAngle" type="number"
-                           step="any" min="1" max="180"
+                    <input id="ToolAngle"
+                           type="number" step="any" min="1" max="180"
                            data-bind="value: angle"
                            class="auto-popover" /> &deg;
                   </td>
@@ -749,8 +750,8 @@
                   <td><label for="ToolPassDepth" class="control-label">
                       Pass Depth</label>
                   </td><td>
-                    <input id="ToolPassDepth" type="number"
-                           step="any" min="0"
+                    <input id="ToolPassDepth"
+                           type="number" step="any" min="0.001"
                            data-bind="value: passDepth"
                            class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>
@@ -759,8 +760,8 @@
                   <td><label for="ToolStepOver" class="control-label">
                       Step Over</label>
                   </td><td>
-                    <input id="ToolStepOver" type="number"
-                           step="any" min="0" max="1"
+                    <input id="ToolStepOver"
+                           type="number" step="any" min="0" max="1"
                            data-bind="value: stepover"
                            class="auto-popover"> [0..1]
                   </td>
@@ -768,8 +769,8 @@
                   <td><label for="ToolRapidRate" class="control-label">
                       Rapid</label>
                   </td><td>
-                    <input id="ToolRapidRate" type="number"
-                           step="any" min="0"
+                    <input id="ToolRapidRate"
+                           type="number" step="any" min="1"
                            data-bind="value: rapidRate"
                            class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
@@ -778,8 +779,8 @@
                   <td><label for="ToolPlungeRate" class="control-label">
                       Plunge</label>
                   </td><td>
-                    <input id="ToolPlungeRate" type="number"
-                           step="any" min="0"
+                    <input id="ToolPlungeRate"
+                           type="number" step="any" min="1"
                            data-bind="value: plungeRate"
                            class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
@@ -789,8 +790,8 @@
                   <td><label for="ToolCutRate" class="control-label">
                       Cut</label>
                   </td><td>
-                    <input id="ToolCutRate" type="number"
-                           step="any" min="0"
+                    <input id="ToolCutRate"
+                           type="number" step="any" min="1"
                            data-bind="value: cutRate"
                            class="auto-popover" />
                     <span data-bind="text: App.models.Project.units"></span>/min
@@ -828,7 +829,8 @@
                     <label for="InputMatThickness" class="control-label">
                       Thickness</label>
                   </td><td>
-                    <input type="number" step="any" id="InputMatThickness"
+                    <input id="InputMatThickness"
+                           type="number" step="any" min="0.001"
                            data-bind="value: thickness"
                            placeholder="Thickness"
                            class="auto-popover" />
@@ -850,7 +852,8 @@
                     <label for="InputMatClearance" class="control-label">
                       Clearance</label>
                   </td><td>
-                    <input type="number" step="any" id="InputMatClearance"
+                    <input id="InputMatClearance"
+                           type="number" step="any" min="0"
                            data-bind="value: clearance"
                            placeholder="Clearance"
                            class="auto-popover" />
@@ -880,7 +883,8 @@
                     <label for="InputMinNumSegments" class="control-label">
                       Minimum Segments</label>
                   </td><td colspan="2">
-                    <input type="number" id="InputMinNumSegments"
+                    <input id="InputMinNumSegments"
+                           type="number" min="2"
                            data-bind="value: minSegs"
                            placeholder="Segments" class="auto-popover" />
                   </td>
@@ -891,12 +895,12 @@
                       Minimum Segment Length
                     </label>
                   </td><td>
-                    <input type="number" step="any"
-                           id="InputMinSegmentLength"
+                    <input id="InputMinSegmentLength"
+                           type="number" step="any" min="0.001"
                            data-bind="value: minSegLen"
                            placeholder="Length" class="auto-popover" />
                   </td><td>
-                      <span data-bind="text: App.models.Project.units"></span>
+                    <span data-bind="text: App.models.Project.units"></span>
                   </td>
                 </tr>
               </table> <!-- /card-table -->
@@ -1015,6 +1019,7 @@
         with a curve in it is selected.</span>
     </div>
     <div id="Alerts">
+      <span name="unsupportedSVG"><strong>$1.$2=$3</strong> is not supported; try Inkscape's <strong>Object to Path</strong> command</span>
       <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
       <span name="loadingProject">Loading project "$1"</span>
       <span name="loadedProject">Loaded project "$1"</span>

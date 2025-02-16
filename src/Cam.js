@@ -431,7 +431,7 @@ export function splitPathOverTabs(toolPath, tabGeometry, cutZ, tabZ) {
   if (toolPath.isClosed)
     toolPath.push(toolPath[0]);
 
-  if (!tabGeometry) {
+  if (!tabGeometry || tabGeometry.length === 0) {
     toolPath.Z(cutZ, true);
     return new CutPaths([ toolPath ]);
   }
