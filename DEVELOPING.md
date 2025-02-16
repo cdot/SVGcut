@@ -51,19 +51,15 @@ The operand paths are then processed according to the selected
 
 Focusing now on operations, the next stage in the pipeline is toolpath
 generation. This applies the selection operation (such as
-`AnnularPocket`) to the paths to generate the actual tool paths. Some
-operations (such as `Perforate`) will also generate Z coordinates at
-this stage, but most are still 2D. Tool paths are saved in the
-`OperationViewModel` as `toolPaths`.
+`AnnularPocket`) to the paths to generate the actual tool paths, splitting
+them over holding tabs and assigning target Z coordinates as appropriate.
+Tool paths are saved in the `OperationViewModel` as `toolPaths`.
 
-The last step is Gcode generation. This processes all the enabled
-operations, taking each tool path in turn and (if appropriate)
-splitting it over the holding tabs, assigning Z coordinates where they
-haven't been computed during toolpath generation. The paths are then
+The last step is Gcode generation. The paths are then
 processed sequentially, with each path being cut in pass-depth passes
 until the target Z for each segment of the path is reached.
 
-The Gcode is re-read to generate the simulation.
+The Gcode is then re-read to generate the simulation.
 
 ## Units
 There are four coordinate systems to understand.

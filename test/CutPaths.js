@@ -27,13 +27,13 @@ describe("CutPaths", () => {
     });
   });
 
-  UNit("empty", () => {
+  it("empty", () => {
     const cp = new CutPaths();
     assert(cp instanceof CutPaths);
     assert(Array.isArray(cp));
   });
 
-  UNit("from arrays", () => {
+  it("from arrays", () => {
     const cp = new CutPaths([
       [ { x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 } ],
       [{X:0,Y:0},{X:100,y:0},{X:0,y:100}]
@@ -42,7 +42,7 @@ describe("CutPaths", () => {
     assert.equal(cp.length, 2);
   });
 
-  UNit("from CutPath", () => {
+  it("from CutPath", () => {
     const cp = new CutPaths([
       [ { x: 1, y: 2 }, { x: 3, y: 4 }, { x: 5, y: 6 } ],
       [{X:0,Y:0},{X:100,y:0},{X:0,y:100}]
@@ -51,13 +51,13 @@ describe("CutPaths", () => {
     assert.equal(cp.length, 2);
   });
 
-  UNit("from CutPaths", () => {
+  it("from CutPaths", () => {
     const path = new CutPath([{X:0,Y:0},{X:100,y:0},{X:0,y:100}], true);
     const cp = new CutPaths(path);
     assert.deepEqual(cp, [path]);
   });
 
-  UNit("toSegments", () => {
+  it("toSegments", () => {
     const cp = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}], true)
@@ -71,7 +71,7 @@ describe("CutPaths", () => {
     ]);
   });
 
-  UNit("fromSegments", () => {
+  it("fromSegments", () => {
     const cp = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}],
@@ -82,7 +82,7 @@ describe("CutPaths", () => {
     assert.almost(sp, cp);
   });
 
-  UNit("offset", () => {
+  it("offset", () => {
     const cps = new CutPaths([
       [ { x: d, y: 2*d }, { x: 3*d, y: 4*d }, { x: 5*d, y: 6*d } ],
       new CutPath([{X:0,Y:0},{X:100*d,y:0},{X:100*d,Y:100*d},{X:0,y:100*d}],
@@ -98,7 +98,7 @@ describe("CutPaths", () => {
     ]);
   });
 
-  UNit("closestVertex", () => {
+  it("closestVertex", () => {
     const paths = new CutPaths([
       [
         { X: 30, Y: 0, Z: 0 },
@@ -122,7 +122,7 @@ describe("CutPaths", () => {
                      { pointIndex: 1, dist2: 2, pathIndex: 1 });
   });
 
-  UNit("closestEndPoint", () => {
+  it("closestEndPoint", () => {
     const paths = new CutPaths([
       [
         { X: 30, Y: 0, Z: 0 },
@@ -151,7 +151,7 @@ describe("CutPaths", () => {
                      point: { X: 40, Y: 15, Z: 0 }});
   });
 
-  UNit("to/from json", () => {
+  it("to/from json", () => {
     const paths = new CutPaths([
       new CutPath([
         { X: 30, Y: 0, Z: 0 },
