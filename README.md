@@ -139,7 +139,7 @@ will be machine (0,0) while the bottom left corner will be at
 (-30,-15).
 
 As well as the "SVG page", "Bounding box", and "Centre", origins, you
-can also generate Gcode to add an additional offset to the origin. For
+can also add an additional offset to the origin. For
 example, if you want to move the machine origin several times and
 repeat the same cut.
 
