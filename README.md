@@ -1,8 +1,7 @@
 # <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVGcut
 
 <em>SVGcut is a fork of [`jscut`](https://github.com/tbfleming/jscut).
-Development of `jscut` was abandoned in 2014, leaving a number of issues
-open.</em>
+Development of `jscut` was abandoned in 2014, when the author moved on to other things.</em>
 
 SVGcut is a simple Computer Aided Manufacturing (CAM) application that
 runs in the browser. It takes SVG (Scalable Vector Graphics) files as
@@ -22,7 +21,7 @@ development, see [DEVELOPING](DEVELOPING.md).
 
 ## Preparing your SVG
 
-To prepare your SVG, make sure draw you it at the size that you want your
+To prepare your SVG, make sure you draw you it at the size that you want your
 final work to be. If you are using Inkscape, then set your units to
 whatever physical measure you feel most comfortable with (usually
 millimetres or inches) and simply draw at that scale. It is easiest,
