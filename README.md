@@ -128,7 +128,7 @@ bottom right corner is at (70,45)mm, as shown by the green lettering.
 When we load up SVGcut and generate Gcode for this drawing with the
 `Origin` set to `SVG Page`, then the lower left corner of the SVG page
 becomes machine (0,0) and the lower left corner of the bounding box
-will be at machine (10,30), as shown by the orange letters.
+will be at machine (10,15), as shown by the orange letters.
 
 If we now switch the origin to `Bounding Box`, then the lower left
 corner of the bounding box becomes machine (0,0), and the top right is
