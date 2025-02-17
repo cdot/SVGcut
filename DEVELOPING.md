@@ -43,7 +43,7 @@ When an SVG file is imported, it is added to the DOM as a child <svg>
 node.  All complex path operations - such as circle, quadratic curves,
 transformations etc. - are retained in the `ContentSVGGroup`.
 
-When the user clicks an object on the SVG picture, a new <path> is
+When the user clicks an object on the SVG picture, a new path is
 constructed that approximates the object using only straight line
 segments (`M`, `L` and `Z` commands only) using absolute pixel
 coordinates. This copy is added to the `SelectionSVGGroup`.
@@ -66,7 +66,7 @@ generation. This applies the selection operation (such as
 them over holding tabs and assigning target Z coordinates as appropriate.
 Tool paths are saved in the `OperationViewModel` as `toolPaths`.
 
-The last step is Gcode generation. The paths are then
+The last step is Gcode generation. The paths are
 processed sequentially, with each path being cut in pass-depth passes
 until the target Z for each segment of the path is reached.
 
