@@ -198,7 +198,7 @@ be limited to cutting to the depth you specify.
 
 SVGcut is a fork of
 [Tim Fleming's `jscut`](https://github.com/tbfleming/jscut).
-Development of `jscut` was abandoned over 10 years ago, leaving a number
+Development of `jscut` stopped some years ago, leaving a number
 of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
