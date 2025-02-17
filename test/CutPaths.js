@@ -256,13 +256,112 @@ describe("CutPaths", () => {
     ], false));
   });
 
-  it("clip", () => {
+  it("union", () => {
+    const cps1 = new CutPaths([
+      [
+        { X: -100, Y:   0, Z: -2 },
+        { X:    0, Y: 100, Z: -2 },
+        { X:  100, Y:   0, Z: -2 },
+        { X:    0, Y:  50, Z: -2 }
+      ]
+    ]);
+    const cps2 = new CutPaths([
+      [
+        { X: -100, Y: 100, Z: -2 },
+        { X:    0, Y:   0, Z: -2 },
+        { X:  100, Y: 100, Z: -2 },
+        { X:    0, Y:  50, Z: -2 }
+      ]
+    ]);
+    const result = cps1.union(cps2);
+    assert.deepEqual(result, new CutPaths([
+      [
+        { X: 50, Y: 50, Z: 0 },
+        { X: 100, Y: 100, Z: -2 },
+        { X: 33, Y: 67, Z: 0 },
+        { X: 0, Y: 100, Z: -2 },
+        { X: -33, Y: 67, Z: 0 },
+        { X: -100, Y: 100, Z: -2 },
+        { X: -50, Y: 50, Z: 0 },
+        { X: -100, Y: 0, Z: -2 },
+        { X: -33, Y: 33, Z: 0 },
+        { X: 0, Y: 0, Z: -2 },
+        { X: 33, Y: 33, Z: 0 },
+        { X: 100, Y: 0, Z: -2 }
+      ]
+    ], true));
   });
 
   it("diff", () => {
+    const cps1 = new CutPaths([
+      [
+        { X: -100, Y:   0, Z: -2 },
+        { X:    0, Y: 100, Z: -2 },
+        { X:  100, Y:   0, Z: -2 },
+        { X:    0, Y:  50, Z: -2 }
+      ]
+    ]);
+    const cps2 = new CutPaths([
+      [
+        { X: -100, Y: 100, Z: -2 },
+        { X:    0, Y:   0, Z: -2 },
+        { X:  100, Y: 100, Z: -2 },
+        { X:    0, Y:  50, Z: -2 }
+      ]
+    ]);
+    const result = cps1.diff(cps2);
+    assert.deepEqual(result, new CutPaths([
+      [
+        { X: 33, Y: 67, Z: 0 },
+        { X: 0, Y: 100, Z: -2 },
+        { X: -33, Y: 67, Z: 0 },
+        { X: 0, Y: 50, Z: -2 }
+      ],
+      [
+        { X: -33, Y: 33, Z: 0 },
+        { X: -50, Y: 50, Z: 0 },
+        { X: -100, Y: 0, Z: -2 }
+      ],
+      [
+        { X: 50, Y: 50, Z: 0 },
+        { X: 33, Y: 33, Z: 0 },
+        { X: 100, Y: 0, Z: -2 },
+      ]
+    ], true));
   });
 
-  it("simplifyAndClean", () => {
+  it("simplifyAndClean closed path", () => {
+    const cps1 = new CutPaths([
+      [
+        { X: -10000, Y:   0, Z: -2 },
+        { X:    0, Y: 100, Z: -2 },
+        { X:  10000, Y:   0, Z: -2 },
+        { X:    0, Y:  5000, Z: -2 }
+      ]
+    ], true);
+    const result = cps1.simplifyAndClean("evenodd");
+    assert.deepEqual(result, new CutPaths([
+      [
+        { X:    0, Y:  5000, Z: -2 },
+        { X: -10000, Y:   0, Z: -2 },
+        { X:    0, Y: 100, Z: -2 },
+        { X:  10000, Y:   0, Z: -2 }
+      ]
+    ], true));
+  });
+
+  it("simplifyAndClean open path", () => {
+    const cps1 = new CutPaths([
+      [
+        // NOTE: 2D only! simplifyAndClean kills Z.
+        { X: -10000, Y:    0 },
+        { X:      0, Y:  100 },
+        { X:  10000, Y:    0 },
+        { X:      0, Y: 5000 }
+      ]
+    ], false);
+    const result = cps1.simplifyAndClean("evenodd");
+    assert.deepEqual(result, cps1);
   });
 
   it("crosses", () => {

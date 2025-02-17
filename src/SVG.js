@@ -408,6 +408,7 @@ export function segmentsFromElement(element, params) {
     break;
   }
 
+    /* c8 ignore start */
   case "a": case "clippath": case "cursor": case "defs": case "desc":
   case "feblend": case "fecolormatrix": case "fecomponenttransfer":
   case "fecomposite": case "feconvolvematrix": case "fediffuselighting":
@@ -429,6 +430,7 @@ export function segmentsFromElement(element, params) {
     // Ignore
     //console.debug(`SVGElement "${element.tagName}" ignored`);
     break;
+    /* c8 ignore stop */
 
   case "svg": case "g": {
     // Recurse
@@ -508,18 +510,22 @@ export function segments2d(segs) {
  */
 export function getBounds(el) {
   // Try getBBox first
-  const system = el.getBBox();
-  if (system) {
-    if (system.baseVal &&
-        system.baseVal.width > 0 && system.baseVal.height > 0)
-      return new Rect(system.baseVal);
-    else if (typeof system.width !== "undefined"
-             && typeof system.height !== "undefined") {
-      if (system.width > 0 && system.height > 0)
-        return new Rect(system);
-    } else
-      throw new Error(`Wierd type from getBBox: ${system}`);
+  /* c8 ignore start */
+  if (typeof SVGGraphicsElement !=="undefined" && SVGGraphicsElement.getBBox) {
+    const system = el.getBBox();
+    if (system) {
+      if (system.baseVal &&
+          system.baseVal.width > 0 && system.baseVal.height > 0)
+        return new Rect(system.baseVal);
+      else if (typeof system.width !== "undefined"
+               && typeof system.height !== "undefined") {
+        if (system.width > 0 && system.height > 0)
+          return new Rect(system);
+      } else
+        throw new Error(`Wierd type from getBBox: ${system}`);
+    }
   }
+  /* c8 ignore stop */
 
   // Otherwise analyse the element
   // Get the closest enclosing <svg> for computing %ages

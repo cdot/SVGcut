@@ -11,6 +11,26 @@ ClipperLib.use_xyz = true;
  */
 export class CutPoint extends ClipperLib.IntPoint {
   /**
+   * Use linear interpolation to determine the Z of a 2D intersection point.
+   * The computed Z is written back to the intersection point.
+   * Where the two points are coincident in 2D, the assigned Z will be halfway
+   * between their Z's.
+   * @param {CutPoint} v1 start of intersected edge
+   * @param {CutPoint} v2 end of intersected edge
+   * @param {CutPoint} ip intersection point
+   */
+  static interpolateZ(v1, v2, ip) {
+    const ex = v2.X - v1.X, ey = v2.Y - v1.Y;
+    const el = Math.sqrt(ex * ex + ey * ey);
+    if (el === 0) { ip.Z = (v1.Z + v2.Z) / 2; return; }
+    const sx = ip.X - v1.X, sy = ip.Y - v1.Y;
+    const sl = Math.sqrt(sx * sx + sy * sy);
+    const t = sl / el;
+    const dZ = v2.Z - v1.Z;
+    ip.Z = v1.Z + dZ * t;
+  }
+
+  /**
    * Get the square of the distance between two points
    * @param {CutPoint} b
    */

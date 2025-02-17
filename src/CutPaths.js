@@ -187,6 +187,7 @@ export class CutPaths extends Array {
   clip(clipPaths, clipType) {
     assert(clipPaths instanceof CutPaths);
     const clipper = new ClipperLib.Clipper();
+    clipper.ZFillFunction = CutPoint.interpolateZ;
     clipper.AddPaths(this, ClipperLib.PolyType.ptSubject, true);
     clipper.AddPaths(clipPaths, ClipperLib.PolyType.ptClip, true);
     const newGeom = new ClipperLib.Paths();
@@ -232,7 +233,8 @@ export class CutPaths extends Array {
   }
 
   /**
-   * Simplify and clean up geometry.
+   * Simplify and clean up geometry. This is strictly 2D only, Z
+   * cordinates will be lost/damaged.
    * @param {string} fillRule "nonzero" or "evenodd" (see SVG docs)
    * @return {CutPaths} cleaned up geometry
    * @memberof Clipper
@@ -257,8 +259,7 @@ export class CutPaths extends Array {
         const simplePolys = ClipperLib.Clipper.SimplifyPolygon(cleanPolys, fr);
         cleanPaths.push(new CutPath(simplePolys[0], true));
       } else {
-        // Remove vertices that are within the specified distance of an
-        // adjacent vertex.
+        // Remove duplicated vertices
         path.unduplicate();
         const clean = ClipperLib.JS.Clean(path, CLEAN_POLY_DIST);
         cleanPaths.push(new CutPath(clean, false));
@@ -268,7 +269,7 @@ export class CutPaths extends Array {
   }
 
   /**
-   * Does the line from p1 to p2 cut a poly?
+   * Does the 2D line from p1 to p2 cut a poly?
    * @param {CutPoint} p1 line endpoint
    * @param {CutPoint} p2 line endpoint
    * @return {boolean} true if the line crossed an edge.
@@ -278,6 +279,7 @@ export class CutPaths extends Array {
     if (p1.X === p2.X && p1.Y === p2.Y) // 1D line, can't cross anything
       return false;
     const clipper = new ClipperLib.Clipper();
+    clipper.ZFillFunction = CutPoint.interpolateZ;
     clipper.AddPath([p1, p2], ClipperLib.PolyType.ptSubject, false);
     clipper.AddPaths(this, ClipperLib.PolyType.ptClip, true);
     const polyTree = new ClipperLib.PolyTree();
@@ -289,15 +291,11 @@ export class CutPaths extends Array {
       const child = polyTree.Childs()[0];
       const points = child.Contour();
       if (points.length === 2) {
-        if (points[0].X === p1.X
-            && points[1].X === p2.X
-            && points[0].Y === p1.Y
-            && points[1].Y === p2.Y)
+        if (points[0].X === p1.X && points[1].X === p2.X
+            && points[0].Y === p1.Y && points[1].Y === p2.Y)
           return false;
-        if (points[0].X === p2.X
-            && points[1].X === p1.X
-            && points[0].Y === p2.Y
-            && points[1].Y === p1.Y)
+        if (points[0].X === p2.X && points[1].X === p1.X
+            && points[0].Y === p2.Y && points[1].Y === p1.Y)
           return false;
       }
     }

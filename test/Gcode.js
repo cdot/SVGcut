@@ -254,7 +254,7 @@ describe("Gcode", () => {
     assert.equal(gcode.length, expected.length);
   });
 
-  it("generates using Z", () => {
+  it("engrave with precalculated Z", () => {
     const op = {
       paths: new CutPaths([
         [
@@ -481,6 +481,57 @@ describe("Gcode", () => {
       'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
       'G0 X0 ; Return to 0,0',
+      'M2 ; End program'
+    ];
+    for (let i = 0; i < expected.length; i++)
+      assert.equal(gcode[i], expected[i], `mismatch line ${i}`);
+    assert.equal(gcode.length, expected.length);
+  });
+
+  it("precalculated drill path", () => {
+    const opJob = {
+      gunits:      "mm",
+      xScale:      1,      yScale:      1,      zScale:      1,
+      offsetX:     0,      offsetY:     0,
+      decimal:     2,
+      topZ:        0,      botZ:        -5,
+      tabsDepth:   1,      safeZ:       10,      passDepth:   5,
+      plungeFeed:  4,      cutFeed:     80,
+      retractFeed: 200,      rapidFeed:   1000,
+      returnTo00:  true,      workWidth:   300,      workHeight:  180
+    };
+    const op = {
+      paths: new CutPaths([
+        [ { X: -10, Y: -10, Z: -1 }, { X: 10, Y: -10, Z: -2 },
+          { X: 10, Y: 10, Z: -3 }, { X: -10, Y: 10, Z: -4 } ]
+      ], true),
+      name: "Test",
+      cutType: Cam.OP.Drill,
+      ramp: true,
+      spinSpeed: 2000,
+      direction: "Conventional"
+    };
+    const job = new Gcode.Generator(opJob);
+    job.addOperation(op);
+    const gcode = job.end();
+    while (gcode[0].indexOf("; *** Operation") !== 0)
+      gcode.shift();
+    while (gcode[gcode.length - 1][0] === ";")
+      gcode.pop();
+    const expected = [
+      '; *** Operation "Test" (Drill) ***',
+      '; Path 1',
+      'G0 X-10 Y-10 ; Hang',
+      'G0 Z0 ; Sink',
+      'M3 S2000 ; Start spindle',
+      'G1 Z-1 F4',
+      'G1 X10 Z-2 F80',
+      'G1 Y10 Z-3',
+      'G1 X-10 Z-4',
+      'G1 Y-10 Z-1 ; Close path',
+      'M5 ; Stop spindle',
+      'G0 Z10 F1000 ; Retract',
+      'G0 X0 Y0 ; Return to 0,0',
       'M2 ; End program'
     ];
     for (let i = 0; i < expected.length; i++)

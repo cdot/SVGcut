@@ -152,7 +152,7 @@ class GcodeGenerationViewModel extends ViewModel {
   /**
    * @override
    */
-  bind() {  
+  bind() {
     for (const id of [
       "GcodeGenerationView", "SaveGcodeModal", "ViewGcodeModal",
       "SimulatePanel" ])

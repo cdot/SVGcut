@@ -29,7 +29,7 @@ export function setupDOM(content) {
     global.DOM = dom;
     global.window = dom.window;
     global.document = dom.window.document;
-    global.navigator = { userAgent: "node.js" };
+    //global.navigator = { userAgent: "node.js" };
   });
 }
 

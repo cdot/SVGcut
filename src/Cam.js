@@ -17,7 +17,12 @@ import * as Flatten from 'flatten-js';
  */
 
 /**
+ * @typedef {number} Operator
+ */
+
+/**
  * Operations on polygons & paths
+ * @enum {Operator}
  * @memberof Cam
  */
 export const OP = {
@@ -31,7 +36,7 @@ export const OP = {
 };
 
 /**
- * Long names for supported operations
+ * Long names for supported operations. Indexed by `Operator`.
  * @memberof Cam
  */
 export const LONG_OP_NAME = [
@@ -42,6 +47,21 @@ export const LONG_OP_NAME = [
   "Outside",
   "Perforate",
   "Pocket (raster)"
+];
+
+/**
+ * Whether the indexed op is a drill op, where Cam computes the exact
+ * tool path. Indexed by `Operator`.
+ * @memberof Cam
+ */
+export const DRILL_OP = [
+  /*AnnularPocket:*/ false,
+  /*Drill:*/ true,
+  /*Engrave:*/ false,
+  /*Inside:*/ false,
+  /*Outside:*/ false,
+  /*Perforate:*/ true,
+  /*RasterPocket:*/ false
 ];
 
 /**
@@ -268,7 +288,6 @@ function drillHole(pt, safeZ, botZ) {
  * @param {number} botZ is the depth of the perforations
  * @return {CutPath}
  * @private
- * @memberof Cam
  */
 function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
   assert(path instanceof CutPath);
@@ -283,7 +302,7 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
   // between adjacent holes
   const numHoles = Math.floor(totalPathLength / (cutterDia + spacing));
   const step = totalPathLength / (numHoles - 1);
-
+  console.log("PL", totalPathLength,"NH",numHoles,"S", step);
   // Walk round the path stopping at every hole, generating a new path
   let newPath = new CutPath();
   let gap = 0; // distance along the path from the last hole;
@@ -438,6 +457,7 @@ export function splitPathOverTabs(toolPath, tabGeometry, cutZ, tabZ) {
 
   // Use Difference to extract the cut paths
   let clpr = new ClipperLib.Clipper();
+  clpr.ZFillFunction = CutPoint.interpolateZ;
   clpr.AddPath(toolPath, ClipperLib.PolyType.ptSubject, false);
   clpr.AddPaths(tabGeometry, ClipperLib.PolyType.ptClip, true);
   let solution_polytree = new ClipperLib.PolyTree();
@@ -450,6 +470,7 @@ export function splitPathOverTabs(toolPath, tabGeometry, cutZ, tabZ) {
 
   // Use intersection to extract the tab paths
   clpr = new ClipperLib.Clipper();
+  clpr.ZFillFunction = CutPoint.interpolateZ;
   clpr.AddPath(toolPath, ClipperLib.PolyType.ptSubject, false);
   clpr.AddPaths(tabGeometry, ClipperLib.PolyType.ptClip, true);
   solution_polytree = new ClipperLib.PolyTree();

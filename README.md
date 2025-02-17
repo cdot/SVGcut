@@ -1,12 +1,17 @@
 # <img src="/images/logo.svg" style="display:inline;width:32px;height:32px" /> SVGcut
 
-A simple Computer Aided Manufacturing (CAM) application that runs in
-the browser. It takes SVG (Scalable Vector Graphics) files as inputs,
-and generates Gcode under interactive control. You can then save the
-Gcode for sending to your CNC machine using an application such as
-[Candle](https://github.com/Denvi/Candle). It is primarily aimed at
-hobbyist milling machines (routers), and doesn't support many of the
-capabilities of more sophisticated machines, such as tool swapping.
+<em>SVGcut is a fork of [`jscut`](https://github.com/tbfleming/jscut).
+Development of `jscut` was abandoned in 2014, leaving a number of issues
+open.</em>
+
+SVGcut is a simple Computer Aided Manufacturing (CAM) application that
+runs in the browser. It takes SVG (Scalable Vector Graphics) files as
+inputs, and generates Gcode under interactive control. You can then
+save the Gcode for sending to your CNC machine using an application
+such as [Candle](https://github.com/Denvi/Candle). It is primarily
+aimed at hobbyist milling machines (routers), and doesn't support many
+of the capabilities of more sophisticated machines, such as tool
+swapping.
 
 No need to install anything, you can
 [run it in your browser](https://cdot.github.io/SVGcut/app.html).
@@ -198,6 +203,7 @@ Development of `jscut` was abandoned over 10 years ago, leaving a number
 of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
++ Open paths (polylines) as well as closed (polygons)
 + Select all paths on a double-click
 + Zoom and pan on paths
 + Easier to work with XY origins
@@ -207,10 +213,6 @@ these, and more.
 + Per-operation spindle speed control
 + Gcode text preview
 + Extensive newbie documentation
-+ Extensive in-code documentation and literate programming techniques
-+ Clean ES6 Javascript
-+ Updated third-party dependencies
-+ Support for a lot more of SVG
 
 Some features of `jscut` have been disabled/removed. This may be because
 they are deemed too esoteric, or the (undocumented) code was too

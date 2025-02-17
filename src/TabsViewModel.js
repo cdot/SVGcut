@@ -38,7 +38,7 @@ class TabsViewModel extends ViewModel {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
     });
   }
-  
+
   /**
    * @override
    */

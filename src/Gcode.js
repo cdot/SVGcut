@@ -338,7 +338,7 @@ export class Generator {
       return m[1];
     return s.replace(/(.)0+$/, "$1");
   }
-  
+
   /**
    * Generate gcode to mark the end of a job
    * @return {string[]} array of gcode commands
@@ -403,7 +403,7 @@ export class Generator {
     if (typeof pt.Z !== "undefined")
       npt.Z = this.mapZ(pt.Z);
     return npt;
-  }    
+  }
 
   /**
    * Test if the tool is at the given point (2D)
@@ -493,6 +493,7 @@ export class Generator {
 
   /**
    * Start the spindle
+   * @param {number} spin desired spindle speed
    * @private
    */
   startSpindle(spin) {
@@ -527,7 +528,8 @@ export class Generator {
 
     assert(typeof op.name === "string");
     assert(typeof op.cutType === "number");
-    this.rem(`*** Operation "${op.name}" (${Cam.LONG_OP_NAME[op.cutType]}) ***`);
+    this.rem(
+      `*** Operation "${op.name}" (${Cam.LONG_OP_NAME[op.cutType]}) ***`);
 
     assert(op.paths instanceof CutPaths);
     assert(typeof op.ramp === "boolean");
@@ -541,28 +543,68 @@ export class Generator {
       if (path.length === 0)
         continue;
 
-      let passNum = 0;
-      const minZ = path.bbox3D().minZ;
       this.rem(`Path ${pathIndex}`);
 
-      // Loop over the paths carving away passDepth slices until the
-      // target cut depth is reached on all segments.
-      let lastCutZ = this.topZ; // depth of the last cut
-      while (lastCutZ > minZ) {
-        // Calculate maximum cut depth for this pass
-        const targetZ = lastCutZ - this.passDepth;
-        this.rem(`Pass ${pathIndex}:${++passNum}`);
-        //console.log(`Pass ${pathIndex}:${passNum}`);
-        this.followPath(path, targetZ, op);
-        lastCutZ = targetZ;
-        if (this.passDepth === 0) break;
-        // For open paths, perform the next run back down the path
-        if (!path.isClosed)
-          path = path.reverse();
+      if (Cam.DRILL_OP[op.cutType]) {
+        this.followPrecomputedPath(path, op);
+      } else {
+        const minZ = path.bbox3D().minZ;
+        let passNum = 0;
+        // Loop over the paths carving away passDepth slices until the
+        // target cut depth is reached on all segments.
+        let lastCutZ = this.topZ; // depth of the last cut
+        while (lastCutZ > minZ) {
+          // Calculate maximum cut depth for this pass
+          const targetZ = lastCutZ - this.passDepth;
+          this.rem(`Pass ${pathIndex}:${++passNum}`);
+          //console.log(`Pass ${pathIndex}:${passNum}`);
+          this.followCutPath(path, targetZ, op);
+          lastCutZ = targetZ;
+          if (this.passDepth === 0) break;
+          // For open paths, perform the next run back down the path
+          if (!path.isClosed)
+            path = path.reverse();
+        }
       }
       this.stopSpindle();
 
       this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Retract" });
+    }
+  }
+
+  /**
+   * If necessary, do a safe move to the given point.
+   * @param {CutPoint} pt the point to move to
+   * @private
+   */
+  safeMoveTo(pt) {
+    // If the tool isn't over the start of the path, move it there
+    if (!this.toolAt(pt)) {
+      this.stopSpindle();
+      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
+      this.G(0, { pt: pt, z: this.safeZ, rem: "Hang" });
+      this.G(0, { z: this.topZ, rem: "Sink" });
+    }
+  }
+
+  /**
+   * Follow the Z's given in the path exactly.
+   * @param {CutPath} path
+   * @param {object} op operation description (see addOperation for members)
+   * @private
+   */
+  followPrecomputedPath(path, op) {
+    this.safeMoveTo(path[0]);
+    this.startSpindle(op.spinSpeed);
+
+    let i;
+    for (i = 0; i < path.length; i++) {
+      const feed = this.toolAt(path[i]) ? this.plungeFeed :  this.cutFeed;
+      this.G(1, { f: feed, pt: path[i] });
+    }
+    if (path.isClosed) {
+      const feed = this.toolAt(path[0]) ? this.plungeFeed :  this.cutFeed;
+      this.G(1, { f: feed, pt: path[0], rem: "Close path" });
     }
   }
 
@@ -574,15 +616,8 @@ export class Generator {
    * @param {object} op operation description (see addOperation for members)
    * @private
    */
-  followPath(path, minZ, op) {
-    // If the tool isn't over the start of the path, move it there
-    if (!this.toolAt(path[0])) {
-      this.stopSpindle();
-      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
-      this.G(0, { pt: path[0], z: this.safeZ, rem: "Hang" });
-      this.G(0, { z: this.topZ, rem: "Sink" });
-    }
-
+  followCutPath(path, minZ, op) {
+    this.safeMoveTo(path[0]);
     this.startSpindle(op.spinSpeed);
 
     let targetZ = Math.max(path[0].Z, minZ);
