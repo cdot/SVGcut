@@ -22,7 +22,7 @@ development, see [DEVELOPING](DEVELOPING.md).
 
 ## Preparing your SVG
 
-To prepare your SVG, make sure draw it at the size that you want your
+To prepare your SVG, make sure draw you it at the size that you want your
 final work to be. If you are using Inkscape, then set your units to
 whatever physical measure you feel most comfortable with (usually
 millimetres or inches) and simply draw at that scale. It is easiest,
