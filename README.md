@@ -5,7 +5,7 @@ Development of `jscut` was abandoned in 2014, when the author moved on to other 
 
 SVGcut is a simple Computer Aided Manufacturing (CAM) application that
 runs in the browser. It takes SVG (Scalable Vector Graphics) files as
-inputs, and generates Gcode under interactive control. You can then
+inputs, and generates [Gcode](https://en.wikipedia.org/wiki/G-code) under interactive control. You can then
 save the Gcode for sending to your CNC machine using an application
 such as [Candle](https://github.com/Denvi/Candle). It is primarily
 aimed at hobbyist milling machines (routers), and doesn't support many
