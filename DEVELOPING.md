@@ -16,7 +16,7 @@ First, clone the repository. Then
 npm install
 npm run doc
 ```
-You should be able to open `index.html` through a local web server.
+You should be able to open `doc/index.html` through a local web server.
 
 # Overview of the code
 `app.html` uses script tags to load most third-party dependencies.
