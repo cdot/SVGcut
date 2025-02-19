@@ -227,7 +227,7 @@ class ProjectViewModel extends ViewModel {
    */
   loadDefaults() {
     if (this.importProject(DEFAULTS_PROJECT)) {
-      console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
+      //console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
       this.isChanged = false;
     }
   }
@@ -321,7 +321,7 @@ class ProjectViewModel extends ViewModel {
         App.models[model].reset();
       this.projectName("New project");
       this.loadDefaults();
-      console.debug("Started new project");
+      //console.debug("Started new project");
     });
   }
 

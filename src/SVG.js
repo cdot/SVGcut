@@ -294,22 +294,27 @@ export function segmentsFromElement(element, params) {
     return n;
   }
 
+  // Paths are made absolute by linearisation, but are still in the
+  // coordinate space of the original element. Transform the paths back
+  // into the (pixel) coordinate space of the outermost enclosing SVG element.
   function unTransform(path, element) {
     try {
-      // SVG 2 spec: CTM is a matrix that transforms the coordinate
+      // SVG 2 spec: "CTM is a matrix that transforms the coordinate
       // space of the current element (including its transform
       // property) to the coordinate space of its closest ancestor
-      // viewport-establishing element (also including its transform
-      // property).
+      // *viewport-establishing( element (also including its transform
+      // property)."
+      // Note: it's not clear what constitutes a viewport-establishing element.
+      // element.viewportElement returns the closest enclosing SVG, but that's
+      // not the transform that getCTM returns. The result from getCTM()
+      // changes when when the element isn't visible on the screen.
       const tx = element.getCTM();
       for (const command of path) {
-        // All command parameters are absolute coordinates since linearisation
         for (let i = 1; i < command.length; i += 2) {
           const x = command[i], y = command[i + 1];
-          // apply matrix transform
-          // a b
-          // c d
-          // e f
+          // [x, y, 1] * [a b
+          //              c d
+          //              e f]
           command[i]     = x * tx.a + y * tx.c + tx.e;
           command[i + 1] = x * tx.b + y * tx.d + tx.f;
         }
@@ -459,11 +464,10 @@ export function segmentsFromElement(element, params) {
   }
 
   if (pathString) {
-    // Convert path to M, L and Z in element coordinate space
+    // Convert path to M, L and Z
     const path = linearise(parsePathD(pathString), params);
+    // and map to outermost SVG coordinate space
     try {
-      // Apply inverse transforms to get the new path into the viewport
-      // coordinate space.
       unTransform(path, element);
     } catch (e) {
       // SVGElement doesn't have getCTM in node.js, works fine in browser.
@@ -519,8 +523,11 @@ export function getBounds(el) {
         return new Rect(system.baseVal);
       else if (typeof system.width !== "undefined"
                && typeof system.height !== "undefined") {
-        if (system.width > 0 && system.height > 0)
-          return new Rect(system);
+        if (system.width > 0 && system.height > 0) {
+          const systemBB = new Rect(system);
+          console.debug("System BB", systemBB);
+          return systemBB;
+        }
       } else
         throw new Error(`Wierd type from getBBox: ${system}`);
     }
@@ -555,8 +562,11 @@ export function getBounds(el) {
   // Linearise all the elements and then measure.
   const segs = segmentsFromElement(el, r);
   if (!segs || segs.length === 0) {
-    return el.viewBox ? new Rect(el.viewBox.baseVal) :
+    const emptyBB = el.viewBox ? new Rect(el.viewBox.baseVal) :
     Rect(0, 0, 10, 10);
+    console.debug("Empty BB", emptyBB);
+    return emptyBB;
+
   }
   let minx = Number.MAX_VALUE, maxx = 0;
   let miny = minx, maxy = maxx;
@@ -570,5 +580,7 @@ export function getBounds(el) {
     }
   }
   // Dimensions in pixels already
-  return new Rect(minx, miny, maxx - minx, maxy - miny);
+  const computedBB = new Rect(minx, miny, maxx - minx, maxy - miny);
+  console.debug("Computed BB", computedBB);
+  return computedBB;
 }

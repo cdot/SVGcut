@@ -81,7 +81,7 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
   if (geometry.length === 0)
     return geometry;
 
-  console.debug(`Cam.annularPocket ${geometry.length} paths`);
+  //console.debug(`Cam.annularPocket ${geometry.length} paths`);
 
   // Shrink by half the cutter diameter
   let current = geometry.offset(-cutterDia / 2);
@@ -105,7 +105,7 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
     current = current.offset(-cutterDia * (1 - overlap));
   }
   toolPaths.mergePaths(outer);
-  console.debug(`Cam.annularPocket generated ${toolPaths.length} tool paths`);
+  //console.debug(`Cam.annularPocket generated ${toolPaths.length} tool paths`);
   return toolPaths;
 }
 
@@ -167,7 +167,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
   if (geometry.length === 0)
     return toolPaths;
 
-  console.debug(`Cam.rasterPocket ${geometry.length} paths`);
+  //console.debug(`Cam.rasterPocket ${geometry.length} paths`);
   const step = cutterDia * (1 - overlap);
   // Shrink first path by half the cutter diameter
   let iPockets = geometry.offset(-cutterDia / 2);
@@ -198,7 +198,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     toolPaths.unshift(poly);
   }
 
-  console.debug(`Cam.rasterPocket generated ${toolPaths.length} tool paths`);
+  //console.debug(`Cam.rasterPocket generated ${toolPaths.length} tool paths`);
   return toolPaths;
 }
 
@@ -220,7 +220,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   if (geometry.length === 0)
     return toolPaths;
 
-  console.debug(`Cam.${isInside ? "in" : "out"}line ${geometry.length} paths`);
+  //console.debug(`Cam.${isInside ? "in" : "out"}line ${geometry.length} paths`);
   let currentWidth = cutterDia;
   const eachWidth = cutterDia * (1 - overlap);
 
@@ -259,7 +259,7 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     current = current.offset(eachOffset);
   }
   toolPaths.mergePaths(clipPoly);
-  console.debug(`Cam.${isInside ? "in" : "out"} generated ${toolPaths.length} tool paths`);
+  //console.debug(`Cam.${isInside ? "in" : "out"} generated ${toolPaths.length} tool paths`);
   return toolPaths;
 };
 
@@ -302,7 +302,6 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
   // between adjacent holes
   const numHoles = Math.floor(totalPathLength / (cutterDia + spacing));
   const step = totalPathLength / (numHoles - 1);
-  console.log("PL", totalPathLength,"NH",numHoles,"S", step);
   // Walk round the path stopping at every hole, generating a new path
   let newPath = new CutPath();
   let gap = 0; // distance along the path from the last hole;
@@ -364,7 +363,7 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
  */
 export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
   assert(geometry instanceof CutPaths);
-  console.debug(`Cam.perforate ${geometry.length} paths`);
+  //console.debug(`Cam.perforate ${geometry.length} paths`);
   const toolPaths = new CutPaths();
 
   // Bloat the closed paths by half the cutter diameter
@@ -380,7 +379,7 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
     }
   }
 
-  console.debug(`Cam.perforate generated ${toolPaths.length} tool paths`);
+  //console.debug(`Cam.perforate generated ${toolPaths.length} tool paths`);
   return toolPaths;
 }
 
@@ -416,7 +415,7 @@ export function drill(geometry, safeZ, botZ) {
  */
 export function engrave(geometry, climb) {
   assert(geometry instanceof CutPaths);
-  console.debug(`Cam.engrave ${geometry.length} paths`);
+  //console.debug(`Cam.engrave ${geometry.length} paths`);
   const toolPaths = new CutPaths();
   for (const path of geometry) {
     const copy = new CutPath(path); // take a copy
@@ -425,7 +424,7 @@ export function engrave(geometry, climb) {
     toolPaths.push(copy);
   }
   toolPaths.mergePaths(geometry);
-  console.debug(`Cam.engrave generated ${toolPaths.length} tool paths`);
+  //console.debug(`Cam.engrave generated ${toolPaths.length} tool paths`);
   return toolPaths;
 };
 

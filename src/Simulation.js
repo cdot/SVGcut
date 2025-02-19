@@ -869,7 +869,7 @@ class Simulation {
     }
 
     if (this.pathNumPoints === 0) {
-      console.debug("Simulation.drawCutter: no points");
+      //console.debug("Simulation.drawCutter: no points");
       return;
     }
 

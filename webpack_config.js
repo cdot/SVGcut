@@ -83,7 +83,7 @@ function remapImport(module) {
  * @return {Promise} a promise that resolves when the output has been written
  */
 function processHTML(entry) {
-  console.debug(`Processing ${entry}.html`);
+  console.log(`Processing ${entry}.html`);
   return fs.readFile(`./${entry}.html`)
   .then(content => {
     content = content.toString()

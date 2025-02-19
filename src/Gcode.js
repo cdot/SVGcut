@@ -196,7 +196,7 @@ export function parse(gcode) {
 
   if (percents === 1) // error, see remark above
     // Warn about it, but plough on regardless.
-    console.debug("Gcode: malformed, no terminating %");
+    console.warn("Gcode: malformed, no terminating %");
 
   // When a program starts, the position and feed rate of the tool
   // are unknown. They only become known when X, Y, Z, and F have
@@ -212,7 +212,7 @@ export function parse(gcode) {
       }
     }
     if (!readBack) {
-      console.debug(`Gcode: ${field} never gets a value`);
+      //console.debug(`Gcode: ${field} never gets a value`);
       readBack = 0;
     }
     for (const pt of path) {
@@ -524,7 +524,7 @@ export class Generator {
    * @param {boolean} op.ramp Ramp plunge. Default is to drill plunge.
    */
   addOperation(op) {
-    console.debug(`Generating Gcode for ${op.name}, ${op.paths.length} paths`);
+    //console.debug(`Generating Gcode for ${op.name}, ${op.paths.length} paths`);
 
     assert(typeof op.name === "string");
     assert(typeof op.cutType === "number");
@@ -557,7 +557,6 @@ export class Generator {
           // Calculate maximum cut depth for this pass
           const targetZ = lastCutZ - this.passDepth;
           this.rem(`Pass ${pathIndex}:${++passNum}`);
-          //console.log(`Pass ${pathIndex}:${passNum}`);
           this.followCutPath(path, targetZ, op);
           lastCutZ = targetZ;
           if (this.passDepth === 0) break;

@@ -399,7 +399,7 @@ class OperationViewModel extends ViewModel {
 
     this.generatingToolpath = true;
 
-    console.debug(`generateToolpath for the ${this.combinedGeometry.length} paths in ${this.name()}`);
+    //console.debug(`generateToolpath for the ${this.combinedGeometry.length} paths in ${this.name()}`);
 
     let geometry = this.combinedGeometry;
     const oper = this.operation();
@@ -466,7 +466,7 @@ class OperationViewModel extends ViewModel {
     this.removeToolPaths();
     this.toolPaths(paths);
 
-    console.debug(`generated ${paths.length} tool paths for ${this.name()}`);
+    //console.debug(`generated ${paths.length} tool paths for ${this.name()}`);
 
     this.generatingToolpath = false;
 

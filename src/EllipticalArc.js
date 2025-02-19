@@ -93,7 +93,6 @@ export function endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep) {
     delta += 2 * Math.PI;
 
   //console.debug(c.x + r.x * Math.cos(theta), c.y + r.y * Math.sin(theta));
-
   return {
     c: c,
     theta: theta,

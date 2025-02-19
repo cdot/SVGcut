@@ -172,7 +172,7 @@ export class SVGcut {
       const ang = this.models.Tool.angle();
       const cutterH = uc.fromUnits(10, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
-      console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
+      //console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
       this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
@@ -372,7 +372,20 @@ export class SVGcut {
    * @return {Rect} the BB (in px units)
    */
   getMainSVGBBox() {
-    return SVG.getBounds(this.mainSVG);
+    // When the main SVG element is hidden (e.g. when viewing the Simulation
+    // tab) then SVGElement.getCTM goes belly up and returns a mysterious
+    // transformation matrix that doesn't bear any relation to the viewport
+    // establishing element (as far as I can tell). Luckily we can cache the
+    // last computed BB and use that. It won't be exactly right when the
+    // operation is changed e.g from Inside to Outside while in the Simulation
+    // view, but it'll be close enough.
+    const isHidden = this.mainSVG.offsetWidth === 0
+          || this.mainSVG.offsetHeight === 0
+          || this.mainSVG.getClientRects().length === 0
+          || window.getComputedStyle(this.mainSVG).visibility === "hidden";
+    if (isHidden && this.bbCache)
+      return this.bbCache;
+    return this.bbCache = SVG.getBounds(this.mainSVG);
   }
 
   /**
@@ -402,9 +415,11 @@ export class SVGcut {
     // Mine; works even when the SVG hasn't been rendered, but is heavy.
     //const bbox = this.getMainSVGBBox();
     // Set the viewBox to view all the contents of the main svg
+    const bbs =
+          `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`;
+    console.debug("Set bbox", bbs);
     mSVG.setAttribute(
-      "viewBox",
-      `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`);
+      "viewBox", bbs);
   }
 
   /**
@@ -460,6 +475,7 @@ export class SVGcut {
     let svgGroups = document.querySelectorAll(".managed-SVG-group");
     for (const svgel of svgGroups)
       svgel.replaceChildren();
+    this.fitSVG();
   }
 
   /**
@@ -488,7 +504,7 @@ export class SVGcut {
       ".managed-SVG-group.serialisable");
     for (const svgel of svgGroups) {
       if (container.svg[svgel.id]) {
-        console.debug("**** Reloading SVG", svgel.id);
+        //console.debug("**** Reloading SVG", svgel.id);
         const el = SVG.loadSVGFromText(container.svg[svgel.id]);
         svgel.append(el);
       }

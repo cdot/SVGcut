@@ -209,7 +209,7 @@ class GcodeGenerationViewModel extends ViewModel {
     if (ops.length === 0)
       return;
 
-    console.debug(`generateGcode for ${ops.length} operations`);
+    //console.debug(`generateGcode for ${ops.length} operations`);
 
     const gunits = this.unitConverter.units();
 
@@ -303,7 +303,7 @@ class GcodeGenerationViewModel extends ViewModel {
     // Save the gcode to the observable
     this.gcode(job.end());
 
-    console.debug(`${this.gcode().length} lines of Gcode generated`);
+    //console.debug(`${this.gcode().length} lines of Gcode generated`);
 
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
 
