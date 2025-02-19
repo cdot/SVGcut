@@ -152,30 +152,6 @@
     </div>
   </div>
 
-  <div class="modal fade" id="SaveGcodeModal" role="dialog"
-       aria-labelledby="SgcModalLabel" aria-hidden="true">
-    <!-- Bound to GcodeGenerationViewModel -->
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="SgcModalLabel">Save GCODE</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <label>Save as</label>
-          <input data-bind="value: gcodeFilename">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary"
-                  data-bind="click: saveGcodeInFile">
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="modal fade" id="ViewGcodeModal" tabindex="-1" role="dialog"
        aria-hidden="true" arial-labelledby="VgcModalTitle">
     <!-- Bound to GcodeGenerationViewModel -->
@@ -552,7 +528,7 @@
                   aria-labelledby="projectDropdown">
                 <li class="dropdown-item">
                   <a href="#" class="nav-link close-on-click"
-                     data-bind="click: newProject">
+                     data-bind="click:newProject">
                     New Project
                   </a>
                 </li>
@@ -563,11 +539,14 @@
                   </a>
                   <ul class="dropdown-menu" aria-labelledby="OpenMenu">
                     <li class="dropdown-item">
-                      <a href="#" class="nav-link close-on-click"
-                         id="ChooseProjectFile">
+                      <a href="#"
+                         id="ChooseProjectFile"
+                         class="nav-link close-on-click">
                         ... from File
-                        <input type="file" style="display:none"
-                               accept=".svgcut" id="ChosenProjectFile">
+                        <input id="ChosenProjectFile"
+                               type="file"
+                               style="display:none"
+                               accept=".svgcut">
                       </a>
                     </li><li class="dropdown-item">
                       <a href="#" class="nav-link close-on-click open-modal"
@@ -578,14 +557,16 @@
                   </ul>
                 </li> <!-- /open submenu -->
                 <li class="dropdown-item change-activated disabled">
-                  <a href="#" class="nav-link close-on-click open-modal"
+                  <a href="#"
+                     class="nav-link close-on-click open-modal"
                      data-bind="click:()=> App.showModal('SaveProjectModal')">
                     Save Project
                   </a>
                 </li>
                 <li class="dropdown-item">
-                  <a href="#" class="nav-link close-on-click"
-                                     id="ChooseImportSVGFile">
+                  <a href="#"
+                     id="ChooseImportSVGFile"
+                     class="nav-link close-on-click">
                     Import SVG File
                     <input type="file" style="display:none"
                            accept=".svg,image/svg+xml"
@@ -593,8 +574,9 @@
                   </a>
                 </li>
                 <li class="dropdown-item">
-                  <a href="#" class="nav-link close-on-click open-modal"
-                     data-bind="click:()=> App.showModal('SaveGcodeModal')">
+                  <a href="#"
+                     class="nav-link close-on-click disabled gcode-activated"
+                     data-bind="click:saveGcodeInFile">
                     Save Gcode
                   </a>
                 </li>

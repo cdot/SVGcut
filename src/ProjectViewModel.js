@@ -356,6 +356,18 @@ class ProjectViewModel extends ViewModel {
   }
 
   /**
+   * Support for storing gcode in local files.
+   * Saves the gcode in a user-selected file.
+   */
+  saveGcodeInFile() {
+    const gcode = App.models.GcodeGeneration.gcodeS();
+    const blob = new Blob([gcode], {type: 'text/plain'});
+    // No way to know what it was last saved as, so just guess
+    // at <project name>.nc
+    saveAs(blob, `${this.projectName()}.nc`);
+  }
+
+  /**
    * @override
    */
   jsonFieldName() { return 'misc'; }

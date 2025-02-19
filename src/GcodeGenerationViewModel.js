@@ -1,8 +1,5 @@
 /*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-//import "file-saver"
-/* global saveAs */
-
 // import "knockout"
 /* global ko */
 
@@ -70,12 +67,6 @@ class GcodeGenerationViewModel extends ViewModel {
           el.classList.add("disabled");
       }
     });
-
-    /**
-     * Filename to store gcode in
-     * @member {observable.<string>}
-     */
-    this.gcodeFilename = ko.observable(DEFAULT_GCODEFILENAME);
 
     /**
      * True to return to machine 0,0 at the end of the GCode.
@@ -170,8 +161,7 @@ class GcodeGenerationViewModel extends ViewModel {
    */
   bind() {
     for (const id of [
-      "GcodeGenerationView", "SaveGcodeModal", "ViewGcodeModal",
-      "SimulationModal" ])
+      "GcodeGenerationView", "ViewGcodeModal", "SimulationModal" ])
       super.bind(id);
   }
 
@@ -185,7 +175,6 @@ class GcodeGenerationViewModel extends ViewModel {
     this.extraOffsetY(DEFAULT_EXTRAOFFSETY);
     this.returnTo00(DEFAULT_RETURNTO00);
     this.gcode([]);
-    this.gcodeFilename(DEFAULT_GCODEFILENAME);
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
   }
 
@@ -348,21 +337,6 @@ class GcodeGenerationViewModel extends ViewModel {
   }
 
   /**
-   * Support for storing gcode in local files.
-   * Saves the gcode and hides the modal that invoked the function.
-   */
-  saveGcodeInFile() {
-    App.hideModals();
-
-    if (!this.haveGcode())
-      return;
-
-    const gcode = this.gcode().join("\n");
-    const blob = new Blob([gcode], {type: 'text/plain'});
-    saveAs(blob, this.gcodeFilename());
-  }
-
-  /**
    * @override
    */
   jsonFieldName() { return 'gcodeConversion'; }
@@ -373,7 +347,6 @@ class GcodeGenerationViewModel extends ViewModel {
   toJson() {
     return {
       units: this.unitConverter.units(),
-      gcodeFilename: this.gcodeFilename(),
       origin: this.origin(),
       returnTo00: this.returnTo00(),
       extraOffsetX: this.extraOffsetX(),
@@ -386,7 +359,6 @@ class GcodeGenerationViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'units');
-    this.updateObservable(json, 'gcodeFilename');
     this.updateObservable(json, 'origin');
     this.updateObservable(json, 'returnTo00');
     this.updateObservable(json, 'extraOffsetX');

@@ -344,6 +344,7 @@ export class Generator {
    * @return {string[]} array of gcode commands
    */
   end() {
+    this.stopSpindle();
     const p = {
       z: this.safeZ,
       f: this.rapidFeed
@@ -565,7 +566,7 @@ export class Generator {
             path = path.reverse();
         }
       }
-      this.stopSpindle();
+      //this.stopSpindle();
 
       this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Retract" });
     }
@@ -579,7 +580,7 @@ export class Generator {
   safeMoveTo(pt) {
     // If the tool isn't over the start of the path, move it there
     if (!this.toolAt(pt)) {
-      this.stopSpindle();
+      //this.stopSpindle();
       this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
       this.G(0, { pt: pt, z: this.safeZ, rem: "Hang" });
       this.G(0, { z: this.topZ, rem: "Sink" });
