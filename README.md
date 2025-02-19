@@ -89,7 +89,9 @@ drop-down that opens when you click ▶.
 + `Spacing` - specific to the `Perforate` operation, this is used to set the spacing between drill holes.
 Not all options are appropriate for all operations; the drop-down will
 change when you change the selected operation, and so will the tool
-paths shown in the display.
+paths shown in the display. If you want to hide the source SVG to see
+the toolpaths more clearly, you can enable the `View`->`Hide SVG`
+option.
 
 ## Curve Conversion
 
@@ -147,7 +149,7 @@ repeat the same cut.
 
 ### Simulator
 
-At any point you can preview th Gcode in the `Simulate` pane. This
+At any point you can preview the Gcode using the `View`->`Simulation` menu. This
 really is a Gcode simulator; it reloads the generated Gcode, and
 displays the paths the tool will follow. Previewing is a good idea, as
 it can help you pick up on cases where the tool diameter is too great
@@ -155,14 +157,11 @@ to cut an acute angle.
 
 ### Code preview
 
-You can also use the `View Gcode` button in the `Gcode Generation`
-pane to open
-a text view on the Gcode.
+You can also use the `View`->`Gcode` menu item to open a text view on the Gcode.
 
 ## Saving the Gcode
 
-Once you are happy with the Gcode, save it to a file using `Save Gcode` from
-the `File` menu. You can call it what you want, though if you use the
+Once you are happy with the Gcode, save it to a file using the `File`->`Save Gcode` menu. You can call it what you want, though if you use the
 extension `.nc` it will be easier to find in Candle.
 
 # Projects

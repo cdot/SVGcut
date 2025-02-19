@@ -34,6 +34,39 @@
 </head>
 <body>
 
+  <div class="modal fade" id="SimulationModal" role="dialog"
+       aria-labelledby="SimModalTitle" aria-hidden="true">
+    <!-- bound to GcodeGenerationViewModel -->
+    <div class="modal-dialog modal-fullscreen">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="SimModalTitle">Simulation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <table width="100%">
+            <tr>
+              <th>T:</th><td><span id="StopWatchT"></span></td>
+              <th>X:</th><td><span id="StopWatchX"></span></td>
+              <th>Y:</th><td><span id="StopWatchY"></span></td>
+              <th>Z:</th><td><span id="StopWatchZ"></span></td>
+              <th>F:</th><td><span id="StopWatchF"></span></td>
+              <th>S:</th><td><span id="StopWatchS"></span></td>
+            </tr>
+          </table>
+          <input id="TimeControl" class="form-range" type="range"
+                 max="1000" value="0" />
+          <canvas id="SimulationCanvas"></canvas>
+          <ul>
+            <li>Use mouse to rotate view</li>
+            <li>Use slider control to set simulation time</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal fade" id="SaveProjectModal" role="dialog"
        aria-labelledby="SpaModalTitle" aria-hidden="true">
     <!-- Bound to ProjectViewModel  -->
@@ -273,10 +306,12 @@
                     </td><td>
                       <select id="OpCombine" data-bind="value:combineOp"
                               class="auto-popover">
-                        <option value="Union">Union</option>
-                        <option value="Intersect">Intersection</option>
-                        <option value="Diff">Difference</option>
-                        <option value="Xor">XOR</option>
+                        <!-- must match COMBINE enum -->
+                        <option value="0">Group</option>
+                        <option value="1">Union</option>
+                        <option value="2">Intersection</option>
+                        <option value="3">Difference</option>
+                        <option value="4">XOR</option>
                       </select>
                     </td>
                   </tr><tr data-bind="visible:needs('direction')">
@@ -492,10 +527,6 @@
                   </td>
                 </tr>
               </table> <!-- /card-table -->
-              <button class="btn btn-secondary btn-sm"
-                      data-bind="enable: haveGcode(), click: viewGcode">
-                View Gcode
-              </button>
             </div> <!-- /card-body -->
           </div> <!-- /GcodeGenerationViewPane -->
         </div <!-- GcodeGenerationView -->
@@ -597,6 +628,24 @@
                   </a>
                 </li>
                 <li class="dropdown-item">
+                  <a href="#" class="nav-link"
+                     data-bind="click: App.zoomIn()">
+                    Zoom In
+                  </a>
+                </li>
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link disabled gcode-activated"
+                     data-bind="click:()=>App.showModal('SimulationModal')">
+                    Simulation
+                  </a>
+                </li>
+                <li class="dropdown-item">
+                  <a href="#" class="nav-link disabled gcode-activated"
+                     data-bind="click:()=>App.showModal('ViewGcodeModal')">
+                    Gcode
+                  </a>
+                </li>
+                <li class="dropdown-item">
                   <a href="#" class="nav-link">
                     <input id="HideSVG" type="checkbox"
                            data-bind="checked: App.hideSVG()" />
@@ -644,66 +693,28 @@
         </nav> <!-- /Toolbar -->
 
         <!-- SVG views -->
-        <div>
-          <ul class="nav nav-tabs" role="tablist">
-            <li class="nav-item">
-              <a id="ActivateToolpathsTab" class="nav-link active" href="#SVGPanel"
-                 data-bs-toggle="tab">
-                Toolpaths
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="#SimulatePanel" data-bs-toggle="tab">
-                Simulate
-              </a>
-            </li>
-          </ul>
-          <div class="tab-content">
-            <!-- toolpaths tab -->
-            <div class="tab-pane active" id="SVGPanel">
-              <svg id="MainSVG" viewBox="0 0 500 500"
-                   preserveAspectRatio="xMinYMin meet">
-                <defs>
-                  <filter id="ContrastFilter" filterUnits="objectBoundingBox">
-                    <feComponentTransfer>
-                      <feFuncR type="linear" slope="0.5" intercept="0.25">
-                      </feFuncR>
-                      <feFuncG type="linear" slope="0.5" intercept="0.25">
-                      </feFuncG>
-                      <feFuncB type="linear" slope="0.5" intercept="0.25">
-                      </feFuncB>
-                    </feComponentTransfer>
-                  </filter>
-                </defs>
-                <g id="ContentSVGGroup" class="managed-SVG-group serialisable"
-                   filter="url(#ContrastFilter)"/>
-                <g id="ToolPathsSVGGroup" class="managed-SVG-group" />
-                <g id="CombinedGeometrySVGGroup" class="managed-SVG-group" />
-                <g id="TabsSVGGroup" class="managed-SVG-group" />
-                <g id="SelectionSVGGroup" class="managed-SVG-group" />
-              </svg>
-            </div>
-            <!-- simulate tab -->
-            <div class="tab-pane" id="SimulatePanel">
-              <table width="100%">
-                <tr>
-                  <th>T:</th><td><span id="StopWatchT"></span>s</td>
-                  <th>X:</th><td><span id="StopWatchX"></span></td>
-                  <th>Y:</th><td><span id="StopWatchY"></span></td>
-                  <th>Z:</th><td><span id="StopWatchZ"></span></td>
-                  <th>F:</th><td><span id="StopWatchF"></span></td>
-                  <th>S:</th><td><span id="StopWatchS"></span></td>
-                </tr>
-              </table>
-              <input id="TimeControl" class="form-range" type="range"
-                     max="1000" value="0" />
-              <canvas id="SimulationCanvas"></canvas>
-              <ul>
-                <li>Use mouse to rotate view</li>
-                <li>Use slider control to set simulation time</li>
-              </ul>
-            </div>
-          </div>
+        <div id="SVGPanel">
+          <svg id="MainSVG" viewBox="0 0 500 500"
+               preserveAspectRatio="xMinYMin meet">
+            <defs>
+              <filter id="ContrastFilter" filterUnits="objectBoundingBox">
+                <feComponentTransfer>
+                  <feFuncR type="linear" slope="0.5" intercept="0.25">
+                  </feFuncR>
+                  <feFuncG type="linear" slope="0.5" intercept="0.25">
+                  </feFuncG>
+                  <feFuncB type="linear" slope="0.5" intercept="0.25">
+                  </feFuncB>
+                </feComponentTransfer>
+              </filter>
+            </defs>
+            <g id="ContentSVGGroup" class="managed-SVG-group serialisable"
+               filter="url(#ContrastFilter)"/>
+            <g id="ToolPathsSVGGroup" class="managed-SVG-group" />
+            <g id="CombinedGeometrySVGGroup" class="managed-SVG-group" />
+            <g id="TabsSVGGroup" class="managed-SVG-group" />
+            <g id="SelectionSVGGroup" class="managed-SVG-group" />
+          </svg>
         </div>
       </div>
 
@@ -984,7 +995,11 @@
       <span name="OpEnabled">Enable/disable this operation. Only enabled operation are shown</span>
       <span name="OpName">Name used in gcode comments</span>
       <span name="OpRamp">Ramp the cutter in gradually instead of plunging straight down</span>
-      <span name="OpCombine">How to combine multiple paths into this operation</span>
+      <div name="OpCombine">How to combine multiple paths into this operation.
+        Group means to take the polygons as-is.<br>
+        Intersection&hellip; Union&hellip; Diff&hellip; Xor&hellip;
+        <img width="100%" src="images/combine_ops.png" />
+      </div>
       <span name="OpDirection">What direction the cutter should travel.
         See README for an explanation</span>
       <span name="OpSpindleSpeed">How fast the spindle should run while

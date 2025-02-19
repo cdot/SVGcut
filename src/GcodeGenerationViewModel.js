@@ -60,7 +60,16 @@ class GcodeGenerationViewModel extends ViewModel {
      */
     this.gcode = ko.observable([]);
     this.gcodeS = ko.observable("");
-    this.gcode.subscribe(() => this.gcodeS(this.gcode().join("\n")));
+    this.gcode.subscribe(() => {
+      this.gcodeS(this.gcode().join("\n"));
+      if (this.gcode().length > 0) {
+        for (const el of document.querySelectorAll(".gcode-activated"))
+          el.classList.remove("disabled");
+      } else {
+        for (const el of document.querySelectorAll(".gcode-activated"))
+          el.classList.add("disabled");
+      }
+    });
 
     /**
      * Filename to store gcode in
@@ -147,6 +156,13 @@ class GcodeGenerationViewModel extends ViewModel {
         this.bbHeight(
           this.unitConverter.fromUnits(bb.height, "integer").toFixed(2));
       });
+
+    window.addEventListener("resize", () => this.fitCanvas());
+
+    document.getElementById("SimulationModal")
+    .addEventListener("shown.bs.modal", () => {
+      this.fitCanvas();
+    });
   }
 
   /**
@@ -155,7 +171,7 @@ class GcodeGenerationViewModel extends ViewModel {
   bind() {
     for (const id of [
       "GcodeGenerationView", "SaveGcodeModal", "ViewGcodeModal",
-      "SimulatePanel" ])
+      "SimulationModal" ])
       super.bind(id);
   }
 
@@ -171,6 +187,19 @@ class GcodeGenerationViewModel extends ViewModel {
     this.gcode([]);
     this.gcodeFilename(DEFAULT_GCODEFILENAME);
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
+  }
+
+  /**
+   * Update the size of the simulation canvas to match
+   * the size of the main SVG.
+   * @private
+   */
+  fitCanvas() {
+    // Get the whole middle section for width
+    const canvas = document.getElementById("SimulationCanvas");
+    const min = Math.min(canvas.clientWidth, canvas.clientHeight);
+    // Make the simulation square
+    App.simulation.resizeCanvas(min, min);
   }
 
   /**
@@ -277,8 +306,7 @@ class GcodeGenerationViewModel extends ViewModel {
         direction: op.direction(),
         spinSpeed: Number(op.spindleSpeed())
       };
-      const precalculatedZ = op.operation() === Cam.OP.Perforate
-            || op.operation() === Cam.OP.Drill;
+      const precalculatedZ = Cam.DRILL_OP[op.operation()];
 
       let paths = op.toolPaths();
       const cutZ = job.topZ - Number(op.cutDepth());
@@ -288,12 +316,16 @@ class GcodeGenerationViewModel extends ViewModel {
       // or Z's were precalculated, then ignore the tab geometry
       let tg = (tabZ <= cutZ || precalculatedZ) ? undefined : tabGeometry;
 
-      // Split paths over tab geometry and assign Z's where not
-      // already defined in Cam.
       let cutPaths = new CutPaths();
-      for (const path of paths) {
-        cutPaths = cutPaths.concat(
-          Cam.splitPathOverTabs(path, tg, cutZ, tabZ));
+      if (precalculatedZ)
+        cutPaths = cutPaths.concat(paths);
+      else {
+        // Split paths over tab geometry and assign Z's where not
+        // already defined in Cam.
+        for (const path of paths) {
+          cutPaths = cutPaths.concat(
+            Cam.splitPathOverTabs(path, tg, cutZ, tabZ));
+        }
       }
       opCard.paths = cutPaths;
 
@@ -313,10 +345,6 @@ class GcodeGenerationViewModel extends ViewModel {
   haveGcode() {
     const gc = this.gcode();
     return gc && gc.length > 0;
-  }
-
-  viewGcode() {
-    App.showModal('ViewGcodeModal');
   }
 
   /**

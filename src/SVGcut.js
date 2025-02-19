@@ -26,6 +26,8 @@ import * as Cam from "./Cam.js";
  * @param {number} t time period in seconds
  */
 function formatTime(t) {
+  if (isNaN(t))
+    return "00:00:00";
   const s = `0${t % 60}`.slice(-2);
   t = Math.floor(t / 60);
   const m = `0${t % 60}`.slice(-2);
@@ -42,6 +44,24 @@ function formatTime(t) {
  */
 export class SVGcut {
 
+  /*
+   * Note:
+   * Manipulating SVG in a browser context presents a few issues, as
+   * the SVG spec can be vague on some points, and browser
+   * implementations vary. Originally, the simulation view was a peer
+   * of the toolpaths view, selected by switching a tab. However this
+   * introduced a number of subtle bugs. When the simulation was in
+   * view, it was still possible to change the operation. This would
+   * change the toolpaths, which required access to the viewport
+   * transformation matrix to compute a bounding box before generating
+   * the Gcode. However when the toolpaths SVG was not in view, the
+   * SVG transformation matrix was not valid. This could be overcome
+   * by caching the bounding box, but at the cost of more complex and
+   * potentially fragile code. To simplify the code and eliminate this
+   * issue, the simulation view was moved to a modal, thus blocking
+   * toolpath changes during simulation.
+   */
+  
   /**
    * Construct the SVGcut singleton. This is available throughout the code
    * via the global variable `App`.
@@ -132,21 +152,9 @@ export class SVGcut {
       nel.forEach(e => bootstrap.Dropdown.getInstance(e).hide());
     }));
 
-    // If a SVG is imported / project opened when the toolpath is closed,
-    // then the viewbox won't get updated. Detect when we switch back
-    // and update it then. This will reset the zoom level to the default.
-    document.getElementById("ActivateToolpathsTab")
-    .addEventListener("click", () => {
-      this.fitSVG();
-    });
-
     this.addSVGEventHandlers();
 
-    window.addEventListener("resize", () => {
-      //console.debug("Main resized");
-      this.fitSVG();
-      this.updateSimulationCanvasSize();
-    });
+    window.addEventListener("resize", () => this.fitSVG());
 
     // handle popovers flagged by trigger:"manual" and class="manual-popover"
     const mans = document.querySelectorAll('.manual-popover');
@@ -192,7 +200,6 @@ export class SVGcut {
    */
   start() {
     this.fitSVG();
-    this.updateSimulationCanvasSize();
 
     return this.simulation.start()
     .then(() => this.models.Project.loadDefaults());
@@ -389,20 +396,6 @@ export class SVGcut {
   }
 
   /**
-   * Update the size of the simulation canvas to match
-   * the size of the main SVG.
-   * @private
-   */
-  updateSimulationCanvasSize() {
-    // Get the whole middle section for width
-    const middleDiv = document.getElementById("Middle");
-    const mSVGW = Math.min(
-      middleDiv.clientWidth, middleDiv.clientHeight); // pixels
-    // Make the simulation square
-    this.simulation.resizeCanvas(mSVGW, mSVGW);
-  }
-
-  /**
    * Set the viewBox of the main SVG so that it fits the
    * viewing area.
    * @private
@@ -417,7 +410,6 @@ export class SVGcut {
     // Set the viewBox to view all the contents of the main svg
     const bbs =
           `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`;
-    console.debug("Set bbox", bbs);
     mSVG.setAttribute(
       "viewBox", bbs);
   }

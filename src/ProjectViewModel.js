@@ -308,7 +308,7 @@ class ProjectViewModel extends ViewModel {
    * True if there is gcode associated with the project.
    */
   haveGcode() {
-    return App.models.GcodeGenerationModel.haveGcode();
+    return App.models.GcodeGeneration.haveGcode();
   }
 
   /**

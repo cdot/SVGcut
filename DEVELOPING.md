@@ -113,7 +113,7 @@ mocha --experimental-loader=@node-loader/import-maps SVG.js
 + Keep `npm run lint` clean.
 + Use `npm run doc` to generate and check code documentation.
 
-## Third-party Libraries
+# Third-party Libraries
 Dependencies are minimised as far as possible, but SVGcut still makes
 heavy use of third party libraries:
 + `knockout` is used to bind UI elements in the HTML to members in view models.

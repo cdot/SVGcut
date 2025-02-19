@@ -14,7 +14,6 @@ import * as SVG from "./SVG.js";
 import * as Cam from "./Cam.js";
 
 const DEFAULT_RAMP = false;
-const DEFAULT_COMBINEOP = "Union";
 const DEFAULT_DIRECTION = "Conventional";
 const DEFAULT_CUTDEPTH = 1;        // mm
 const DEFAULT_MARGIN = 0;          // mm
@@ -26,6 +25,24 @@ const FIELDS = [
   "name", "enabled", "combineOp", "operation", "cutDepth", "width",
   "direction", "spacing", "ramp", "margin", "spindleSpeed"
 ];
+
+/**
+ * @typedef {number} CombineOp
+ */
+
+/**
+ * Boolean operations on closed polygons.
+ * @enum {CombineOp}
+ * @memberof OperationViewModel
+ */
+export const COMBINE = {
+  Group: 0,
+  Union: 1,
+  Intersect: 2,
+  Diff: 3,
+  Xor: 4
+};
+const DEFAULT_COMBINEOP = COMBINE.Group;
 
 /**
  * ViewModel for an operation in the `Operations` card
@@ -75,8 +92,7 @@ class OperationViewModel extends ViewModel {
 
     /**
      * The operation used to combine raw paths to generate the resulting
-     * combinedGeometry. One of "Union" (the default), "Intersect", "Diff"
-     * or "Xor"
+     * combinedGeometry.
      * @member {observable.<string>}
      */
     this.combineOp = ko.observable(DEFAULT_COMBINEOP);
@@ -327,15 +343,22 @@ class OperationViewModel extends ViewModel {
     const closedPaths = this.operandPaths.filter(p => p.isClosed);
     let geom = new CutPaths(closedPaths[0]);
 
-    for (let i = 1; i < closedPaths.length; i++) {
-      const others = new CutPaths(closedPaths[i]);
-      switch (this.combineOp()) {
-      case "Intersect": geom = geom.intersection(others); break;
-      case "Diff":      geom = geom.diff(others); break;
-      case "Xor":       geom = geom.xor(others); break;
-      default:          geom = geom.union(others); break;
+    const bop = Number(this.combineOp());
+    if (bop === COMBINE.Group)
+      geom = closedPaths;
+    else {
+      for (let i = 1; i < closedPaths.length; i++) {
+        const others = new CutPaths(closedPaths[i]);
+        switch (bop) {
+        case COMBINE.Intersect: geom = geom.intersection(others); break;
+        case COMBINE.Diff:      geom = geom.diff(others); break;
+        case COMBINE.Xor:       geom = geom.xor(others); break;
+        case COMBINE.Union:     geom = geom.union(others); break;
+        default: assert(false);
+        }
       }
     }
+
     const openPaths = this.operandPaths.filter(p => !p.isClosed);
     for (const op of openPaths)
       geom.push(op);
@@ -357,15 +380,22 @@ class OperationViewModel extends ViewModel {
 
       if (oper === Cam.OP.Inside
           || oper === Cam.OP.Outside
+          || oper === Cam.OP.Engrave
           || oper === Cam.OP.Perforate
           || oper === Cam.OP.Drill) {
         const width = this.toolPathWidth();
         if (oper === Cam.OP.Inside) {
           previewGeometry =
             previewGeometry.diff(previewGeometry.offset(-width));
-        } else // Outside or Perforate or Drill
+        } else if (oper === Cam.OP.Engrave) {
           previewGeometry =
-            previewGeometry.offset(width).diff(previewGeometry);
+          previewGeometry.offset(width / 2).diff(
+            previewGeometry.offset(-width / 2));
+        } else {
+          // Outside or Perforate or Drill
+          previewGeometry =
+          previewGeometry.offset(width).diff(previewGeometry);
+        }
       }
 
       if (previewGeometry.length > 0) {

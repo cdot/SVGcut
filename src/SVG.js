@@ -525,7 +525,7 @@ export function getBounds(el) {
                && typeof system.height !== "undefined") {
         if (system.width > 0 && system.height > 0) {
           const systemBB = new Rect(system);
-          console.debug("System BB", systemBB);
+          //console.debug("System BB", systemBB);
           return systemBB;
         }
       } else
@@ -564,7 +564,7 @@ export function getBounds(el) {
   if (!segs || segs.length === 0) {
     const emptyBB = el.viewBox ? new Rect(el.viewBox.baseVal) :
     Rect(0, 0, 10, 10);
-    console.debug("Empty BB", emptyBB);
+    //console.debug("Empty BB", emptyBB);
     return emptyBB;
 
   }
@@ -581,6 +581,6 @@ export function getBounds(el) {
   }
   // Dimensions in pixels already
   const computedBB = new Rect(minx, miny, maxx - minx, maxy - miny);
-  console.debug("Computed BB", computedBB);
+  //console.debug("Computed BB", computedBB);
   return computedBB;
 }
