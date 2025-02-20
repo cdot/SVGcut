@@ -1,5 +1,5 @@
 {
-	"name": "@cdot/jscut",
+	"name": "@cdot/svgcut",
 	"description": "",
 	"version": "1.0.0",
 	"license": "MIT",
@@ -38,6 +38,8 @@
 		"gl-matrix": "^3.4.3",
 		"knockout": "^3.5.1",
 		"knockout.validation": "^2.0.4",
-		"node": "^23.8.0"
+		"node": "^23.8.0",
+		"nvm": "^0.0.4",
+		"webpack": "^5.98.0"
 	}
 }

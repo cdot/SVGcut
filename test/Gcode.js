@@ -226,13 +226,11 @@ describe("Gcode", () => {
       '; Pass 1:4',
       'G1 Z-2',
       'G1 X0 Y0',
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
       '; Path 2',
       '; Pass 2:1',
       'G0 X20 Y20 ; Hang',
       'G0 Z0 ; Sink',
-      'M3 S2000 ; Start spindle',
       'G1 Z-0.5 F60',
       'G1 X30 Y30',
       '; Pass 2:2',
@@ -244,8 +242,8 @@ describe("Gcode", () => {
       '; Pass 2:4',
       'G1 Z-2',
       'G1 X20 Y20',
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'G0 X0 Y0 ; Return to 0,0',
       'M2 ; End program'
     ];
@@ -320,8 +318,8 @@ describe("Gcode", () => {
       'G1 Z-5',
       'G1 Y10 Z0',
       'G1 X0 Y0 Z-3',
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'M2 ; End program'
     ];
     for (let i = 0; i < expected.length; i++)
@@ -375,8 +373,8 @@ describe("Gcode", () => {
       'G1 X-10',
       'G1 Y-10',
       'G1 X10 ; Close path', // TODO: this is unnecessary
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'G0 X0 Y0 ; Return to 0,0',
       'M2 ; End program'
     ];
@@ -427,8 +425,8 @@ describe("Gcode", () => {
       'G1 X10',
       'G1 Y10',
       'G1 X-10',
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'G0 X0 Y0 ; Return to 0,0',
       'M2 ; End program'
     ];
@@ -478,8 +476,8 @@ describe("Gcode", () => {
       'G1 X100 ; Ramp step',
       'G1 X-100',
       'G1 X100', // unnecesary
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'G0 X0 ; Return to 0,0',
       'M2 ; End program'
     ];
@@ -529,8 +527,8 @@ describe("Gcode", () => {
       'G1 Y10 Z-3',
       'G1 X-10 Z-4',
       'G1 Y-10 Z-1 ; Close path',
-      'M5 ; Stop spindle',
       'G0 Z10 F1000 ; Retract',
+      'M5 ; Stop spindle',
       'G0 X0 Y0 ; Return to 0,0',
       'M2 ; End program'
     ];

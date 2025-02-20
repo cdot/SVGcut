@@ -85,6 +85,8 @@ increasing downwards, but Gcode is generated assuming 0,0 at the lower
 left (or centre) with Y increasing upwards.
 
 # Tests
+All code should pass `npm run lint` with no errors.
+
 There is a suite of unit tests in the `test` directory, implemented
 using `mocha`. Run them using `npm run test`. They are far from
 comprehensive, as most testing has been done interactively in the
@@ -92,6 +94,10 @@ browser. Note that some of the tests have to be run with the `--experimental-loa
 ```
 mocha --experimental-loader=@node-loader/import-maps SVG.js
 ```
+
+# Production
+There is a command `npm run build` that will build a minimised version in
+the `dist` subdirectory, should you want it.
 
 # Coding Standards
 + Literate coding. All names should be expressive (in English) of their purpose.

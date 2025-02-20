@@ -61,7 +61,7 @@ export class SVGcut {
    * issue, the simulation view was moved to a modal, thus blocking
    * toolpath changes during simulation.
    */
-  
+
   /**
    * Construct the SVGcut singleton. This is available throughout the code
    * via the global variable `App`.

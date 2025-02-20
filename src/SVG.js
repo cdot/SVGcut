@@ -527,7 +527,7 @@ export function getBounds(el) {
           const systemBB = new Rect(system);
           //console.debug("System BB", systemBB);
           return systemBB;
-        }!
+        }
       } else
         throw new Error(`Wierd type from getBBox: ${system}`);
     }
