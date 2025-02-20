@@ -257,6 +257,7 @@ class GcodeGenerationViewModel extends ViewModel {
     }
 
     const offset = this.originOffset();
+    console.debug("Gcode offset", offset);
 
     const job = new Gcode.Generator({
       gunits:         gunits,

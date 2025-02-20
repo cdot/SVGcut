@@ -375,7 +375,7 @@ export class Generator {
    * @return {number} the coord mapped to CNC units
    * @private
    */
-  mapX(x) { return x * this.xScale + this.offsetX; }
+  mapX(x) { return x * this.xScale - this.offsetX; }
 
   /**
    * Map a CutPath Y to Gcode coords
