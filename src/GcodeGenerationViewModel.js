@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout"
 /* global ko */
@@ -18,7 +18,6 @@ const DEFAULT_ORIGIN = "SVG page";
 const DEFAULT_EXTRAOFFSETX = 0;
 const DEFAULT_EXTRAOFFSETY = 0;
 const DEFAULT_RETURNTO00 = false;
-const DEFAULT_GCODEFILENAME = "svgcut.nc";
 
 /**
  * ViewModel for Gcode Generation panel.
@@ -66,6 +65,7 @@ class GcodeGenerationViewModel extends ViewModel {
         for (const el of document.querySelectorAll(".gcode-activated"))
           el.classList.add("disabled");
       }
+      this.updateGcodeOrigin(this.originOffset());
     });
 
     /**
@@ -192,18 +192,30 @@ class GcodeGenerationViewModel extends ViewModel {
   }
 
   /**
-   * Get the main SVG area in gcode units
-   * @return {Rect} a standard left, top, width, height rect
+   * Work out origin offset in Gcode units. This is the offset of the
+   * Gcode origin from the *top left* of the bounding box.
+   * @return {Rect} the paths BB offset by the origin position
+   * @private
    */
-  getSVGBB() {
-    const pxBB = App.getMainSVGBBox();
-    const gcodeBB = new Rect(
-      this.unitConverter.fromUnits(pxBB.x, "px"),
-      this.unitConverter.fromUnits(pxBB.y, "px"),
-      this.unitConverter.fromUnits(pxBB.width, "px"),
-      this.unitConverter.fromUnits(pxBB.height, "px")
-    );
-    return gcodeBB;
+  originOffset() {
+    // Get the SVG bounding box in gcode units, with Y=0 at the top
+    const svgBB = this.unitConverter.fromUnits(App.getMainSVGBBox(), "px");
+    let offsetX = svgBB.left + Number(this.extraOffsetX());
+    let offsetY = svgBB.bottom - Number(this.extraOffsetY());
+    // offsetY is measured from the top of the BB
+
+    // Get the BB of the paths in gcode units, with Y=0 at the top
+    const pathsBB = this.unitConverter.fromUnits(
+      App.models.Operations.getBounds(), "integer");
+    if (this.origin() === "Bounding box" || this.origin() === "Centre") {
+      offsetX += (pathsBB.left - svgBB.left);
+      offsetY += (pathsBB.bottom - svgBB.bottom);
+      if (this.origin() === "Centre") {
+        offsetX += pathsBB.width / 2;
+        offsetY -= pathsBB.height / 2;
+      }
+    }
+    return new Rect(offsetX, offsetY, pathsBB.width, pathsBB.height);
   }
 
   /**
@@ -244,20 +256,7 @@ class GcodeGenerationViewModel extends ViewModel {
       }
     }
 
-    // Work out origin offset
-    const svgBB = this.getSVGBB();
-    let offsetX = svgBB.left + this.extraOffsetX();
-    let offsetY = svgBB.bottom + this.extraOffsetY();
-    if (this.origin() === "Bounding box" || this.origin() === "Centre") {
-      const pathsBB = this.unitConverter.fromUnits(
-        App.models.Operations.getBounds(), "integer");
-      offsetX -= pathsBB.left - svgBB.left;
-      offsetY -= svgBB.bottom - pathsBB.bottom;
-      if (this.origin() === "Centre") {
-        offsetX -= pathsBB.width / 2;
-        offsetY -= pathsBB.height / 2;
-      }
-    }
+    const offset = this.originOffset();
 
     const job = new Gcode.Generator({
       gunits:         gunits,
@@ -277,8 +276,8 @@ class GcodeGenerationViewModel extends ViewModel {
       returnTo00:     this.returnTo00(),
       workWidth:      Number(this.bbWidth()),
       workHeight:     Number(this.bbHeight()),
-      offsetX:        offsetX,
-      offsetY:        offsetY
+      offsetX:        offset.x,
+      offsetY:        offset.y
     });
 
     if (job.passDepth < 0) {
@@ -334,6 +333,39 @@ class GcodeGenerationViewModel extends ViewModel {
   haveGcode() {
     const gc = this.gcode();
     return gc && gc.length > 0;
+  }
+
+  /**
+   * Update the axes picture for the current gcode. Here because at
+   * some point might want to make origins relative to the toolpaths,
+   * rather than the entire SVG image.
+   */
+  updateGcodeOrigin(bb) {
+    let w = this.unitConverter.toUnits(bb.width, "px"),
+        h = this.unitConverter.toUnits(bb.height, "px"),
+        x, y;
+
+    const group = document.getElementById("AxesSVGGroup");
+    if (w <= 0 || h <= 0 || !this.haveGcode()) {
+      group.setAttribute("visibility", "hidden");
+      x = y = w = h = 0;
+    } else {
+      group.setAttribute("visibility", "visible");
+      x = this.unitConverter.toUnits(bb.x, "px");
+      y = this.unitConverter.toUnits(bb.y, "px");
+    }
+
+    const xAxis = document.getElementById("X-Axis");
+    const yAxis = document.getElementById("Y-Axis");
+    xAxis.setAttribute("x1", x);
+    xAxis.setAttribute("y1", y);
+    xAxis.setAttribute("x2", x + w / 3);
+    xAxis.setAttribute("y2", y);
+
+    yAxis.setAttribute("x1", x);
+    yAxis.setAttribute("y1", y);
+    yAxis.setAttribute("x2", x);
+    yAxis.setAttribute("y2", y - h / 3);
   }
 
   /**

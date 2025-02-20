@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 //import "knockout";
 /* global ko */
 
@@ -8,7 +8,7 @@ import { ViewModel } from "./ViewModel.js";
 import { CutPaths } from "./CutPaths.js";
 import { TabViewModel } from "./TabViewModel.js";
 
-const DEFAULT_MAXCUTDEPTH = 1;
+const DEFAULT_MAXCUTDEPTH = 0.5;
 
 /**
  * View model for (holding) Tabs pane.

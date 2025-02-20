@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -45,7 +45,7 @@ export class MaterialViewModel extends ViewModel {
     unitConverter.add(this.clearance);
     this.clearance.subscribe(
       () => {
-        document.dispatchEvent(new Event("UPDATE_TOOL_PATHS"));
+        document.dispatchEvent(new Event("UPDATE_GCODE"));
         document.dispatchEvent(new Event("PROJECT_CHANGED"));
       });
 

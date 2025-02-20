@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 /* global assert */
 
 // import "knockout";
@@ -41,31 +41,53 @@ class SelectionViewModel extends ViewModel {
     this.svgGroup = document.getElementById("SelectionSVGGroup");
   }
 
+  selectAll() {
+    // Select everything
+
+    if (this.isSomethingSelected())
+      // Deselect current selection
+      this.clearSelection();
+
+    const selectedEls = App.contentSVGGroup.querySelectorAll(
+      'path,rect,circle,ellipse,line,polyline,polygon');
+    if (selectedEls.length > 0) {
+      selectedEls.forEach(element => this.clickOnSVG(element, true));
+    }
+  }
+
   /**
    * Handler for a click event on the SVG window.
-   * @param {SVGElement} elem SVG element that was hit by the click
+   * + Click elem (!extend) - clear current selection, select elem
+   * + Click elem (extend) - add elem to selection
+   * + Click space (!extend) - clear current selection
+   * + Click space (extend) - no-op
+   * @param {SVGElement?} elem the element hit
+   * @param {boolean} extend true to extend the selection
    * @return {boolean} true if the event has been handled
    */
-  clickOnSVG(elem) {
-    if (elem.tagName.toLowerCase() === "svg") {
+  clickOnSVG(elem, extend) {
+
+    if (!extend)
       this.clearSelection();
-      return false;
+
+    if (elem) {
+      const clas = elem.getAttribute("class");
+      if (clas && clas.indexOf("selected-path") >= 0)
+        return this.removeFromSelection(elem);
+      else if (elem.tagName.toLowerCase() !== "svg")
+        return this.addToSelection(elem);
     }
 
-    const clas = elem.getAttribute("class");
+    return true;
+  }
 
-    // pointer events are disabled for combined-geometry, tool-path and
-    // tabe-geometry in the css.
-    if (clas && clas.indexOf("selected-path") >= 0) {
-      // Deselect previously selected path
-      elem.remove();
-      if (clas.indexOf("open-path") >= 0)
-        this.openSelected(this.openSelected() - 1);
-      else
-        this.closedSelected(this.closedSelected() - 1);
-      return true;
-    }
-
+  /**
+   * Add the element to the current selection
+   * @param {SVGElement} elem the element hit
+   * @return {boolean} true if the element was selected, false otherwise
+   * @private
+   */
+  addToSelection(elem) {
     // When something is selected in the SVG it is automatically linearised
     // before being added to the selection SVG. That way when an operation is
     // created, the paths can simply be converted to integer coordinates
@@ -85,7 +107,7 @@ class SelectionViewModel extends ViewModel {
           'http://www.w3.org/2000/svg', "path");
         newPath.setAttribute("d", SVG.segments2d(segs));
         let classes = "selected-path";
-        // .path loses Z, so have to save it somehow
+        // .path loses 'Z', so have to save it somehow
         if (segs[segs.length - 1][0] === 'Z') {
           if (elem.getAttribute("fill-rule") === "evenodd")
             newPath.setAttribute("fill-rule", "evenodd");
@@ -103,6 +125,25 @@ class SelectionViewModel extends ViewModel {
       console.warn(e);
     }
 
+    return false;
+  }
+
+  /**
+   * Deselect previously selected path
+   * @param {SVGElement} elem the element hit
+   * @return {boolean} true if the element was removed
+   * @private
+   */
+  removeFromSelection(elem) {
+    const clas = elem.getAttribute("class");
+    if (clas && clas.indexOf("selected-path") >= 0) {
+      elem.remove();
+      if (clas.indexOf("open-path") >= 0)
+        this.openSelected(this.openSelected() - 1);
+      else
+        this.closedSelected(this.closedSelected() - 1);
+      return true;
+    }
     return false;
   }
 
@@ -141,12 +182,14 @@ class SelectionViewModel extends ViewModel {
 
   /**
    * Deselect everything
+   * @return {boolean} true
    */
   clearSelection() {
     // replaceChildren with no parameters clears the node
     this.svgGroup.replaceChildren();
     this.openSelected(0);
     this.closedSelected(0);
+    return true;
   }
 
   /**

@@ -515,7 +515,7 @@ export function segments2d(segs) {
 export function getBounds(el) {
   // Try getBBox first
   /* c8 ignore start */
-  if (typeof SVGGraphicsElement !=="undefined" && SVGGraphicsElement.getBBox) {
+  if (typeof SVGGraphicsElement !== "undefined" && SVGGraphicsElement.getBBox) {
     const system = el.getBBox();
     if (system) {
       if (system.baseVal &&
@@ -527,7 +527,7 @@ export function getBounds(el) {
           const systemBB = new Rect(system);
           //console.debug("System BB", systemBB);
           return systemBB;
-        }
+        }!
       } else
         throw new Error(`Wierd type from getBBox: ${system}`);
     }

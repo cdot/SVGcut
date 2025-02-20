@@ -30,7 +30,7 @@ machine can handle. Make sure that the Scale (in Document Properties)
 is set to 1.
 
 There are some limitations:
-- You may have to use the "Path->Object to Path" command to convert some objects (such as text) into paths.
+- You may have to use the "Path↘Object to Path" command to convert some objects (such as text) into paths.
 - Colour can be confusing. Beware of creating paths the same colour as their background, or that are covered by other objects.
 - Stroke width is also ignored, so you are recommended to set a very small stroke width.
 
@@ -44,25 +44,26 @@ all the nice features.
 ## Tool
 
 The next step is to set the parameters of the tool you are
-using. Click on the `Tool Settings` button to open the settings
+using. Click on the `Tool Settings` button to open the
 pane. There is popup help on each of the options.
 
 ## Material
 
-Open the material pane to specify the material you are working
+Open the `Material` pane to specify the material you are working
 with. There is popup help on each of the options.
 
 ## Import SVG
 
 Open the `File` menu and select `Import SVG` to load your SVG
 file. If you have more than one SVG file you can load them all at
-once, or one after another. You should be able to see your SVG in the `Toolpaths` tab. You can zoom (mouse wheel) and pan.
+once, or one after another. You should be able to see your SVG in the main
+window. You can zoom (mouse wheel) and pan (click and drag).
 
 ## Operations
 
 Use the mouse to select the paths (the _geometry_) you want to convert
-to Gcode (click a path again to deselect it; a double-click will
-select all paths). They will change colour. In the `Operations` pane,
+to Gcode (shift+click to select another, `Select↘All` to select everything).
+They will change colour. In the `Operations` pane,
 click `Create Operation` to tell it what you want to do with the
 selected paths. There are a number of operations available:
 + `Engrave` - the tool will follow the paths (basically what a pen plotter does).
@@ -72,7 +73,7 @@ selected paths. There are a number of operations available:
 + `Pocket (raster)` - will carve out the interior of your selected paths using side-to-side tool movements.
 + `Perforate` - will drill a series of evenly-spaced holes outside the boundary of closed paths, or along the line of open paths. You can control the spacing of the holes.
 
-The `Toolpaths` pane will change to show what has been selected for
+The display will change to show what has been selected for
 the operation, and the tool paths generated for that operation.
 
 Now you should set the depth to which you want your selected operation
@@ -90,14 +91,15 @@ drop-down that opens when you click ▶.
 Not all options are appropriate for all operations; the drop-down will
 change when you change the selected operation, and so will the tool
 paths shown in the display. If you want to hide the source SVG to see
-the toolpaths more clearly, you can enable the `View`->`Hide SVG`
+the toolpaths more clearly, you can enable the `View↘Hide SVG`
 option.
 
 ## Curve Conversion
 
 Bezier curves in paths are supported by converting them to a sequence
-of straight line segments. This pane give you some options for
-controlling this conversion.
+of straight line segments. The `Curve Conversion` pane give you some options for
+controlling this conversion. Curve conversion happens when something is
+first selected, so don't expect to see any effect on existing operations.
 
 ## Gcode Generation
 
@@ -105,25 +107,18 @@ In the `Gcode Generation` pane, select the units that your machine
 operates in. If your machine supports the `G21` code you can just use
 the units you are most comfortable in.
 
-When you draw in an SVG editor such as Inkscape, you work in a
-coordinate system where 0, 0 is at the top left of the page, and Y
-increases downwards. However hobbyist CNC machine coordinates usually
-work from an origin at the bottom left, with Y increasing away from
-the operator, and this is the convention that SVGcut follows.
-
-The application handles most of the details of converting between
-these coordinate systems. However it helps if you have a clear idea of
-how the different systems relate.
-
-+ SVG Coordinates - 0,0 is at the top left of the page. Y increases downwards.
-+ The Machine Origin - 0,0 is the bottom left corner of the work area. All CNC machines have a coordinate origin, normally determined automatically by running each axis against the end stops.
+All CNC machines have a coordinate system where X increases to the right,
+Y away from the operator, and Z increases upwards. SVG cut shows you where
+the machine 0.0 is relative to your work using an axes cursor - green
+for Y, and red for X, same as Candle.
 
 You can choose for the machine origin to correspond to the bottom left
-of the SVG page, or to the bottom left of the bounding box around your
-selected operations. For example, let's say we want to carve the
-Sanskrit word "Love". We have drawn it on a 80x60mm page, using Inkscape. The top left
-corner of the bounding box of the drawing is at (10,15)mm while the
-bottom right corner is at (70,45)mm, as shown by the green lettering.
+of the SVG page, or to the bottom left or centre of the bounding box
+around your selected operations. For example, let's say we want to
+carve the Sanskrit word "Love". We have drawn it on a 80x60mm page,
+using Inkscape.  The top left corner of the bounding box of the
+drawing in Inkscape is at (10,15)mm while the bottom right corner is
+at (70,45)mm, as shown by the green lettering.
 
 <img src="/images/coords.svg" style="width:50%;height: auto"></img>
 
@@ -149,7 +144,7 @@ repeat the same cut.
 
 ### Simulator
 
-At any point you can preview the Gcode using the `View`->`Simulation` menu. This
+At any point you can preview the Gcode using the `View↘Simulation` menu. This
 really is a Gcode simulator; it reloads the generated Gcode, and
 displays the paths the tool will follow. Previewing is a good idea, as
 it can help you pick up on cases where the tool diameter is too great
@@ -157,11 +152,11 @@ to cut an acute angle.
 
 ### Code preview
 
-You can also use the `View`->`Gcode` menu item to open a text view on the Gcode.
+You can also use the `View↘Gcode` menu item to open a text view on the Gcode.
 
 ## Saving the Gcode
 
-Once you are happy with the Gcode, save it to a file using the `File`->`Save Gcode` menu. You can call it what you want, though if you use the
+Once you are happy with the Gcode, save it to a file using the `File↘Save Gcode` menu. You can call it what you want, though if you use the
 extension `.nc` it will be easier to find in Candle.
 
 # Projects
@@ -169,10 +164,8 @@ extension `.nc` it will be easier to find in Candle.
 The `File` menu lets you save and reload projects. You can save in
 a file, or in the browser.
 
-Note that your original SVG files are *not* saved with projects.
-Despite that, projects can still be quite big, and the browser has
-limited storage space, so keep the browser for templates and store
-project files to disc.
+Projects can get quite big, and the browser has limited storage space,
+so keep the browser for templates and store project files to disc.
 
 ## Templates
 When you start up the app for the first time, it starts up with a
@@ -189,20 +182,20 @@ giving them meaningful names.
 To use
 [holding tabs](https://www.axyz.com/technical-tip-of-the-week-when-to-use-holding-tabs/)
 you have to draw paths in your SVG where you want the tabs to be. In
-SVGcut, select these paths and use `Create Tabs` on the Tabs pane to
+SVGcut, select these paths and use `Create Tabs` on the `Holding Tabs` pane to
 specify them as tabs. When the cutter passes over these areas, it will
 be limited to cutting to the depth you specify.
 
 # Relationship to `jscut`
 
 SVGcut is a fork of
-[Tim Fleming's `jscut`](https://github.com/tbfleming/jscut).
+[Todd Fleming's `jscut`](https://github.com/tbfleming/jscut).
 Development of `jscut` stopped some years ago, leaving a number
 of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
 + Open paths (polylines) as well as closed (polygons)
-+ Select all paths on a double-click
++ Cleaner selection
 + Zoom and pan on paths
 + Easier to work with XY origins
 + Perforate operation
@@ -224,7 +217,7 @@ complex to reverse engineer, for limited end-user value.
 
 # LICENSE & COPYRIGHT
 
-Tim Fleming is recognised as author of all his code, even where it has
+Todd Fleming is recognised as author of all his code, even where it has
 been extensively rewritten. Because `jscut` is GPL, so is SVGcut.
 
 + Copyright 2014 Todd Fleming

@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "file-saver"
 /* global saveAs */
@@ -113,6 +113,11 @@ export class SVGcut {
      */
     this.mainSVG = document.getElementById("MainSVG");
 
+    /**
+     * The content group; the only valid contributor to selections
+     */
+    this.contentSVGGroup = document.getElementById("ContentSVGGroup");
+
     // Create the simulation canvas.
     this.simulation = new Simulation(
       "glShaders",
@@ -218,41 +223,20 @@ export class SVGcut {
   addSVGEventHandlers() {
     // Click to select
     this.mainSVG
-    .addEventListener("click", e => setTimeout(() => {
+    .addEventListener("click", e => {
+      //setTimeout(() => {
       // Timeout to give space for double-click
-      if (e.detail > 1)
-        return false; // ignore dblclick first click
+      //if (e.detail > 1)
+      //  return false; // ignore dblclick first click
 
-      if (e.target) {
-        // Ignore clicks that are not on SVG elements
-        if (this.models.Selection.clickOnSVG(e.target)) {
-          if (this.models.Selection.isSomethingSelected()) {
-            this.tutorial(3);
-            return true;
-          }
+      if (this.models.Selection.clickOnSVG(e.target, e.shiftKey)) {
+        if (this.models.Selection.isSomethingSelected()) {
+          this.tutorial(3);
+          return true;
         }
       }
       return false;
-    }, 200));
-
-    // Double-click select all
-    this.mainSVG
-    .addEventListener("dblclick", e => {
-      // Select everything
-
-      if (this.models.Selection.isSomethingSelected())
-        // Deselect current selection
-        this.models.Selection.clearSelection();
-
-      const selectedEls = this.mainSVG.querySelectorAll(
-        'path,rect,circle,ellipse,line,polyline,polygon');
-      if (selectedEls.length > 0) {
-        selectedEls.forEach(element =>
-          this.models.Selection.clickOnSVG(element));
-        if (this.models.Selection.isSomethingSelected())
-          this.tutorial(3);
-      }
-    });
+    }/*, 200)*/);
 
     // Zooming using the mouse wheel
     this.mainSVG
@@ -390,8 +374,10 @@ export class SVGcut {
           || this.mainSVG.offsetHeight === 0
           || this.mainSVG.getClientRects().length === 0
           || window.getComputedStyle(this.mainSVG).visibility === "hidden";
-    if (isHidden && this.bbCache)
+    if (isHidden && this.bbCache) {
+      console.debug("BB from cache", this.bbCache);
       return this.bbCache;
+    }
     return this.bbCache = SVG.getBounds(this.mainSVG);
   }
 
@@ -408,10 +394,10 @@ export class SVGcut {
     // Mine; works even when the SVG hasn't been rendered, but is heavy.
     //const bbox = this.getMainSVGBBox();
     // Set the viewBox to view all the contents of the main svg
-    const bbs =
-          `${bbox.x - 2} ${bbox.y - 2} ${bbox.width + 4} ${bbox.height + 4}`;
-    mSVG.setAttribute(
-      "viewBox", bbs);
+    // Toolpaths may overlap this
+    const bbs = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
+    console.debug("SETVB", bbs);
+    mSVG.setAttribute("viewBox", bbs);
   }
 
   /**
@@ -467,6 +453,8 @@ export class SVGcut {
     let svgGroups = document.querySelectorAll(".managed-SVG-group");
     for (const svgel of svgGroups)
       svgel.replaceChildren();
+    this.models.GcodeGeneration.updateGcodeOrigin(new Rect(0, 0, 0, 0));
+    this.mainSVG.setAttribute("viewBox", "0 0 500 500");
     this.fitSVG();
   }
 
@@ -534,7 +522,7 @@ export class SVGcut {
 
   hideSVG() {
     const control = document.getElementById("HideSVG");
-    document.getElementById("ContentSVGGroup")
+    this.contentSVGGroup
     .setAttribute("visibility", control.checked ? "hidden" : "visible");
   }
 }

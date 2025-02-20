@@ -1,4 +1,4 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // import "knockout";
 /* global ko */
@@ -7,13 +7,13 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const DEFAULT_STEPOVER = 0.4;
-const DEFAULT_DIAMETER = 3; // mm
-const DEFAULT_PASSDEPTH = 1; // mm
+const DEFAULT_STEPOVER = 0.4;   // fraction of tool diameter
+const DEFAULT_DIAMETER = 1;     // mm
+const DEFAULT_PASSDEPTH = 0.2;  // mm
 const DEFAULT_RAPIDRATE = 1000; // mm/min
-const DEFAULT_PLUNGERATE = 300; // mm/min
-const DEFAULT_CUTRATE = 300; // mm/min
-const DEFAULT_ANGLE = 180; // degrees, 180=flat
+const DEFAULT_PLUNGERATE = 100; // mm/min
+const DEFAULT_CUTRATE = 100;    // mm/min
+const DEFAULT_ANGLE = 180;      // degrees, 180=flat
 
 /**
  * View model for the Tool pane
