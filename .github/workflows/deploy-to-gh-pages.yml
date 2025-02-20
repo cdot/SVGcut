@@ -35,7 +35,7 @@ jobs:
           node-version: 16
       - run: npm install --omit=dev
       - name: Setup Github pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@v5
       - name: Build and upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -43,5 +43,5 @@ jobs:
           path: '.'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
 
