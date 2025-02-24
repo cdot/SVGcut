@@ -250,35 +250,33 @@ class GcodeGenerationViewModel extends ViewModel {
     for (const tab of tabs) {
       if (tab.enabled()) {
         // Bloat tab geometry by the cutter radius
-        const bloat = App.models.Tool.diameter.toUnits("integer") / 2;
+        const bloat = App.models.Tool.cutterDiameter.toUnits("integer") / 2;
         const tg = tab.combinedGeometry.offset(bloat);
         tabGeometry = tabGeometry.union(tg);
       }
     }
 
     const offset = this.originOffset();
-    console.debug("Gcode offset", offset);
+    //console.debug("Gcode offset", offset);
 
     const job = new Gcode.Generator({
-      gunits:         gunits,
+      gunits:      gunits,
       // Scaling to apply to internal units in paths, to generate Gcode units.
-      xScale:         UnitConverter.from.integer.to[gunits],
-      yScale:         -UnitConverter.from.integer.to[gunits],
-      zScale:         1,
-      decimal:        2, // 100th mm
-      topZ:           App.models.Material.topZ.toUnits(gunits),
-      botZ:           App.models.Material.botZ.toUnits(gunits),
-      safeZ:          App.models.Material.zSafeMove.toUnits(gunits),
-      passDepth:      App.models.Tool.passDepth.toUnits(gunits),
-      plungeFeed:     App.models.Tool.plungeRate.toUnits(gunits),
-      retractFeed:    App.models.Tool.rapidRate.toUnits(gunits),
-      cutFeed:        App.models.Tool.cutRate.toUnits(gunits),
-      rapidFeed:      App.models.Tool.rapidRate.toUnits(gunits),
-      returnTo00:     this.returnTo00(),
-      workWidth:      Number(this.bbWidth()),
-      workHeight:     Number(this.bbHeight()),
-      offsetX:        offset.x,
-      offsetY:        offset.y
+      xScale:      UnitConverter.from.integer.to[gunits],
+      yScale:      -UnitConverter.from.integer.to[gunits],
+      zScale:      1,
+      decimal:     2, // 100th mm
+      topZ:        App.models.Material.topZ.toUnits(gunits),
+      botZ:        App.models.Material.botZ.toUnits(gunits),
+      safeZ:       App.models.Material.zSafeMove.toUnits(gunits),
+      plungeRate:  App.models.Tool.plungeRate.toUnits(gunits),
+      retractRate: App.models.Tool.rapidRate.toUnits(gunits),
+      rapidRate:   App.models.Tool.rapidRate.toUnits(gunits),
+      returnTo00:  this.returnTo00(),
+      workWidth:   Number(this.bbWidth()),
+      workHeight:  Number(this.bbHeight()),
+      offsetX:     offset.x,
+      offsetY:     offset.y
     });
 
     if (job.passDepth < 0) {
@@ -289,11 +287,19 @@ class GcodeGenerationViewModel extends ViewModel {
 
     for (const op of ops) {
       const opCard = {
-        name: op.name(),
-        cutType: op.operation(),
-        ramp: op.ramp(),
-        direction: op.direction(),
-        spinSpeed: Number(op.spindleSpeed())
+        name:      op.name(),
+        cutType:   op.operation(),
+        ramp:      op.ramp(),
+        passDepth: op.passDepth()
+        ? op.passDepth.toUnits(gunits)
+        : App.models.Tool.passDepth.toUnits(gunits),
+        rpm: op.rpm()
+        ? Number(op.rpm())
+        : Number(App.models.Tool.rpm()),
+        cutRate:   op.cutRate() 
+        ? op.cutRate.toUnits(gunits)
+        : App.models.Tool.cutRate.toUnits(gunits),
+        direction: op.direction()
       };
       const precalculatedZ = Cam.DRILL_OP[op.operation()];
 

@@ -32,7 +32,7 @@ is set to 1.
 There are some limitations:
 - You may have to use the "Path↘Object to Path" command to convert some objects (such as text) into paths.
 - Colour can be confusing. Beware of creating paths the same colour as their background, or that are covered by other objects.
-- Stroke width is also ignored, so you are recommended to set a very small stroke width.
+- Stroke width is also ignored, so you are recommended to set a very small stroke width. Or set your stroke width to the width of the tool you are using, it can help you visualise the final result.
 
 *Tip* If you have a drawing that makes heavy use of complex features
 (such as text) you might consider taking a copy and preparing it for
@@ -44,7 +44,7 @@ all the nice features.
 ## Tool
 
 The next step is to set the parameters of the tool you are
-using. Click on the `Tool Settings` button to open the
+using. Click on the `Tool Defaults` button to open the
 pane. There is popup help on each of the options.
 
 ## Material
@@ -65,41 +65,36 @@ Use the mouse to select the paths (the _geometry_) you want to convert
 to Gcode (shift+click to select another, `Select↘All` to select everything).
 They will change colour. In the `Operations` pane,
 click `Create Operation` to tell it what you want to do with the
-selected paths. There are a number of operations available:
-+ `Engrave` - the tool will follow the paths (basically what a pen plotter does).
-+ `Outside` - will cut around the outside of the paths.
-+ `Inside` - will cut around the inside of your paths.
-+ `Pocket (concentric)` - will carve out the interior of your selected paths using ever-decreasing circles.
-+ `Pocket (raster)` - will carve out the interior of your selected paths using side-to-side tool movements.
-+ `Perforate` - will drill a series of evenly-spaced holes outside the boundary of closed paths, or along the line of open paths. You can control the spacing of the holes.
+selected paths. There are a number of operations available, describedin detail in the popup help.
 
 The display will change to show what has been selected for
 the operation, and the tool paths generated for that operation.
 
 Now you should set the depth to which you want your selected operation
 to cut (it won't necessarily cut to this depth immediately, it may do
-several passes in steps of the `Pass Depth` you set in the `Tool
-Settings` pane). There are other options that can be set in the
-drop-down that opens when you click ▶.
-+ `Name` - by default operations are assigned a name that reflects the order they are added. You can personalise this here.
-+ `Ramp Plunge` - Normally a deep cut is started by plunging the tool down into the work - by drilling a hole. Some tools or materials are not suitable for this, so a different approach is required. A ramp plunge is where the tool moves along the tool path while it also descends into the work. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.
-+ `Combine` - specifies the boolean operation to apply to the selected paths. Draw a polygon with holes in it and view the results of the different operations in the simulator to understand how this works.
-+ `Direction` - see <a href="https://en.wikipedia.org/wiki/Milling_cutter">Wikipedia</a> for the pros and cons of climb versus conventional milling.
-+ `Margin` - this allows you to add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
-+ `Width` - some operations can cut a path wider than the tool diameter.
-+ `Spacing` - specific to the `Perforate` operation, this is used to set the spacing between drill holes.
+several passes in steps of the `Pass Depth`). There are other options
+that can be set in the drop-down that opens when you click ▶. Some of these
+options can be used to override the defaults set in the `Tool Settings` pane.
+
 Not all options are appropriate for all operations; the drop-down will
 change when you change the selected operation, and so will the tool
-paths shown in the display. If you want to hide the source SVG to see
+paths shown in the display.
+
+If you want to hide the source SVG to see
 the toolpaths more clearly, you can enable the `View↘Hide SVG`
 option.
 
-## Curve Conversion
+## Approximation
 
+### Curves
 Bezier curves in paths are supported by converting them to a sequence
-of straight line segments. The `Curve Conversion` pane give you some options for
-controlling this conversion. Curve conversion happens when something is
-first selected, so don't expect to see any effect on existing operations.
+of straight line segments. The `Minimum Segments` and `Minimum Segment Length`
+properties give you some control over this conversion.
+Curve conversion happens when something is first selected, so don't expect
+to see any effect on existing operations.
+
+### Shrinking/growing polygons (Offsetting)
+Offsetting is used when calculating paths for Inside, Outside, Perforate and pockecting operations. You can manipulate these settings to improve the accuracy/look of paths, trading accuracy off against software (and CNC) performance.
 
 ## Gcode Generation
 

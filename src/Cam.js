@@ -1,6 +1,5 @@
 /*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
-/* global App */
 /* global assert */
 /* global ClipperLib */
 ClipperLib.use_xyz = true;
@@ -36,18 +35,32 @@ export const OP = {
 };
 
 /**
+ * Parameter requirements for supported operations. Indexed by `Operator`.
+ * @memberof Cam
+ */
+export const NEEDS = [];
+NEEDS[OP.Engrave] = [ "cutRate", "direction", "passDepth", "ramp" ];
+NEEDS[OP.Perforate] = [ "spacing" ];
+NEEDS[OP.Drill] = [];
+NEEDS[OP.Inside] = [
+  "cutRate", "direction", "margin", "passDepth", "ramp", "width", "stepOver" ];
+NEEDS[OP.Outside] = NEEDS[OP.Inside];
+NEEDS[OP.AnnularPocket] = [
+  "cutRate", "direction", "margin", "passDepth", "ramp", "stepOver" ];
+NEEDS[OP.RasterPocket] = NEEDS[OP.AnnularPocket];
+
+/**
  * Long names for supported operations. Indexed by `Operator`.
  * @memberof Cam
  */
-export const LONG_OP_NAME = [
-  "Pocket (annular)",
-  "Drill",
-  "Engrave",
-  "Inside",
-  "Outside",
-  "Perforate",
-  "Pocket (raster)"
-];
+export const LONG_OP_NAME = [];
+LONG_OP_NAME[OP.AnnularPocket] = "Pocket (annular)";
+LONG_OP_NAME[OP.Drill] = "Drill";
+LONG_OP_NAME[OP.Engrave] = "Engrave";
+LONG_OP_NAME[OP.Inside] = "Inside";
+LONG_OP_NAME[OP.Outside] = "Outside";
+LONG_OP_NAME[OP.Perforate] = "Perforate";
+LONG_OP_NAME[OP.RasterPocket] = "Pocket (raster)";
 
 /**
  * Whether the indexed op is a drill op, where Cam computes the exact
@@ -69,13 +82,16 @@ export const DRILL_OP = [
  * starting from the outside and working towards the centre. Only works
  * on closed paths.
  * @param {CutPaths} geometry the geometry to compute for
- * @param {number} cutterDia in "integer" units
- * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true for climb milling
+ * @param {object} params named parameters
+ * @param {number} params.cutterDiameter in "integer" units
+ * @param {number} params.overlap is in the range [0, 1)
+ * @param {boolean} params.climb true for climb milling
+ * @param {JoinType} params.joinType join type
+ * @param {number} params.mitreLimit join mitre limit
  * @return {CutPaths}
  * @memberof Cam
  */
-export function annularPocket(geometry, cutterDia, overlap, climb) {
+export function annularPocket(geometry, params) {
   assert(geometry instanceof CutPaths);
   geometry = geometry.filter(p => p.isClosed);
   if (geometry.length === 0)
@@ -84,7 +100,7 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
   //console.debug(`Cam.annularPocket ${geometry.length} paths`);
 
   // Shrink by half the cutter diameter
-  let current = geometry.offset(-cutterDia / 2);
+  let current = geometry.offset(-params.cutterDiameter / 2, params);
 
   // take a copy of the shrunk pocket to check against. Each time
   // the poly merges, there's a risk that an edge between the
@@ -99,10 +115,11 @@ export function annularPocket(geometry, cutterDia, overlap, climb) {
   while (current.length != 0) {
     for (const p of current)
       toolPaths.push(p);
-    if (climb)
+    if (params.climb)
       for (let i = 0; i < current.length; ++i)
         current[i].reverse();
-    current = current.offset(-cutterDia * (1 - overlap));
+    current = current.offset(
+      -params.cutterDiameter * (1 - params.overlap), params);
   }
   toolPaths.mergePaths(outer);
   //console.debug(`Cam.annularPocket generated ${toolPaths.length} tool paths`);
@@ -154,13 +171,16 @@ function rasteriseConvexPocket(pocket, step, climb) {
  * convex areas and each is rasterised with horizontal tool sweeps. Only
  * works on closed paths.
  * @param {CutPaths} geometry
- * @param {number} cutterDia is in "integer" units
- * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true for climb milling
+ * @param {object} params named parameters
+ * @param {number} params.cutterDiameter is in "integer" units
+ * @param {number} params.overlap is in the range [0, 1)
+ * @param {boolean} params.climb true for climb milling
+ * @param {JoinType} params.joinType join type
+ * @param {number} params.mitreLimit join mitre limit
  * @return {CutPaths} rasters
  * @memberof Cam
  */
-export function rasterPocket(geometry, cutterDia, overlap, climb) {
+export function rasterPocket(geometry, params) {
   assert(geometry instanceof CutPaths);
   geometry = geometry.filter(p => p.isClosed);
   const toolPaths = new CutPaths();
@@ -168,9 +188,9 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     return toolPaths;
 
   //console.debug(`Cam.rasterPocket ${geometry.length} paths`);
-  const step = cutterDia * (1 - overlap);
+  const step = params.cutterDiameter * (1 - params.overlap);
   // Shrink first path by half the cutter diameter
-  let iPockets = geometry.offset(-cutterDia / 2);
+  let iPockets = geometry.offset(-params.cutterDiameter / 2, params);
 
   for (let poly of iPockets) {
     if (!poly.isClosed)
@@ -181,7 +201,7 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
     const convexPockets = Partition.convex(pocket);
     let firstPoint;
     for (const convexPocket of convexPockets) {
-      const rasters = rasteriseConvexPocket(convexPocket, step, climb);
+      const rasters = rasteriseConvexPocket(convexPocket, step, params.climb);
       if (rasters.length > 0) {
         if (!firstPoint)
           firstPoint = rasters[0];
@@ -205,15 +225,18 @@ export function rasterPocket(geometry, cutterDia, overlap, climb) {
 /**
  * Compute outline tool path.
  * @param {CutPaths} geometry
- * @param {number} cutterDia is in "integer" units
+ * @param {number} cutterDiameter is in "integer" units
  * @param {boolean} isInside true to cut inside the path, false to cut outside
- * @param {number} width desired path width (may be wider than the cutter)
- * @param {number} overlap is in the range [0, 1)
- * @param {boolean} climb true for climb milling
+ * @param {number} params.width desired path width (may be wider than the
+ * cutter)
+ * @param {number} params.overlap is in the range [0, 1)
+ * @param {boolean} params.climb true for climb milling
+ * @param {JoinType} params.joinType join type
+ * @param {number} params.mitreLimit join mitre limit
  * @return {CutPaths}
  * @memberof Cam
  */
-export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
+export function outline(geometry, isInside, params) {
   assert(geometry instanceof CutPaths);
   geometry = geometry.filter(p => p.isClosed);
   let toolPaths = new CutPaths();
@@ -221,8 +244,8 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
     return toolPaths;
 
   //console.debug(`Cam.${isInside ? "in" : "out"}line ${geometry.length} paths`);
-  let currentWidth = cutterDia;
-  const eachWidth = cutterDia * (1 - overlap);
+  let currentWidth = params.cutterDiameter;
+  const eachWidth = params.cutterDiameter * (1 - params.overlap);
 
   let current;
   let clipPoly;
@@ -230,33 +253,36 @@ export function outline(geometry, cutterDia, isInside, width, overlap, climb) {
   let needReverse;
 
   if (isInside) {
-    current = geometry.offset(-cutterDia / 2);
-    clipPoly = current.diff(geometry.offset(-(width - cutterDia / 2)));
+    current = geometry.offset(-params.cutterDiameter / 2, params);
+    clipPoly = current.diff(
+      geometry.offset(-(params.width - params.cutterDiameter / 2), params));
     eachOffset = -eachWidth;
-    needReverse = climb;
+    needReverse = params.climb;
   } else { // is outside
-    current = geometry.offset(cutterDia / 2);
-    clipPoly = geometry.offset(width - cutterDia / 2).diff(current);
+    current = geometry.offset(params.cutterDiameter / 2, params);
+    clipPoly = geometry
+    .offset(params.width - params.cutterDiameter / 2, params)
+    .diff(current);
     eachOffset = eachWidth;
-    needReverse = !climb;
+    needReverse = !params.climb;
   }
 
-  while (currentWidth <= width) {
+  while (currentWidth <= params.width) {
     toolPaths.push(...current);
     let i;
     if (needReverse)
       for (i = 0; i < current.length; ++i)
         current[i].reverse();
     const nextWidth = currentWidth + eachWidth;
-    if (nextWidth > width && width - currentWidth > 0) {
-      current = current.offset(width - currentWidth);
+    if (nextWidth > params.width && params.width - currentWidth > 0) {
+      current = current.offset(params.width - currentWidth, params);
       if (needReverse)
         for (i = 0; i < current.length; ++i)
           current[i].reverse();
       break;
     }
     currentWidth = nextWidth;
-    current = current.offset(eachOffset);
+    current = current.offset(eachOffset, params);
   }
   toolPaths.mergePaths(clipPoly);
   //console.debug(`Cam.${isInside ? "in" : "out"} generated ${toolPaths.length} tool paths`);
@@ -282,14 +308,15 @@ function drillHole(pt, safeZ, botZ) {
 /**
  * Calculate perforations along a path.
  * @param {CutPath} path
- * @param {number} cutterDia in "integer" units
- * @param {number} spacing is the gap to leave between perforations
- * @param {number} safeZ is the Z to which the tool is withdrawn
- * @param {number} botZ is the depth of the perforations
+ * @param {object} params named parameters
+ * @param {number} params.cutterDiameter in "integer" units
+ * @param {number} params.spacing is the gap to leave between perforations
+ * @param {number} params.safeZ is the Z to which the tool is withdrawn
+ * @param {number} params.botZ is the depth of the perforations
  * @return {CutPath}
  * @private
  */
-function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
+function perforatePath(path, params) {
   assert(path instanceof CutPath);
 
   // Measure the path
@@ -300,7 +327,8 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
 
   // Work out number of holes, and step between them, allowing spacing
   // between adjacent holes
-  const numHoles = Math.floor(totalPathLength / (cutterDia + spacing));
+  const numHoles = Math.floor(
+    totalPathLength / (params.cutterDiameter + params.spacing));
   const step = totalPathLength / (numHoles - 1);
   // Walk round the path stopping at every hole, generating a new path
   let newPath = new CutPath();
@@ -317,7 +345,7 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
   while (segi < path.length) {
     // Place a hole here
     //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
-    newPath.push(...drillHole(segStart, safeZ, botZ));
+    newPath.push(...drillHole(segStart, params.safeZ, params.botZ));
     gap = 0;
     while (gap + segLen < step) {
       if (++segi === path.length)
@@ -354,14 +382,15 @@ function perforatePath(path, cutterDia, spacing, safeZ, botZ) {
  * paths; closed paths the tool will follow outside the path, open paths the
  * tool will follow the path.
  * @param {CutPaths} geometry
- * @param {number} cutterDia in "integer" units
- * @param {number} spacing is the gap to leave between perforations
- * @param {number} topZ is the Z to which the tool is withdrawn
- * @param {number} botZ is the depth of the perforations
+ * @param {object} params named parameters
+ * @param {number} params.cutterDiameter in "integer" units
+ * @param {number} params.spacing is the gap to leave between perforations
+ * @param {number} params.topZ is the Z to which the tool is withdrawn
+ * @param {number} params.botZ is the depth of the perforations
  * @return {CutPaths}
  * @memberof Cam
  */
-export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
+export function perforate(geometry, params) {
   assert(geometry instanceof CutPaths);
   //console.debug(`Cam.perforate ${geometry.length} paths`);
   const toolPaths = new CutPaths();
@@ -371,11 +400,11 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
   for (const path of geometry) {
     if (path.isClosed) {
       const bloated = new CutPaths(path)
-            .offset(cutterDia / 2, CutPaths.JoinType.jtRound)[0];
-      const ring = perforatePath(bloated, cutterDia, spacing, topZ, botZ);
+            .offset(params.cutterDiameter / 2, params)[0];
+      const ring = perforatePath(bloated, params);
       toolPaths.push(ring);
     } else { // just follow open paths
-      toolPaths.push(perforatePath(path, cutterDia, spacing, topZ, botZ));
+      toolPaths.push(perforatePath(path, params));
     }
   }
 
@@ -388,16 +417,17 @@ export function perforate(geometry, cutterDia, spacing, topZ, botZ) {
  * for a drill hole. The holes are drilled in the order of the edges.
  * Works on both open and closed paths.
  * @param {CutPaths} geometry
- * @param {number} safeZ is the Z to which the tool is withdrawn (integer units)
- * @param {number} botZ is the depth of the perforations (integer units)
+ * @param {object} params named parameters
+ * @param {number} params.safeZ is the Z to which the tool is withdrawn
+ * @param {number} params.botZ is the depth of the perforations
  * @return {CutPaths}
  * @memberof Cam
  */
-export function drill(geometry, safeZ, botZ) {
+export function drill(geometry, params) {
   const drillPath = new CutPath();
   for (const path of geometry) {
     for (const hole of path) {
-      drillPath.push(...drillHole(hole, safeZ, botZ));
+      drillPath.push(...drillHole(hole, params.safeZ, params.botZ));
     }
   }
   return new CutPaths(drillPath);
@@ -408,18 +438,19 @@ export function drill(geometry, safeZ, botZ) {
  * that follows the outline of the geometry, regardless of the tool
  * diameter. Works on both open and closed paths.
  * @param {CutPaths} geometry the engraving
- * @param {boolean} climb true for climb milling; not that it should make
- * any difference!
+ * @param {object} params named parameters
+ * @param {boolean} params.climb true for climb milling; not that it
+ * should make any difference!
  * @return {CutPaths}
  * @memberof Cam
  */
-export function engrave(geometry, climb) {
+export function engrave(geometry, params) {
   assert(geometry instanceof CutPaths);
   //console.debug(`Cam.engrave ${geometry.length} paths`);
   const toolPaths = new CutPaths();
   for (const path of geometry) {
     const copy = new CutPath(path); // take a copy
-    if (!climb)
+    if (!params.climb)
       copy.reverse();
     toolPaths.push(copy);
   }

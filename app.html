@@ -42,7 +42,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="SimModalTitle">Simulation</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
+                  aria-label="Close" />
         </div>
         <div class="modal-body">
           <table width="100%">
@@ -57,7 +57,7 @@
           </table>
           <input id="TimeControl" class="form-range" type="range"
                  max="1000" value="0" />
-          <canvas id="SimulationCanvas"></canvas>
+          <canvas id="SimulationCanvas" />
           <ul>
             <li>Use mouse to rotate view</li>
             <li>Use slider control to set simulation time</li>
@@ -75,7 +75,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="SpaModalTitle">Save Project As</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
+                  aria-label="Close"/>
         </div>
         <div class="modal-body">
           <label for="SpName">Name</label>
@@ -106,10 +106,10 @@
         <div class="modal-header">
           <h4 class="modal-title" id="LpfbModalTitle">Open Project</h4>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
+                  aria-label="Close"/>
         </div>
         <div class="modal-body">
-          <p data-bind="text: getBrowserProjectsList()"></p>
+          <p data-bind="text: getBrowserProjectsList()"/>
           <p>Select Project:
             <select id="SelectProject"
                     data-bind="options:browserProjects,value:selectedProject">
@@ -119,7 +119,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
                   data-bind="click: gotoDeleteBrowserProject">
-            Delete
+            &#128465;
           </button>
           <button type="button" class="btn btn-primary"
                   data-bind="click: loadProjectFromBrowser">
@@ -138,7 +138,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="DpfbModalLabel">Delete Project</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
+                  aria-label="Close"/>
         </div>
         <div class="modal-body">
           Delete "<b><span data-bind="text: projectName"></span></b>"?
@@ -146,7 +146,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
                   data-bind="click: deleteProjectFromBrowser">
-            Delete</button>
+            &#128465;</button>
         </div>
       </div>
     </div>
@@ -160,7 +160,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="VgcModalTitle">GCODE</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Close"></button>
+                  aria-label="Close"/>
         </div>
         <div class="modal-body">
           <div id="GcodeTextView" data-bind="text: gcodeS">
@@ -178,7 +178,7 @@
         <div class="modal-header">
           <h5 class="modal-title" id="CdlModalTitle">Confirm Data Loss</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"
-                  aria-label="Back"></button>
+                  aria-label="Back"/>
         </div>
         <div class="modal-body">
           <p>Are you sure you are happy to lose changes?</p>
@@ -214,8 +214,8 @@
             <div class="card-body">
               <div style="display:inline-block">
                 <button
-                  id="CreateOperationButton" class="btn btn-primary manual-popover"
-                  data-bind="click: addOperation, enable: App.models.Selection.isSomethingSelected()">
+                  id="CreateOperationButton" class="btn btn-primary hover-help"
+                  data-bind="click:addOperation,enable:App.models.Selection.isSomethingSelected()">
                   Create Operation
                 </button>
               </div>
@@ -232,19 +232,19 @@
                   <div class="card-list-cell enable">
                     <input id="OpEnabled" type="checkbox"
                            data-bind="checked: enabled"
-                           class="auto-popover" />
+                           class="hover-help" />
                   </div>
                   <div class="card-list-cell">
                     <select id="OpOperation"
                             data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName(entry);},value:operation"
-                            class="auto-popover">
+                            class="hover-help">
                     </select>
                   </div>
                   <div class="card-list-cell">
                     <input id="OpCutDepth"
                            type="number" step="any" min="0"
                            data-bind="value: cutDepth"
-                           class="auto-popover" />
+                           class="hover-help" />
                   </div>
                   <div class="card-list-cell">
                     <label class="control-label">
@@ -258,30 +258,22 @@
                       <label for="OpName" class="control-label">
                         Name
                       </label>
-                    </td><td>
-                      <input id="OpName" data-bind="value: name"
-                             class="auto-popover" />
                     </td>
-                  </tr>
-                  <tr data-bind="visible:needs('ramp')">
                     <td>
-                      <label for="OpRamp" class="control-label">
-                        Ramp
-                      </label>
-                    </td><td>
-                      <input id="OpRamp" type="checkbox"
-                             data-bind="checked: ramp"
-                             class="auto-popover" />
+                      <input id="OpName" data-bind="value: name" />
                     </td>
+                    <td><button name="OpName"
+                                class="helper">&#9432;</button></td>
                   </tr>
                   <tr>
                     <td>
                       <label for="OpCombine" class="control-label">
                         Combine
                       </label>
-                    </td><td>
-                      <select id="OpCombine" data-bind="value:combineOp"
-                              class="auto-popover">
+                    </td>
+                    <td>
+                      <select id="OpCombine"
+                              data-bind="value:combineOp">
                         <!-- must match COMBINE enum -->
                         <option value="0">Group</option>
                         <option value="1">Union</option>
@@ -290,77 +282,160 @@
                         <option value="4">XOR</option>
                       </select>
                     </td>
-                  </tr><tr data-bind="visible:needs('direction')">
+                    <td><button name="OpCombine"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('direction')">
                     <td>
                       <label for="OpDirection" class="control-label">
                         Direction
                       </label>
-                    </td><td>
+                    </td>
+                    <td>
                       <select id="OpDirection"
-                              data-bind="value: direction" class="auto-popover">
+                              data-bind="value:direction"
+                              data-bs-trigger="focus">
                         <option value="Conventional">Conventional</option>
                         <option value="Climb">Climb</option>
                       </select>
                     </td>
-                  </tr><tr data-bind="visible:needs('spindleSpeed')">
-                    <td>
-                      <label for="OpSpindleSpeed" class="control-label">
-                        Spindle
-                      </label>
-                    </td><td>
-                      <input id="OpSpindleSpeed"
-                             type="number" step="any" min="0"
-                             data-bind="value: spindleSpeed"
-                             class="auto-popover" />
-                      rpm
-                    </td>
-                  </tr><tr data-bind="visible:needs('margin')">
+                    <td><button name="OpDirection"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('margin')">
                     <td>
                       <label for="OpMargin" class="control-label">
                         Margin
                       </label>
-                    </td><td>
+                    </td>
+                    <td>
                       <input id="OpMargin"
                              type="number" step="any"
-                             data-bind="value: margin"
-                             class="auto-popover" />
+                             data-bind="value: margin" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
-                  </tr><tr data-bind="visible:needs('spacing')">
+                    <td><button name="OpMargin"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('ramp')">
+                    <td>
+                      <label for="OpRamp" class="control-label">
+                        Ramp In
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpRamp" type="checkbox"
+                             data-bind="checked:ramp" />
+                    </td>
+                    <td><button name="OpRamp"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('spacing')">
                     <td>
                       <label for="OpSpacing" class="control-label">
                         Spacing
                       </label>
-                    </td><td>
+                    </td>
+                    <td>
                       <input id="OpSpacing"
                              type="number" step="any" min="0.001"
-                             data-bind="value: spacing"
-                             class="auto-popover" />
+                             data-bind="value: spacing" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
+                    <td><button name="OpSpacing"
+                                class="helper">&#9432;</button></td>
                   </tr>
                   <tr data-bind="visible:needs('width')">
                     <td>
                       <label for="OpWidth" class="control-label">
                         Width
                       </label>
-                    </td><td>
+                    </td>
+                    <td>
                       <input id="OpWidth"
                              type="number" step="any" min="0"
-                             data-bind="value: width"
-                             class="auto-popover" />
-                      <span data-bind="text: App.models.Project.units">
-                      </span>
+                             data-bind="value:width" />
+                      <span data-bind="text:App.models.Project.units"></span>
                     </td>
+                    <td><button name="OpWidth"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('passDepth')">
+                    <td>
+                      <label for="OpPassDepth" class="control-label">
+                        Pass Depth
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpPassDepth" type="number"
+                             data-bind="value:passDepth" />
+                      <span data-bind="text:App.models.Project.units"></span>
+                    </td>
+                    <td><button name="OpPassDepth"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs('stepOver')">
+                    <td>
+                      <label for="OpStepOver" class="control-label">
+                        Step Over
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpStepOver"
+                             type="number" step="1" min="1" max="100"
+                             data-bind="value: margin" />
+                    </td>
+                    <td><button name="OpStepOver"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label for="OpCutRate" class="control-label">
+                        Cut Rate</label>
+                    </td>
+                    <td>
+                      <input id="OpCutRate"
+                             type="number" step="any" min="1"
+                             data-bind="value:cutRate" />
+                      <span data-bind="text:App.models.Project.units"></span>/min
+                    </td>
+                    <td><button name="OpCutRate"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <label for="OpRPM" class="control-label">
+                        Spindle Speed
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpRPM"
+                             type="number" step="any" min="0"
+                             data-bind="value:rpm" />rpm
+                    </td>
+                    <td><button name="OpRPM"
+                                class="helper">&#9432;</button></td>
                   </tr>
                   <tr>
                     <td colspan="2">
-                      <button href="#"
-                              class="btn btn-secondary btn-sm"
-                              data-bind="click: removeOperation">
-                        Delete Operation
+                      <button id="PromoteOperation" href="#"
+                              class="btn btn-primary btn-sm"
+                              data-bind="click:promoteOperation">
+                        &DoubleUpArrow;
+                      </button>
+                      <button id="DemoteOperation" href="#"
+                              class="btn btn-primary btn-sm"
+                              data-bind="click:demoteOperation">
+                        &DoubleDownArrow;
+                      </button>
+                      <button id="DeleteOperation" href="#"
+                              class="btn btn-primary btn-sm"
+                              data-bind="click:removeOperation">
+                        &#128465;
                       </button>
                     </td>
+                    <td><button name="OpOps"
+                                class="helper">&#9432;</button></td>
                   </tr>
                 </table> <!-- /detail-table -->
               </div> <!-- end of card-list template -->
@@ -387,15 +462,17 @@
                   <td>
                     <input id="TabsMaxCutDepth"
                            type="number" step="any" min="0.001"
-                           data-bind="value: maxCutDepth"
-                           class="auto-popover">
+                           data-bind="value: maxCutDepth">
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
+                  <td><button name="TabsMaxCutDepth"
+                              class="helper">&#9432;</button></td>
                 </tr>
               </table>
               <div style="display:inline-block">
                 <button
-                  id="CreateTabsButton" class="btn btn-primary manual-popover"
+                  id="CreateTabsButton"
+                  class="btn btn-primary hover-help"
                   data-bind="click:addTab,enable:App.models.Selection.isSomethingSelected()">
                   Create Tabs
                 </button>
@@ -408,17 +485,20 @@
                 <div class="card-list-row">
                   <div class="card-list-cell enable">
                     <input id="TabEnabled" type="checkbox"
-                           data-bind="checked: enabled" class="auto-popover" />
+                           data-bind="checked: enabled"
+                           class="hover-help" />
                   </div>
                   <div class="card-list-cell">
                     <input id="TabMargin"
                            type="number" step="any" min="0"
-                           data-bind="value: margin" class="auto-popover" />
+                           data-bind="value: margin"
+                           class="hover-help" />
                   </div>
                   <div class="card-list-cell">
-                    <button class="btn btn-secondary btn-sm"
-                            data-bind="click: removeTab">
-                      Delete
+                    <button id="DeleteTabs"
+                            class="btn btn-primary btn-sm hover-help"
+                            data-bind="click:removeTab">
+                      &#128465;
                     </button>
                   </div>
                 </div> <!-- /card-list-row -->
@@ -444,27 +524,33 @@
                     <label for="GcodeUnits" class="control-label">
                       Units
                     </label>
-                  </td><td colspan="2">
-                    <select id="GcodeUnits" data-bind="value: units"
-                            class="auto-popover">
+                  </td>
+                  <td colspan="2">
+                    <select id="GcodeUnits"
+                            data-bind="value: units">
                       <option>mm</option>
                       <option>inch</option>
                     </select>
                   </td>
+                  <td><button name="GcodeUnits"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td>
                     <label for="GcodeOrigin" class="control-label">
                       Origin
                     </label>
-                  </td><td colspan="2">
-                    <select id="GcodeOrigin" data-bind="value: origin"
-                            class="auto-popover">
+                  </td>
+                  <td colspan="2">
+                    <select id="GcodeOrigin"
+                            data-bind="value: origin">
                       <option value="SVG page">SVG page</option>
                       <option value="Bounding box">Bounding box</option>
                       <option value="Centre">Centre</option>
                     </select>
                   </td>
+                  <td><button name="GcodeOrigin"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td>
@@ -474,22 +560,22 @@
                   <td>
                     <input id="GcodeExtraOffsetX"
                            type="number" step="any"
-                           data-bind="value: extraOffsetX"
-                           class="auto-popover" />
+                           data-bind="value: extraOffsetX" />
                   </td>
                   <td>
                     <input id="GcodeExtraOffsetY"
                            type="number" step="any"
-                           data-bind="value: extraOffsetY"
-                           class="auto-popover" />
+                           data-bind="value: extraOffsetY" />
                   </td>
+                  <td><button name="GcodeExtraOffset"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td><label>Area</label></td>
-                  <td id="GcodeWidth" data-bind="text: bbWidth"
-                      class="auto-popover"></td>
-                  <td id="GcodeHeight" data-bind="text: bbHeight"
-                      class="auto-popover"></td>
+                  <td id="GcodeWidth" data-bind="text: bbWidth"></td>
+                  <td id="GcodeHeight" data-bind="text: bbHeight"></td>
+                  <td><button name="GcodeArea"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td colspan="2">
@@ -498,14 +584,15 @@
                   </td>
                   <td>
                     <input id="GcodeReturn00" type="checkbox"
-                           data-bind="checked: returnTo00"
-                           class="auto-popover" />
+                           data-bind="checked: returnTo00" />
                   </td>
+                  <td><button name="GcodeReturn00"
+                              class="helper">&#9432;</button></td>
                 </tr>
               </table> <!-- /card-table -->
             </div> <!-- /card-body -->
           </div> <!-- /GcodeGenerationViewPane -->
-        </div <!-- GcodeGenerationView -->
+        </div> <!-- GcodeGenerationView -->
         <div id="AlertPlaceholder"></div>
       </div> <!-- /sidebar-left -->
 
@@ -548,7 +635,8 @@
                                style="display:none"
                                accept=".svgcut">
                       </a>
-                    </li><li class="dropdown-item">
+                    </li>
+                    <li class="dropdown-item">
                       <a href="#" class="nav-link close-on-click open-modal"
                          data-bind="click:()=>App.showModal('LoadProjectFromBrowserModal')">
                         ... from Browser
@@ -666,7 +754,8 @@
                      data-bind="click: () => units('mm')">
                     mm
                   </a>
-                </li><li class="dropdown-item">
+                </li>
+                <li class="dropdown-item">
                   <a href="#" class="nav-link"
                      data-bind="click: () => units('inch')">
                     inch
@@ -680,7 +769,8 @@
               <div style="display:table-row">
                 <div style="display:table-cell">Selected paths:</div>
                 <div style="display:table-cell"
-                     data-bind="text: App.models.Selection.openSelected"></div>
+                     data-bind="text: App.models.Selection.openSelected">
+                </div>
                 <div style="display:table-cell">open,</div>
                 <div style="display:table-cell"
                      data-bind="text: App.models.Selection.closedSelected">
@@ -732,86 +822,120 @@
             <h3 class="card-title">
               <a data-bs-toggle="collapse"
                  href="#ToolViewPane" class="nav-link">
-                Tool Settings</a>
+                Tool Defaults</a>
             </h3>
           </div>
           <div id="ToolViewPane" class="collapse">
             <div class="card-body">
               <table class="card-table">
                 <tr>
-                  <td><label for="ToolDiameter" class="control-label">
-                      Diameter</label>
-                  </td><td>
+                  <td>
+                    <label for="ToolDiameter" class="control-label">
+                      Diameter
+                    </label>
+                  </td>
+                  <td>
                     <input id="ToolDiameter"
                            type="number" step="any" min="0.001"
-                           data-bind="value: diameter"
-                           class="auto-popover" />
+                           data-bind="value:cutterDiameter" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
+                  <td><button name="ToolDiameter"
+                              class="helper">&#9432;</button></td>
                 </tr>
-                <!-- No support for angled bit
                 <tr>
                   <td>
                     <label for="ToolAngle" class="control-label">
                       Angle</label>
-                  </td><td>
-                    <input id="ToolAngle"
-                           type="number" step="any" min="1" max="180"
-                           data-bind="value: angle"
-                           class="auto-popover" /> &deg;
                   </td>
+                  <td>
+                    <input id="ToolAngle"
+                           type="number" step="any" min="1" max="90"
+                           data-bind="value:cutterAngle"/> &deg;
+                  </td>
+                  <td><button name="ToolAngle"
+                              class="helper">&#9432;</button></td>
                 </tr>
-                -->
                 <tr>
-                  <td><label for="ToolPassDepth" class="control-label">
+                  <td>
+                    <label for="ToolPassDepth"class="control-label">
                       Pass Depth</label>
-                  </td><td>
+                  </td>
+                  <td>
                     <input id="ToolPassDepth"
                            type="number" step="any" min="0.001"
-                           data-bind="value: passDepth"
-                           class="auto-popover" />
-                    <span data-bind="text: App.models.Project.units"></span>
+                           data-bind="value:passDepth"/>
+                    <span data-bind="text:App.models.Project.units"></span>
                   </td>
-                </tr><tr>
+                  <td><button name="ToolPassDepth"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
                   <td><label for="ToolStepOver" class="control-label">
                       Step Over</label>
-                  </td><td>
-                    <input id="ToolStepOver"
-                           type="number" step="any" min="0" max="1"
-                           data-bind="value: stepover"
-                           class="auto-popover"> [0..1]
                   </td>
-                </tr><tr>
-                  <td><label for="ToolRapidRate" class="control-label">
-                      Rapid</label>
+                  <td>
+                    <input id="ToolStepOver"
+                           type="number" step="1" min="1" max="100"
+                           data-bind="value:stepOver">%
+                  </td>
+                  <td><button name="ToolStepOver"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <label for="ToolRapidRate" class="control-label">
+                      Rapid Rate</label>
                   </td><td>
                     <input id="ToolRapidRate"
                            type="number" step="any" min="1"
-                           data-bind="value: rapidRate"
-                           class="auto-popover" />
+                           data-bind="value: rapidRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
-                </tr><tr>
-                  <td><label for="ToolPlungeRate" class="control-label">
-                      Plunge</label>
-                  </td><td>
-                    <input id="ToolPlungeRate"
-                           type="number" step="any" min="1"
-                           data-bind="value: plungeRate"
-                           class="auto-popover" />
-                    <span data-bind="text: App.models.Project.units"></span>/min
-                  </td>
+                  <td><button name="ToolRapidRate"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
-                  <td><label for="ToolCutRate" class="control-label">
-                      Cut</label>
-                  </td><td>
-                    <input id="ToolCutRate"
+                  <td>
+                    <label for="ToolPlungeRate" class="control-label">
+                      Plunge Rate</label>
+                  </td>
+                  <td>
+                    <input id="ToolPlungeRate"
                            type="number" step="any" min="1"
-                           data-bind="value: cutRate"
-                           class="auto-popover" />
+                           data-bind="value: plungeRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
+                  <td><button name="ToolPlungeRate"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <label for="ToolCutRate" class="control-label">
+                      Cut Rate</label>
+                  </td>
+                  <td>
+                    <input id="ToolCutRate"
+                           type="number" step="any" min="1"
+                           data-bind="value:cutRate" />
+                    <span data-bind="text: App.models.Project.units"></span>/min
+                  </td>
+                  <td><button name="ToolCutRate"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <label for="ToolRPM" class="control-label">
+                      Spindle Speed
+                    </label>
+                  </td>
+                  <td>
+                    <input id="ToolRPM"
+                           type="number" step="any" min="0"
+                           data-bind="value:rpm" />rpm
+                  </td>
+                  <td><button name="ToolRPM"
+                              class="helper">&#9432;</button></td>
                 </tr>
               </table>
             </div>
@@ -844,80 +968,123 @@
                   <td>
                     <label for="InputMatThickness" class="control-label">
                       Thickness</label>
-                  </td><td>
+                  </td>
+                  <td>
                     <input id="InputMatThickness"
                            type="number" step="any" min="0.001"
                            data-bind="value: thickness"
-                           placeholder="Thickness"
-                           class="auto-popover" />
+                           placeholder="Thickness" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
-                </tr><tr>
+                  <td><button name="InputMatThickness"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
                   <td>
                     <label for="SelectMatZOrigin" class="control-label">
                       Z Origin</label>
-                  </td><td>
-                    <select id="SelectMatZOrigin" data-bind="value: zOrigin"
-                            class="auto-popover">
+                  </td>
+                  <td>
+                    <select id="SelectMatZOrigin"
+                            data-bind="value: zOrigin">
                       <option value="Top">Top</option>
                       <option value="Bottom">Bottom</option>
                     </select>
                   </td>
-                </tr><tr>
+                  <td><button name="SelectMatZOrigin"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
                   <td>
                     <label for="InputMatClearance" class="control-label">
                       Clearance</label>
-                  </td><td>
+                  </td>
+                  <td>
                     <input id="InputMatClearance"
                            type="number" step="any" min="0"
                            data-bind="value: clearance"
-                           placeholder="Clearance"
-                           class="auto-popover" />
+                           placeholder="Clearance"/>
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
+                  <td><button name="InputMatClearance"
+                              class="helper">&#9432;</button></td>
                 </tr>
               </table>
             </div>
           </div>
         </div>
 
-        <div class="card" id="CurveConversionView">
-          <!-- Bound to CurveConversionViewModel  -->
+        <div class="card" id="ApproximationView">
+          <!-- Bound to ApproximationViewModel  -->
           <div class="card-header">
             <h3 class="card-title">
               <a data-bs-toggle="collapse"
-                 href="#CurveConversionViewPane" class="nav-link">
-                Curve To Line Conversion
+                 href="#ApproximationViewPane" class="nav-link">
+                Approximation
               </a>
             </h3>
           </div>
-          <div id="CurveConversionViewPane" class="collapse">
+          <div id="ApproximationViewPane" class="collapse">
             <div class="card-body">
               <table class="card-table">
                 <tr>
                   <td>
-                    <label for="InputMinNumSegments" class="control-label">
-                      Minimum Segments</label>
-                  </td><td colspan="2">
-                    <input id="InputMinNumSegments"
-                           type="number" min="2"
-                           data-bind="value: minSegs"
-                           placeholder="Segments" class="auto-popover" />
+                    <label for="MinNumSegments" class="control-label">
+                      Min Curve Segments</label>
                   </td>
+                  <td>
+                    <input id="MinNumSegments"
+                           type="number" min="2"
+                           data-bind="value:minSegs" />
+                  </td>
+                  <td><button name="MinNumSegments"
+                              class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td>
-                    <label for="InputMinSegmentLength" class="control-label">
-                      Minimum Segment Length
+                    <label for="MinSegmentLength" class="control-label">
+                      Min Segment Length
                     </label>
-                  </td><td>
-                    <input id="InputMinSegmentLength"
+                  </td>
+                  <td>
+                    <input id="MinSegmentLength"
                            type="number" step="any" min="0.001"
-                           data-bind="value: minSegLen"
-                           placeholder="Length" class="auto-popover" />
-                  </td><td>
+                           data-bind="value:minSegLen" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
+                  <td><button name="MinSegmentLength"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <label for="JoinType" class="control-label">
+                      Edge Join Type
+                    </label>
+                  </td>
+                  <td>
+                    <select id="JoinType"
+                            data-bind="value:joinType">
+		              <option value="2">Mitred</option>
+                      <option value="0">Square</option>
+		              <option value="1">Rounded</option>
+                    </select>
+                  </td>
+                  <td><button name="JoinType"
+                              class="helper">&#9432;</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <label for="MitreLimit" class="control-label">
+                      Mitre Limit
+                    </label>
+                  </td>
+                  <td>
+                    <input id="MitreLimit"
+                           type="number" step="any" min="2"
+                           data-bind="value:mitreLimit"/>
+                  </td>
+                  <td><button name="MitreLimit"
+                              class="helper">&#9432;</button></td>
                 </tr>
               </table> <!-- /card-table -->
             </div>
@@ -931,131 +1098,185 @@
     <!-- Text strings; kept here to contain translation to just the HTML -->
     <div id="TutorialSteps">
       <span name="Step1">Open the File menu and import one or more SVG files.</span>
-      <span name="Step2">Click 1 or more paths</span>
+      <span name="Step2">Click 1 or more paths.</span>
       <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
       <span name="Step4">You're done! Open 'View->Simulation', or 'View->Gcode' to view your tool paths. Customise the operation to your tastes. Save your gcode.</span>
     </div>
     <div id="Popovers" style="display:none">
-      <span name="SelectProject">Select a project stored in this browser</span>
+      <span name="SelectProject">Select a project stored in this browser.</span>
       <!-- Tool -->
-      <span name="ToolUnits">Display units, does not affect Gcode generation</span>
-      <span name="ToolDiameter">Diameter of cutter. For a V cutter, diameter of the widest part of the bit.</span>
-      <span name="ToolAngle">Angle of tapered cutter head. This is the angle
-        at the tip of the tool, so 180 means a flat bottom tool, while 90
-        means a 45&deg; chamfer bit.</span>
-      <span name="ToolPassDepth">Maximum depth the tool should plunge each pass.
-        Use a smaller pass depth for harder materials and better quality.
-        Pass depth should never exceed the height of the cutting surface
-        on the tool</span>
-      <span name="ToolStepOver">
-        What fraction of the tool diameter the tool should step over each
-        time around a loop. Smaller values produce better cuts and reduce
-        tool wear, but take longer to complete</span>
-      <span name="ToolRapidRate">
-        The speed the tool moves while not cutting</span>
-      <span name="ToolPlungeRate">
-        The speed the tool plunges downwards into the material</span>
-      <span name="ToolCutRate">
-        The speed the tool moves horizontally during cutting</span>
+      <span name="ToolUnits">Display units, does not affect Gcode generation.</span>
+      <span name="ToolDiameter" title="Diameter">Diameter of the cutter. For a V bit, diameter of the widest part of the bit.</span>
+      <span name="ToolAngle" title="Angle">Angle between axis of rotation and the cutting
+        edge of a tapered cutter head (V Bit). 90&deg; means a flat bottom
+        tool, while 20&deg; would be a sharply pointed bit.</span>
+      <span name="OpPassDepth" title="Pass Depth">
+        <span name="ToolPassDepth" title="Pass Depth">
+          Maximum depth the tool should plunge each pass.
+          Use a smaller pass depth for harder materials and better quality.
+          Pass depth should never exceed the height of the cutting surface
+          on the tool.
+        </span>
+        <strong>If this is blank, it will use the Tool Defaults</strong>/
+      </span>
+      <span name="OpStepOver" title="Step Over">
+        <span name="ToolStepOver" title="Step Over">
+          Percentage of the tool diameter the tool should step over each
+          time around a loop. Smaller values produce better cuts and reduce
+          tool wear, but take longer to complete.
+        </span>
+        <strong>If this is blank, it will use the Tool Defaults</strong>.
+      </span>
+      <span name="ToolRapidRate" title="Rapid Rate">
+        The speed the tool moves while not cutting.</span>
+      <span name="ToolPlungeRate" title="Plunge Rate">
+        The speed the tool plunges downwards into the material.</span>
+      <span name="OpCutRate" title="Cut Rate">
+        <span name="ToolCutRate" title="Cut Rate">
+          The speed the tool moves horizontally during cutting.
+        </span>
+        <strong>If this is blank, it will use the Tool Defaults</strong>.
+      </span>
+      <span name="OpRPM" title="Spindle Speed">
+        <span name="ToolRPM" title="Spindle Speed">
+          How fast the spindle should run.
+        </span>
+        <strong>If this is blank, it will use the Tool Defaults</strong>.
+      </span>
       <!-- Tabs -->
-      <span name="CreateTabsButton"><p class='bg-danger'>
-          Select one or more paths in the "Toolpaths" pane before clicking
-          here</p></span>
-      <span name="TabEnabled">Enable/disable this holding tab</span>
-      <div name="TabMargin">Margin<br>+ve: how much to expand tabs<br>
-        -ve: how much to shrink tabs</div>
-      <span name="TabsMaxCutDepth">Maximum depth operations may cut when
-        they pass over holding tabs</span>
+      <span name="CreateTabsButton">Create tabs by decreasing the cut depth where paths cross the selected paths.</span>
+      <span name="TabEnabled" title="Enable">Enable/disable this holding tab.</span>
+      <div name="TabMargin" title="Margin">
+        <dl>
+          <dt>+ve</dt><dd>how much to expand tabs.</dd>
+          <dt>-ve</dt><dd>how much to shrink tabs.</dd>
+        </dl>
+      </div>
+      <span name="TabsMaxCutDepth" title="Tab Depth">Maximum cut depth over holding tabs.</span>
+      <span name="DeleteTabs" title="Delete Tabs">Delete these holding tabs</span>
       <!-- Gcode Generation -->
-      <span name="GcodeUnits">
+      <span name="GcodeUnits" title="Units">
         The units used by the machine the Gcode is targeted for. The Gcode
         will try to switch the machine into these units using G20/G21, so
         you should only need to change this if the machine doesn't support
         these codes (or you are more comfortable thinking in inches!)
       </span>
-      <span name="GcodeOrigin">
+      <span name="GcodeOrigin" title="Origin">
         Set the machine origin. "SVG page" will set (0,0) to the bottom
         left of the SVG page. "Bounding box" will set it to the bottom left
         of the bounding box around the toolpaths. "Centre" will set it to
         the middle of the toolpaths. Choose the origin that works best
         with your CNC machine.
       </span>
-      <span name="GcodeExtraOffsetX">
-        Extra X offset added to the the machine origin</span>
-      <span name="GcodeExtraOffsetY">
-        Extra Y offset added to the machine origin</span>
-      <span name="GcodeWidth">Width of the work</span>
-      <span name="GcodeHeight">Height of the work</span>
-      <span name="GcodeReturn00">Move the tool to 0,0 after the last
-        operation</span>
+      <span name="GcodeExtraOffset" title="Origin Offset">
+        Extra offset added to the the machine origin.</span>
+      <span name="GcodeArea">Width and height of the work.</span>
+      <span name="GcodeReturn00" title="Finish at work origin">
+        Move the tool to 0,0 after the last operation.</span>
       <!-- Material -->
-      <span name="InputMatThickness">How thick is the material</span>
-      <span name="SelectMatZOrigin">Where Z=0 is</span>
-      <span name="InputMatClearance">How high the tool moves over the material.
-        Increase this when using clamps or screws to fasten the material</span>
+      <span name="InputMatThickness" title="Thickness">How thick is the material.</span>
+      <span name="SelectMatZOrigin">Where Z=0 is.</span>
+      <span name="InputMatClearance" title="Clearance">
+        How high to lift the tool when it moves quickly over the material.
+        Increase this when using clamps or screws to fasten the material.</span>
       <!-- Operation -->
-      <span name="CreateOperationButton"><p class='bg-danger'>
-          Select one or more paths in the "Toolpaths" pane before clicking
-          here</p></span>
-      <span name="OpEnabled">Enable/disable this operation. Only enabled operation are shown</span>
-      <span name="OpName">Name used in gcode comments</span>
-      <span name="OpRamp">Ramp the cutter in gradually instead of plunging straight down</span>
-      <div name="OpCombine">How to combine multiple paths into this operation.
-        Group means to take the polygons as-is.<br>
-        Intersection&hellip; Union&hellip; Diff&hellip; Xor&hellip;
-        <img width="100%" src="images/combine_ops.png" />
+      <span name="CreateOperationButton" title="Create Operation">Create a new operation on the selected paths.</span>
+      <span name="OpEnabled" title="Enable">
+        Enable/disable this operation. Only enabled operation are shown.</span>
+      <span name="OpName" title="Name">By default operations are assigned a name that reflects the order they are added. You can personalise this here.</span>
+      <span name="OpRamp" title="Ramp">Normally a deep cut is started by plunging the tool down into the work - by drilling a hole. Some tools or materials are not suitable for this, so a different approach is required. A ramp plunge is where the tool moves along the tool path while it also descends into the work. See <a href="https://www.harveyperformance.com/in-the-loupe/ramping-success/">here</a> for an excellent explanation.</span>
+      <div name="OpCombine" title="Combine">
+        How to combine multiple polygons into this operation.
+        <dl>
+          <dt>Group</dt><dd>take all the polygons as-is.</dd>
+          <dt>Intersection</dt><dd><img src="images/intersection.svg"/></dd>
+          <dt>Union</dt><dd><img src="images/union.svg"/></dd>
+          <dt>Difference</dt><dd><img src="images/difference.svg"/></dd>
+          <dt>XOR</dt><dd><img src="images/xor.svg"/></dd>
       </div>
-      <span name="OpDirection">What direction the cutter should travel.
-        See README for an explanation</span>
-      <span name="OpSpindleSpeed">How fast the spindle should run while
-        completing this operation</span>
-      <span name="OpCutDepth">How deep this operation should cut in total</span>
-      <div name="OpOperation">Operation to perform on the selected paths.
-        <ul>
-          <li><em>Engrave</em> - middle of the tool follows the paths</li>
-          <li><em>Inside</em> - cuts around the inside of closed paths</li>
-          <li><em>Outside</em> - cuts around the outside of closed paths</li>
-          <li><em>Perforate</em> - drills holes around the outside of closed paths, or along open paths</li>
-          <li><em>Pocket (annular)</em> - carves a pocket using annular rings (closed paths only)</li>
-          <li><em>Pocket (raster</em>) - carves a pocket using side-to-side movement (closed paths only)</li>
-          <li><em>Drill</em> - drills a hole at each vertex of the path</li>
-        </ul>
+      <span name="OpDirection" title="Direction">What direction the cutter should travel.
+        see <a href="https://en.wikipedia.org/wiki/Milling_cutter">Wikipedia</a> for the pros and cons of climb versus conventional milling.</span>
+      <span name="OpCutDepth" title="Cut Depth">
+        How deep this operation should cut in total.</span>
+      <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
+        <dl>
+          <dt>Engrave</dt><dd>middle of the tool follows the paths.</dd>
+          <dt>Inside</dt><dd>cuts around the inside of closed paths.</dd>
+          <dt>Outside</dt><dd>cuts around the outside of closed paths.</dd>
+          <dt>Perforate</dt><dd>drills holes around the outside of closed paths, or along open paths.</dd>
+          <dt>Pocket (annular)</dt><dd>carves a pocket using annular rings (closed paths only).</dd>
+          <dt>Pocket (raster</dt><dd> carves a pocket using side-to-side movement (closed paths only).</dd>
+          <dt>Drill</dt><dd>drills a hole at each vertex of the path.</dd>
+        </dl>
       </div>
-      <span name="OpVMaxDepth">Maximum depth this operation should cut.
-        <p class="bg-danger">not implemented yet; this is ignored</p></span>
-      <div name="OpMargin">
-        <p>Positive: how much material to leave uncut</p>
-        <p>Negative: how much extra material to cut</p></div>
-      <div name="OpSpacing">
-        How much material to leave uncut between perforations</div>
-      <span name="OpWidth">How wide a path to cut. If this is less than the
-        cutter width then it uses the cutter width</span>
-      <!-- Selection -->
-      <span name="InputMinNumSegments">Minimum number of line segments
-        to convert a curve to. Curve conversion is done when something
-        with a curve in it is selected.</span>
-      <span name="InputMinSegmentLength">Minimum length of each line segment
+      <span name="OpVMaxDepth" title="Max Cut Depth">Maximum depth this operation should cut.
+        <p class="bg-danger">not implemented yet; this is ignored.</p></span>
+      <div name="OpMargin" title="Margin">
+        Lets allows you to add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
+        <dl>
+          <dt>+ve</dt><dd>how much material to leave uncut.</dd>
+          <dt>-ve<?dt><dd>how much extra material to cut.</dd>
+        </dl>
+      </div>
+      <div name="OpSpacing" title="Spacing">
+        How much material to leave uncut between perforations.
+      </div>
+      <span name="OpWidth" title="Width">Cut a path wider than the
+        tool diameter.</span>
+      <div name="OpOps" title="Operation">
+        <dl>
+          <dt>&DoubleUpArrow;</dt><dd>Process this operation earlier</dd>
+          <dt>&DoubleDownArrow;</dt><dd>Process this operation later</dd>
+          <dt>&#128465;</dt><dd>Delete this operation</dd>
+        </dl>
+      </div>
+      <!-- Approximation -->
+      <span name="MinNumSegments" title="Min Curve Segments">
+        Minimum number of line segments to convert a curve to. Curve
+        conversion is done when something with a curve in it is
+        selected.</span>
+      <span name="MinSegmentLength" title="Min Segment Length">Minimum length of each line segment
         when converting curves. Curve conversion is done when something
         with a curve in it is selected.</span>
+      <div name="JoinType" title="Egde Join Type">
+        How edges are joined when bloating/shrinking polygons.
+        <dl>
+          <dt>Mitred</dt><dd><img src="images/mitred.svg"/></dd>
+          <dt>Squared</dt><dd><img src="images/squared.svg"/></dd>
+          <dt>Rounded</dt><dd><img src="images/rounded.svg"/></dd>
+        </dl>
+      </div>
+      <span name="MitreLimit" title="Mitre Limit">
+        Only relevant when the `Join Type` is `Mitred`.  There's a
+        limit to mitred joins since offsetting edges that join at very
+        acute angles will produce long and narrow 'spikes'. To contain
+        these spikes, this parameter specifies a maximum distance that
+        new vertices can be offset from the original polygon (in
+        multiples of the size of the offset).  When offsetting would
+        exceed that maximum distance, 'Squared' joining is
+        automatically applied. The default is 2, which is also the
+        minimum. Larger values may produce spikes that are far slimmer
+        than the tool diameter, so use with caution.
+      </span>
     </div>
     <div id="Alerts">
-      <span name="unsupportedSVG"><strong>$1.$2=$3</strong> is not supported; try Inkscape's <strong>Object to Path</strong> command</span>
-      <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored</span>
-      <span name="loadingProject">Loading project "$1"</span>
-      <span name="loadedProject">Loaded project "$1"</span>
-      <span name="projectLoadAbort">Aborted reading project "$1"</span>
-      <span name="projectLoadError">Error reading project "$1"</span>
-      <span name="projectSavedInBrowser">"$1" saved in the browser</span>
-      <span name="projectNotInBrowser">Project "$1" not found in the browser</span>
-      <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0</span>
-      <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0</span>
-      <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter</span>
-      <span name="loadingSVG">Loading SVG from $1</span>
-      <span name="loadedSVG">Loaded SVG from $1</span>
-      <span name="svgLoadAbort">Aborted reading $1</span>
-      <span name="svgLoadError">Error reading $1</span>
-      <span name="tutorialStep">Step $1: $2</span>
-      <span name="tabsMustBeClosed">At least one closed path must be selected to create tabs</span>
+      <span name="unsupportedSVG"><strong>$1.$2=$3</strong> is not supported; try Inkscape's <strong>Object to Path</strong> command.</span>
+      <span name="tabsDeeper">Holding tabs are cut deeper than the max cut depth and will be ignored.</span>
+      <span name="loadingProject">Loading project "$1".</span>
+      <span name="loadedProject">Loaded project "$1".</span>
+      <span name="projectLoadAbort">Aborted reading project "$1".</span>
+      <span name="projectLoadError">Error reading project "$1".</span>
+      <span name="projectSavedInBrowser">"$1" saved in the browser.</span>
+      <span name="projectNotInBrowser">Project "$1" not found in the browser.</span>
+      <span name="passDepthTooSmall">Pass depth $1 &lt; 0. Will be set to 0.</span>
+      <span name="cutDepthTooSmall">Operation "$1" has a cut depth which is &lt; 0. Will reset to 0.</span>
+      <span name="noToolPaths">Operation "$1" doesn't generate any tool paths. Check that features are wider than the tool diameter.</span>
+      <span name="loadingSVG">Loading SVG from $1.</span>
+      <span name="loadedSVG">Loaded SVG from $1.</span>
+      <span name="svgLoadAbort">Aborted reading $1.</span>
+      <span name="svgLoadError">Error reading $1.</span>
+      <span name="tutorialStep">Step $1: $2.</span>
+      <span name="tabsMustBeClosed">At least one closed path must be selected to create tabs.</span>
     </div>
   </div>
 </body>

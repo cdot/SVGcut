@@ -1,10 +1,9 @@
-/*Copyright Tim Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 
 // Vertex shader for the cut path
 
 uniform float resolution;
-// Diameter of the cutter bit
-uniform float cutterDia;
+uniform float cutterDiameter;
 uniform vec2 pathXYOffset;
 uniform float pathScale;
 // Min Z in the entire path
@@ -69,7 +68,7 @@ void main(void) {
     thisPos = upper;
 
   center = (thisPos.xy * resolution + resolution) / 2.0;
-  float r = cutterDia * pathScale / 2.0;
+  float r = cutterDiameter * pathScale / 2.0;
 
   if (i < 12) {
     // lower and upper circle triangles 

@@ -18,12 +18,11 @@ const DEFAULT_DIRECTION = "Conventional";
 const DEFAULT_CUTDEPTH = 1;        // mm
 const DEFAULT_MARGIN = 0;          // mm
 const DEFAULT_SPACING = 1;         //mm
-const DEFAULT_SPINDLESPEED = 1000; // rpm
 const DEFAULT_WIDTH = 0;           //mm
 
 const FIELDS = [
   "name", "enabled", "combineOp", "operation", "cutDepth", "width",
-  "direction", "spacing", "ramp", "margin", "spindleSpeed"
+  "direction", "spacing", "ramp", "margin"
 ];
 
 /**
@@ -223,16 +222,6 @@ class OperationViewModel extends ViewModel {
     });
 
     /**
-     * Spindle speed (only one supported)
-     * @member {observable.<number>}
-     */
-    this.spindleSpeed = ko.observable(DEFAULT_SPINDLESPEED);
-    this.spindleSpeed.subscribe(() => {
-      document.dispatchEvent(new Event("PROJECT_CHANGED"));
-      document.dispatchEvent(new Event("UPDATE_GCODE"));
-    });
-
-    /**
      * How wide a path to cut. If this is less than the cutter diameter
      * it will be rounded up.
      * @member {observable.<number>}
@@ -242,6 +231,48 @@ class OperationViewModel extends ViewModel {
     this.width.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.recombine();
+    });
+
+    /**
+     * Override Tool Defaults
+     * @member {observable.<number>}
+     */
+    this.passDepth = ko.observable();
+    unitConverter.add(this.passDepth);
+    this.passDepth.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
+
+    /**
+     * Override Tool Defaults
+     * @member {observable.<number>}
+     */
+    this.stepOver = ko.observable();
+    this.stepOver.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.recombine();
+    });
+
+    /**
+     * Override Tool Defaults
+     * @member {observable.<number>}
+     */
+    this.cutRate = ko.observable();
+    unitConverter.add(this.cutRate);
+    this.cutRate.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
+    });
+
+    /**
+     * Override Tool Defaults
+     * @member {observable.<number>}
+     */
+    this.rpm = ko.observable();
+    this.rpm.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
     });
 
     /**
@@ -291,6 +322,22 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
+   * Invoked from HTML. Operations are bound to this view model, so
+   * when promoteOperation is bound it comes here.
+   */
+  promoteOperation() {
+    App.models.Operations.promoteOperation(this);
+  }
+
+  /**
+   * Invoked from HTML. Operations are bound to this view model, so
+   * when demoteOperation is bound it comes here.
+   */
+  demoteOperation() {
+    App.models.Operations.demoteOperation(this);
+  }
+
+  /**
    * Remove the combined geometry (and toolpaths) contributed by this operation
    */
   removeCombinedGeometry() {
@@ -318,7 +365,7 @@ class OperationViewModel extends ViewModel {
    * @return {number} in CutPoint units
    */
   toolPathWidth() {
-    const td = App.models.Tool.diameter.toUnits("integer");
+    const td = App.models.Tool.cutterDiameter.toUnits("integer");
     const width = this.width.toUnits("integer");
     if (width < td)
       return td;
@@ -376,7 +423,8 @@ class OperationViewModel extends ViewModel {
         off = -off;
 
       if (oper !== Cam.OP.Engrave && off !== 0)
-        previewGeometry = previewGeometry.offset(off);
+        previewGeometry = previewGeometry.offset(
+          off, App.models.Approximation.approximations);
 
       if (oper === Cam.OP.Inside
           || oper === Cam.OP.Outside
@@ -385,16 +433,19 @@ class OperationViewModel extends ViewModel {
           || oper === Cam.OP.Drill) {
         const width = this.toolPathWidth();
         if (oper === Cam.OP.Inside) {
-          previewGeometry =
-            previewGeometry.diff(previewGeometry.offset(-width));
+          previewGeometry = previewGeometry
+          .diff(previewGeometry
+                .offset(-width, App.models.Approximation.approximations));
         } else if (oper === Cam.OP.Engrave) {
-          previewGeometry =
-          previewGeometry.offset(width / 2).diff(
-            previewGeometry.offset(-width / 2));
+          previewGeometry = previewGeometry
+          .offset(width / 2, App.models.Approximation.approximations)
+          .diff(previewGeometry
+                .offset(-width / 2, App.models.Approximation.approximations));
         } else {
           // Outside or Perforate or Drill
-          previewGeometry =
-          previewGeometry.offset(width).diff(previewGeometry);
+          previewGeometry = previewGeometry
+          .offset(width, App.models.Approximation.approximations)
+          .diff(previewGeometry);
         }
       }
 
@@ -434,16 +485,27 @@ class OperationViewModel extends ViewModel {
     let geometry = this.combinedGeometry;
     const oper = this.operation();
     const toolModel = App.models.Tool;
-    const toolDiameter = toolModel.diameter.toUnits("integer");
-    const bitAngle = toolModel.angle();
-    const passDepth = toolModel.passDepth.toUnits("integer");
-    const stepover = toolModel.stepover();
-    const climb = (this.direction() === "Climb");
+    const passDepth = (this.passDepth())
+          ? this.passDepth.toUnits("integer")
+          : toolModel.passDepth.toUnits("integer");
+    const stepOver = Number((this.stepOver())
+                            ? this.stepOver()
+                            : toolModel.stepOver());
     const zOnTop = App.models.Material.zOrigin() === "Top";
-    const cutDepth = this.cutDepth();
+    const cutDepth = Number(this.cutDepth());
     const clear = App.models.Material.clearance();
-    const safeZ = zOnTop ? clear : clear + cutDepth;
-    const botZ = zOnTop ? -cutDepth : 0;
+
+    const params = App.models.Approximation.approximations;
+    params.cutterDiameter = toolModel.cutterDiameter.toUnits("integer");
+    params.cutterAngle = Number(toolModel.cutterAngle());
+    params.overlap = 1 - stepOver / 100;
+    params.climb = (this.direction() === "Climb");
+    params.safeZ = zOnTop ? clear : clear + cutDepth;
+    params.topZ = zOnTop ? 0 : cutDepth;
+    params.botZ = zOnTop ? -cutDepth : 0;
+    params.width = Math.max(
+      this.width.toUnits("integer"), params.cutterDiameter);
+    params.spacing = this.spacing.toUnits("integer");
 
     // inset/outset the geometry as dictated by the margin
     let off = this.margin.toUnits("integer");
@@ -452,44 +514,36 @@ class OperationViewModel extends ViewModel {
         || oper === Cam.OP.Inside)
       off = -off; // inset
     if (oper !== Cam.OP.Engrave && off !== 0)
-      geometry = geometry.offset(off);
+      geometry = geometry.offset(off, params);
 
-    let paths, width;
+    let paths;
     switch (oper) {
 
     case Cam.OP.AnnularPocket:
-      paths = Cam.annularPocket(geometry, toolDiameter, 1 - stepover, climb);
+      paths = Cam.annularPocket(geometry, params);
       break;
 
     case Cam.OP.RasterPocket:
-      paths = Cam.rasterPocket(geometry, toolDiameter, 1 - stepover, climb);
+      paths = Cam.rasterPocket(geometry, params);
       break;
 
     case Cam.OP.Inside:
     case Cam.OP.Outside:
-      width = this.width.toUnits("integer");
-      if (width < toolDiameter)
-        width = toolDiameter;
       paths = Cam.outline(
-        geometry, toolDiameter,
-        oper === Cam.OP.Inside, // isInside
-        width,
-        1 - stepover,
-        climb);
+        geometry, oper === Cam.OP.Inside, // isInside
+        params);
       break;
 
     case Cam.OP.Perforate:
-      paths = Cam.perforate(
-        geometry, toolDiameter, this.spacing.toUnits("integer"),
-        safeZ, botZ);
+      paths = Cam.perforate(geometry, params);
       break;
 
     case Cam.OP.Drill:
-      paths = Cam.drill(geometry, safeZ, botZ);
+      paths = Cam.drill(geometry, params);
       break;
 
     case Cam.OP.Engrave:
-      paths = Cam.engrave(geometry, climb);
+      paths = Cam.engrave(geometry, params);
       break;
     }
 
@@ -557,22 +611,7 @@ class OperationViewModel extends ViewModel {
    * @private
    */
   needs(what) {
-    const op = this.operation();
-    switch (what) {
-    case "width": return op === Cam.OP.Inside
-      || op === Cam.OP.Outside;
-
-    case "direction":
-    case "ramp":  return op !== Cam.OP.Perforate
-      && op !== Cam.OP.Drill;
-
-    case "margin":  return op !== Cam.OP.Perforate
-      && op !== Cam.OP.Drill
-      && op !== Cam.OP.Engrave;
-
-    case "spacing": return op === Cam.OP.Perforate;
-    }
-    return true;
+    return Cam.NEEDS[this.operation()].indexOf(what) >= 0;
   }
 
   /**

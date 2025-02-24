@@ -266,14 +266,12 @@ export class Generator {
    * @param {number} job.offsetY Origin offset Y
    * @param {number} job.decimal Number of decimal places to keep
    * in gcode
-   * @param {number} job.topZ Top of area to cut (gcode units)
+   * @param {number} job.topZ Top of area to cut
    * @param {number} job.safeDepth Z depth to safely move over
    * uncut areas (gcode units).
-   * @param {number} job.passDepth Cut depth for each pass (gcode units)
-   * @param {number} job.plungeFeed Feedrate to plunge cutter
-   * @param {number} job.retractFeed Feedrate to retract cutter
-   * @param {number} job.cutFeed Feedrate for horizontal cuts
-   * @param {number} job.rapidFeed Feedrate for rapid moves
+   * @param {number} job.plungeRate Feedrate to plunge cutter
+   * @param {number} job.retractRate Feedrate to retract cutter
+   * @param {number} job.rapidRate Feedrate for rapid moves
    */
   constructor(job) {
 
@@ -288,11 +286,9 @@ export class Generator {
     assert(typeof this.topZ === "number");
     assert(typeof this.botZ === "number");
     assert(typeof this.safeZ === "number");
-    assert(typeof this.passDepth === "number");
-    assert(typeof this.plungeFeed === "number");
-    assert(typeof this.retractFeed === "number");
-    assert(typeof this.cutFeed === "number");
-    assert(typeof this.rapidFeed === "number");
+    assert(typeof this.plungeRate === "number");
+    assert(typeof this.retractRate === "number");
+    assert(typeof this.rapidRate === "number");
     assert(typeof this.returnTo00 === "boolean");
     assert(typeof this.workWidth === "number");
     assert(typeof this.workHeight === "number");
@@ -324,7 +320,7 @@ export class Generator {
     this.last = new CNC();
 
     this.G(90, { rem: "Absolute positioning" });
-    this.G(0, { z: this.safeZ, f: this.rapidFeed, rem: "Move to clearance level" });
+    this.G(0, { z: this.safeZ, f: this.rapidRate, rem: "Move to clearance level" });
   }
 
   /**
@@ -347,11 +343,10 @@ export class Generator {
     this.stopSpindle();
     const p = {
       z: this.safeZ,
-      f: this.rapidFeed
+      f: this.rapidRate
     };
     if (this.returnTo00) {
-      this.offsetX = this.offsetY = 0;
-      this.xScale = this.yScale = 0;
+      this.xScale = this.yScale = 1;
       p.pt = new CutPoint(0, 0);
       p.rem = "Return to 0,0";
     }
@@ -521,21 +516,25 @@ export class Generator {
    * in "integer" units, and will be transformed to Gcode units using the
    * `Scale` parameters.
    * @param {number} op.cutType one of the operations supported by Cam.
-   * @param {number} op.spinSpeed spindle speed to use for this operation.
+   * @param {number} op.rpm spindle speed to use for this operation.
+   * @param {number} op.passDepth Cut depth for each pass
+   * @param {number} op.cutRate Cut depth for each pass
    * @param {boolean} op.ramp Ramp plunge. Default is to drill plunge.
    */
   addOperation(op) {
     //console.debug(`Generating Gcode for ${op.name}, ${op.paths.length} paths`);
-
+    assert(op.paths instanceof CutPaths);
     assert(typeof op.name === "string");
+    assert(typeof op.ramp === "boolean");
     assert(typeof op.cutType === "number");
+    assert(typeof op.ramp === "boolean");
+    assert(typeof op.passDepth === "number");
+    assert(typeof op.rpm === "number");
+    assert(typeof op.cutRate === "number");
+    assert(typeof op.direction === "string");
+
     this.rem(
       `*** Operation "${op.name}" (${Cam.LONG_OP_NAME[op.cutType]}) ***`);
-
-    assert(op.paths instanceof CutPaths);
-    assert(typeof op.ramp === "boolean");
-    assert(typeof op.direction === "string");
-    assert(typeof op.spinSpeed === "number");
 
     let pathIndex = 0;
     for (let path of op.paths) {
@@ -556,11 +555,11 @@ export class Generator {
         let lastCutZ = this.topZ; // depth of the last cut
         while (lastCutZ > minZ) {
           // Calculate maximum cut depth for this pass
-          const targetZ = lastCutZ - this.passDepth;
+          const targetZ = lastCutZ - op.passDepth;
           this.rem(`Pass ${pathIndex}:${++passNum}`);
           this.followCutPath(path, targetZ, op);
           lastCutZ = targetZ;
-          if (this.passDepth === 0) break;
+          if (op.passDepth === 0) break;
           // For open paths, perform the next run back down the path
           if (!path.isClosed)
             path = path.reverse();
@@ -568,7 +567,7 @@ export class Generator {
       }
       //this.stopSpindle();
 
-      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Retract" });
+      this.G(0, { f: this.rapidRate, z: this.safeZ, rem: "Retract" });
     }
   }
 
@@ -581,7 +580,7 @@ export class Generator {
     // If the tool isn't over the start of the path, move it there
     if (!this.toolAt(pt)) {
       //this.stopSpindle();
-      this.G(0, { f: this.rapidFeed, z: this.safeZ, rem: "Clear" });
+      this.G(0, { f: this.rapidRate, z: this.safeZ, rem: "Clear" });
       this.G(0, { pt: pt, z: this.safeZ, rem: "Hang" });
       this.G(0, { z: this.topZ, rem: "Sink" });
     }
@@ -595,15 +594,15 @@ export class Generator {
    */
   followPrecomputedPath(path, op) {
     this.safeMoveTo(path[0]);
-    this.startSpindle(op.spinSpeed);
+    this.startSpindle(op.rpm);
 
     let i;
     for (i = 0; i < path.length; i++) {
-      const feed = this.toolAt(path[i]) ? this.plungeFeed :  this.cutFeed;
+      const feed = this.toolAt(path[i]) ? this.plungeRate :  op.cutRate;
       this.G(1, { f: feed, pt: path[i] });
     }
     if (path.isClosed) {
-      const feed = this.toolAt(path[0]) ? this.plungeFeed :  this.cutFeed;
+      const feed = this.toolAt(path[0]) ? this.plungeRate :  op.cutRate;
       this.G(1, { f: feed, pt: path[0], rem: "Close path" });
     }
   }
@@ -618,7 +617,7 @@ export class Generator {
    */
   followCutPath(path, minZ, op) {
     this.safeMoveTo(path[0]);
-    this.startSpindle(op.spinSpeed);
+    this.startSpindle(op.rpm);
 
     let targetZ = Math.max(path[0].Z, minZ);
 
@@ -631,23 +630,23 @@ export class Generator {
         // target Z along this edge.
         thisZ = Math.max(nextPt.Z, minZ);
         if (edgeLength > 0) {
-          const plungeTime = Math.abs(thisZ - this.last.z) / this.plungeFeed;
-          const edgeTime = edgeLength / this.cutFeed;
+          const plungeTime = Math.abs(thisZ - this.last.z) / this.plungeRate;
+          const edgeTime = edgeLength / op.cutRate;
           if (edgeTime > plungeTime) {
-            const rampLength = this.cutFeed * plungeTime;
+            const rampLength = op.cutRate * plungeTime;
             const dE = rampLength / edgeLength;
             const intermediate = new CutPoint(
               this.last.x + (nextPt.X - this.last.x) * dE,
               this.last.y + (nextPt.Y - this.last.y) * dE,
               thisZ
             );
-            this.G(1, { f: this.cutFeed, pt: intermediate, z: thisZ,
+            this.G(1, { f: op.cutRate, pt: intermediate, z: thisZ,
                         rem: `Bottom of ramp` });
           } else if (plungeTime > edgeTime) {
             thisZ = this.last.z +
                     (thisZ - this.last.z) * edgeTime / plungeTime;
           }
-          this.G(1, { f: this.cutFeed, pt: nextPt, z: thisZ,
+          this.G(1, { f: op.cutRate, pt: nextPt, z: thisZ,
                       rem: `Ramp step` });
         }
         if (path.isClosed)
@@ -662,7 +661,7 @@ export class Generator {
         // so that we cut the whole path again.
         // TODO: could head to the nearest end
         while (i > 0 && i < path.length - 1) {
-          this.G(1, { f: this.cutFeed, pt: path[i], z: thisZ,
+          this.G(1, { f: op.cutRate, pt: path[i], z: thisZ,
                       rem: "Reset open ramp path" });
           i = (i + path.length + direction) % path.length;
         }
@@ -674,11 +673,11 @@ export class Generator {
 
     // Cut the whole path at the max of point.Z and minZ
     for (let j = 0; j < path.length; j++) {
-      this.G(1, { f: this.cutFeed, pt: path[i], z: thisZ });
+      this.G(1, { f: op.cutRate, pt: path[i], z: thisZ });
       i = (i + path.length + direction) % path.length;
       thisZ = Math.max(path[i].Z, minZ);
     }
     if (path.isClosed)
-      this.G(1, { f: this.cutFeed, pt: path[i], z: thisZ, rem: "Close path" });
+      this.G(1, { f: op.cutRate, pt: path[i], z: thisZ, rem: "Close path" });
   }
 }

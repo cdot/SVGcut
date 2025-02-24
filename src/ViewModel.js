@@ -36,12 +36,16 @@ class ViewModel {
    */
   addPopovers(nodes) {
 
-    function connect(node, trigger) {
-      const pot = document.querySelector(`#Popovers>[name="${node.id}"]`);
+    function connectHelper(node, trigger) {
+      const id = node.getAttribute("name") ?? node.id;
+      const pot = document.querySelector(`#Popovers [name="${id}"]`);
       if (!pot)
-        throw new Error(`No #Popovers>[name="${node.id}"]`);
+        throw new Error(`No #Popovers [name="${id}"]`);
+      if (!trigger)
+        node.classList.add("btn", "btn-link");
       new bootstrap.Popover(node, {
-        trigger: trigger,
+        title: pot.getAttribute("title") ?? id,
+        trigger: trigger ?? "focus",
         html: true,
         container: "body",
         content: pot.innerHTML,
@@ -53,12 +57,18 @@ class ViewModel {
       for (const node of nodes)
         this.addPopovers(node);
     } else if (nodes.querySelectorAll) {
-      let candidates = nodes.querySelectorAll(".auto-popover");
+      let candidates = nodes.querySelectorAll(".hover-help");
       for (const node of candidates)
-        connect(node, "hover");
+        connectHelper(node, "hover");
+
       candidates = nodes.querySelectorAll(".manual-popover");
       for (const node of candidates)
-        connect(node, "manual");
+        connectHelper(node, "manual");
+
+      candidates = nodes.querySelectorAll(".helper");
+      for (const node of candidates) {
+        connectHelper(node);
+      }
     }
   }
 

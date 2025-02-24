@@ -18,7 +18,7 @@ class Simulation {
 
   /**
    * You can't do anything with it until you call start()
-   * @param {string} shaderDir relative directory to load shaders from.
+   * @param {string} shaderURI URI to load shaders from.
    * @param {HTMLCanvasElement} canvas element to display the simulation in.
    * @param {HTMLElement} timeControl time control input, limited to
    * values between 0 and 1000. This will usually be an
@@ -27,7 +27,7 @@ class Simulation {
    * time changes. Passed the new simulation time and the x, y, z
    * location of the tool at that time.
    */
-  constructor(shaderDir, canvas, timeControl, stopWatch) {
+  constructor(shaderURI, canvas, timeControl, stopWatch) {
 
     /**
      * Flag set true when the shaders and programs have been loaded
@@ -56,11 +56,11 @@ class Simulation {
     this.stopWatch = stopWatch;
 
     /**
-     * relative directory to load shaders from
+     * Relative URI to load shaders from
      * @member {string}
      * @private
      */
-    this.shaderDir = shaderDir;
+    this.shaderURI = shaderURI;
 
     /**
      * @member {number}
@@ -95,13 +95,14 @@ class Simulation {
     this.cutterH = 0;
 
     /**
-     * Cutter diameter
+     * Tool diameter
      * @member {number}
      * @private
      */
-    this.cutterDia = 0;
+    this.cutterDiameter = 0;
 
     /**
+     * Tool head angle (v bit)
      * @member {number}
      * @private
      */
@@ -471,7 +472,7 @@ class Simulation {
 
     gl.useProgram(program);
     program.resolution = gl.getUniformLocation(program, "resolution");
-    program.cutterDia = gl.getUniformLocation(program, "cutterDia");
+    program.cutterDiameter = gl.getUniformLocation(program, "cutterDiameter");
     program.pathXYOffset = gl.getUniformLocation(program, "pathXYOffset");
     program.pathScale = gl.getUniformLocation(program, "pathScale");
     program.pathMinZ = gl.getUniformLocation(program, "pathMinZ");
@@ -502,10 +503,9 @@ class Simulation {
    * @private
    */
   vBit(idx, prev, curr, bufferContent, beginTime, time) {
-    const coneHeight = -Math.min(curr.z, prev.z, 0) + .1;
+    const coneHeight = -Math.min(curr.z, prev.z, 0) + 0.1;
     const coneDia = coneHeight * 2
-          * Math.sin(this.cutterAngleRad / 2)
-          / Math.cos(this.cutterAngleRad / 2);
+          * Math.sin(this.cutterAngleRad) / Math.cos(this.cutterAngleRad);
     const coneDia_2 = coneDia / 2;
     const stride = this.pathStride;
     const pvpl = this.pathVerticesPerLine;
@@ -536,8 +536,8 @@ class Simulation {
     }
 
     if (Math.abs(curr.z - prev.z) >= xyDist * Math.PI
-        / 2 * Math.cos(this.cutterAngleRad / 2)
-        / Math.sin(this.cutterAngleRad / 2)) {
+        / 2 * Math.cos(this.cutterAngleRad)
+        / Math.sin(this.cutterAngleRad)) {
 
       // plunge or retract
       let index = 0;
@@ -565,8 +565,8 @@ class Simulation {
       // cut
       const planeContactAngle = Math.asin(
         (prev.z - curr.z) / xyDist
-        * Math.sin(this.cutterAngleRad / 2)
-        / Math.cos(this.cutterAngleRad / 2));
+        * Math.sin(this.cutterAngleRad)
+        / Math.cos(this.cutterAngleRad));
       //console.debug("\nxyDist = ", xyDist);
       //console.debug("delta z = " + (z - prev.z));
       //console.debug("planeContactAngle = " + (planeContactAngle * 180 / Math.PI));
@@ -668,7 +668,7 @@ class Simulation {
 
     // Set program variables
     this.gl.uniform1f(this.programs.path.resolution, RESOLUTION);
-    this.gl.uniform1f(this.programs.path.cutterDia, this.cutterDia);
+    this.gl.uniform1f(this.programs.path.cutterDiameter, this.cutterDiameter);
     this.gl.uniform2f(this.programs.path.pathXYOffset,
                       this.pathXOffset, this.pathYOffset);
     this.gl.uniform1f(this.programs.path.pathScale, this.pathScale);
@@ -904,8 +904,8 @@ class Simulation {
 
     // Set program variables
     this.gl.uniform3f(this.programs.basic.scale,
-                      this.cutterDia * this.pathScale,
-                      this.cutterDia * this.pathScale,
+                      this.cutterDiameter * this.pathScale,
+                      this.cutterDiameter * this.pathScale,
                       this.cutterH * this.pathScale);
     this.gl.uniform3f(this.programs.basic.translate,
                       (x + this.pathXOffset) * this.pathScale,
@@ -1008,16 +1008,16 @@ class Simulation {
   }
 
   /**
-   * Return a promise to load the given WebGL shader from file
+   * Return a promise to load the given WebGL shader from a URI
    * @param {string} name shader to load
    * @param type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
    * @return {Promise}
    * @private
    */
   loadShader(name, type) {
-    const filename = `${this.shaderDir}/${name}.glsl`;
+    const uri = `${this.shaderURI}/${name}.glsl`;
     const gl = this.gl;
-    return fetch(filename)
+    return fetch(uri)
     .then(response => response.text())
     .then(source => {
       const shader = gl.createShader(type);
@@ -1025,10 +1025,10 @@ class Simulation {
       gl.compileShader(shader);
       const mess = gl.getShaderInfoLog(shader);
       if (mess.length > 0)
-        throw new Error(`Shader ${filename} compile failed ${mess}`);
+        throw new Error(`Shader ${uri} compile failed ${mess}`);
       if (gl.getShaderParameter(shader, gl.COMPILE_STATUS))
         return shader;
-      throw new Error(`Shader ${filename} didn't compile`);
+      throw new Error(`Shader ${uri} didn't compile`);
     });
   }
 
@@ -1107,7 +1107,7 @@ class Simulation {
       this.programs.heightMap = this.linkRenderHeightMapProgram(gl);
       this.programs.basic = this.linkBasicProgram(gl);
 
-      this.setPath([], 0, 0, 180, 0);
+      this.setPath([], 0, 0, 90, 0);
 
       this.addEventListeners();
 
@@ -1122,20 +1122,19 @@ class Simulation {
    * y, z, f, s } where x,y,z are the coords, f is the cutter speed,
    * and s is the spindle speed.
    * @param {number} topZ top of the material
-   * @param {number} cutterDiameter
-   * @param {number} cutterAngle angle of V-cutter head, in degrees.
-   * Flat heads use 180 (the default).
-   * @param {number} cutterHeight height of cutter cylinder, default 1
+   * @param {number} cutterDiameter diameter of cutter head, in "integer".
+   * @param {number} cutterAngle angle of V-cutter head, in degrees measured
+   * from the axis of rotation. Flat heads use 90.
+   * @param {number} cutterHeight height of cutter cylinder, in "integer".
    */
-  setPath(path, topZ,
-          cutterDiameter, cutterAngle = 180, cutterHeight = 10) {
+  setPath(path, topZ, cutterDiameter, cutterAngle, cutterHeight) {
 
     this.pathTopZ = topZ;
-    this.cutterDia = cutterDiameter;
-    if (cutterAngle <= 0 || cutterAngle > 180)
-      cutterAngle = 180;
+    this.cutterDiameter = cutterDiameter;
+    if (cutterAngle <= 0 || cutterAngle > 90)
+      cutterAngle = 90;
     this.cutterAngleRad = cutterAngle * Math.PI / 180;
-    this.isVBit = cutterAngle < 180;
+    this.isVBit = cutterAngle < 90;
     this.cutterH = cutterHeight;
     this.needToCreatePathTexture = true;
     this.requestFrame();
@@ -1197,8 +1196,8 @@ class Simulation {
 
     this.pathXOffset = -(min.x + max.x) / 2;
     this.pathYOffset = -(min.y + max.y) / 2;
-    const size = Math.max(max.x - min.x + 4 * this.cutterDia,
-                          max.y - min.y + 4 * this.cutterDia);
+    const size = Math.max(max.x - min.x + 4 * this.cutterDiameter,
+                          max.y - min.y + 4 * this.cutterDiameter);
     this.pathScale = 2 / size;
     this.pathMinZ = min.z;
 

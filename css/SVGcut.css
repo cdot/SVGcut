@@ -7,12 +7,30 @@ body > .container {
   padding: 60px 15px 0;
 }
 
+dl {
+  display: grid;
+  grid-template-columns: max-content auto;
+}
+
+dt {
+  grid-column-start: 1;
+}
+
+dd {
+  grid-column-start: 2;
+}
+
 .container .text-muted {
   margin: 20px 0;
 }
 
 input[type="number"] {
   width: 5em;
+}
+
+.helper {
+  text-decoration: none;
+  padding: 0 0 0 3px;
 }
 
 /* Layout of left and right sidebars */

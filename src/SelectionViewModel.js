@@ -97,8 +97,8 @@ class SelectionViewModel extends ViewModel {
       const segs = SVG.segmentsFromElement(
         elem,
         {
-          curveMinSegs: App.models.CurveConversion.minSegs(),
-          curveMinSegLen: App.models.CurveConversion.minSegLen.toUnits("px"),
+          curveMinSegs: App.models.Approximation.minSegs(),
+          curveMinSegLen: App.models.Approximation.minSegLen.toUnits("px"),
           vbx: vb.width,
           vby: vb.height
         });
@@ -138,10 +138,12 @@ class SelectionViewModel extends ViewModel {
     const clas = elem.getAttribute("class");
     if (clas && clas.indexOf("selected-path") >= 0) {
       elem.remove();
-      if (clas.indexOf("open-path") >= 0)
-        this.openSelected(this.openSelected() - 1);
-      else
-        this.closedSelected(this.closedSelected() - 1);
+      if (clas.indexOf("open-path") >= 0) {
+        // Math.max because clearSelection() may have zeroed this already
+        this.openSelected(Math.max(this.openSelected() - 1, 0));
+      } else {
+        this.closedSelected(Math.max(this.closedSelected() - 1, 0));
+      }
       return true;
     }
     return false;

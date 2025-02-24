@@ -7,13 +7,14 @@
 
 import { ViewModel } from "./ViewModel.js";
 
-const DEFAULT_STEPOVER = 0.4;   // fraction of tool diameter
-const DEFAULT_DIAMETER = 1;     // mm
-const DEFAULT_PASSDEPTH = 0.2;  // mm
-const DEFAULT_RAPIDRATE = 1000; // mm/min
-const DEFAULT_PLUNGERATE = 100; // mm/min
-const DEFAULT_CUTRATE = 100;    // mm/min
-const DEFAULT_ANGLE = 180;      // degrees, 180=flat
+const DEFAULT_STEP_OVER   = 40;   // percentage of tool diameter
+const DEFAULT_DIAMETER    = 1;    // mm
+const DEFAULT_ANGLE       = 90;   // degrees, 90=flat
+const DEFAULT_PASSDEPTH   = 0.2;  // mm
+const DEFAULT_RAPID_RATE  = 1000; // mm/min
+const DEFAULT_PLUNGE_RATE = 100;  // mm/min
+const DEFAULT_CUT_RATE    = 100;  // mm/min
+const DEFAULT_SPINDLE_RPM = 1000; // rpm
 
 /**
  * View model for the Tool pane
@@ -24,23 +25,26 @@ class ToolViewModel extends ViewModel {
     super(unitConverter);
 
     /**
-     * Fraction of the tool diameter, [0..1]
-     * @member {observable.<number>}
-     */
-    this.stepover = ko.observable(DEFAULT_STEPOVER);
-    this.stepover.subscribe(() => App.models.Operations.recombine());
-
-    /**
      * Tool diameter mm, must be > 0
      * @member {observable.<number>}
      */
-    this.diameter = ko.observable(
+    this.cutterDiameter = ko.observable(
       unitConverter.fromUnits(DEFAULT_DIAMETER, "mm"))
     .extend({ min: unitConverter.fromUnits(0.01, "mm")});
-    unitConverter.add(this.diameter);
-    this.diameter.subscribe(() => {
+    unitConverter.add(this.cutterDiameter);
+    this.cutterDiameter.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       App.models.Operations.recombine();
+    });
+
+    /**
+     * Tool v-bit angle
+     * @member {observable.<number>}
+     */
+    this.cutterAngle = ko.observable(DEFAULT_ANGLE);
+    this.cutterAngle.subscribe(newValue => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
     });
 
     /**
@@ -56,11 +60,21 @@ class ToolViewModel extends ViewModel {
     });
 
     /**
+     * Fraction of the tool diameter, [0..1]
+     * @member {observable.<number>}
+     */
+    this.stepOver = ko.observable(DEFAULT_STEP_OVER);
+    this.stepOver.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      App.models.Operations.recombine();
+    });
+
+    /**
      * Rapid movement rate mm/min
      * @member {observable.<number>}
      */
     this.rapidRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_RAPIDRATE, "mm"));
+      unitConverter.fromUnits(DEFAULT_RAPID_RATE, "mm"));
     unitConverter.add(this.rapidRate);
     this.rapidRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -72,7 +86,7 @@ class ToolViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.plungeRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_PLUNGERATE, "mm"));
+      unitConverter.fromUnits(DEFAULT_PLUNGE_RATE, "mm"));
     unitConverter.add(this.plungeRate);
     this.plungeRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -84,7 +98,7 @@ class ToolViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.cutRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_CUTRATE, "mm"));
+      unitConverter.fromUnits(DEFAULT_CUT_RATE, "mm"));
     unitConverter.add(this.cutRate);
     this.cutRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -92,16 +106,13 @@ class ToolViewModel extends ViewModel {
     });
 
     /**
-     * Tool v-bit angle
+     * Spindle speed (only one supported)
      * @member {observable.<number>}
      */
-    this.angle = ko.observable(DEFAULT_ANGLE);
-    this.angle.subscribe(newValue => {
+    this.rpm = ko.observable(DEFAULT_SPINDLE_RPM);
+    this.rpm.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
-      if (newValue <= 0 || newValue > 180) {
-        this.angle(180);
-        document.dispatchEvent(new Event("UPDATE_GCODE"));
-      }
+      document.dispatchEvent(new Event("UPDATE_GCODE"));
     });
 
     const el = document.getElementById("ToolView");
@@ -113,13 +124,14 @@ class ToolViewModel extends ViewModel {
    * @override
    */
   reset() {
-    this.diameter(DEFAULT_DIAMETER);
-    this.stepover(DEFAULT_STEPOVER);
+    this.cutterDiameter(DEFAULT_DIAMETER);
+    this.cutterAngle(DEFAULT_ANGLE);
+    this.stepOver(DEFAULT_STEP_OVER);
     this.passDepth(DEFAULT_PASSDEPTH);
-    this.rapidRate(DEFAULT_RAPIDRATE);
-    this.plungeRate(DEFAULT_PLUNGERATE);
-    this.cutRate(DEFAULT_CUTRATE);
-    this.angle(DEFAULT_ANGLE);
+    this.rapidRate(DEFAULT_RAPID_RATE);
+    this.plungeRate(DEFAULT_PLUNGE_RATE);
+    this.cutRate(DEFAULT_CUT_RATE);
+    this.rpm(DEFAULT_SPINDLE_RPM);
   }
 
   /**
@@ -132,13 +144,14 @@ class ToolViewModel extends ViewModel {
    */
   toJson() {
     return {
-      diameter: this.diameter(),
-      angle: this.angle(),
+      cutterDiameter: this.cutterDiameter(),
+      cutterAngle: this.cutterAngle(),
       passDepth: this.passDepth(),
-      stepover: this.stepover(),
+      stepOver: this.stepOver(),
       rapidRate: this.rapidRate(),
       plungeRate: this.plungeRate(),
-      cutRate: this.cutRate()
+      cutRate: this.cutRate(),
+      rpm: this.rpm()
     };
   }
 
@@ -147,11 +160,9 @@ class ToolViewModel extends ViewModel {
    */
   fromJson(json) {
     this.updateObservable(json, 'diameter');
-    this.updateObservable(json, 'angle');
+    this.updateObservable(json, 'cutterAngle');
     this.updateObservable(json, 'passDepth');
-    if (typeof json.overlap !== "undefined") // backwards compat
-      this.stepover(1 - json.overlap);
-    this.updateObservable(json, 'stepover');
+    this.updateObservable(json, 'stepOver');
     this.updateObservable(json, 'rapidRate');
     this.updateObservable(json, 'plungeRate');
     this.updateObservable(json, 'cutRate');

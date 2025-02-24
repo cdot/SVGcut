@@ -9,6 +9,37 @@ import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { BBox3D } from "./BBox3D.js";
 
+/**
+ * @typedef {number} MitreLimit
+ * "The maximum distance in multiples of delta that vertices can be
+ * offset from their original positions before squaring is
+ * applied. (Squaring truncates a miter by 'cutting it off' at 1 ×
+ * delta distance from the original vertex.)
+ * The default value for MiterLimit is 2 (ie twice delta). This is
+ * also the smallest MiterLimit that's allowed. If mitering was
+ * unrestricted (ie without any squaring), then offsets at very acute
+ * angles would generate unacceptably long 'spikes'."
+ */
+
+/**
+ * @typedef JoinType
+ * Corner join type.
+ * @see {@link https://github.com/junmer/clipper-lib/blob/HEAD/Documentation.md#clipperlibjointype|ClipperLib} for more.
+ */
+
+/**
+ * @typedef {EndType}
+ * Path end type.
+ * @see {@link https://github.com/junmer/clipper-lib/blob/HEAD/Documentation.md#clipperlibendtype|ClipperLib} for more.
+ * + `etOpenSquare` Ends are squared off and extended delta units
+ * + `etOpenRound` Ends are rounded off and extended delta units
+ * + `etOpenButt` Ends are squared off with no extension.
+ * + `etClosedLine` Ends are joined using the JoinType value and the
+ * path filled as a polyline
+ * + `etClosedPolygon` Ends are joined using the JoinType value and the
+ * path filled as a polygon
+ */
+
 /*
  * The distance parameter's default value is approximately √2 so that
  * a vertex will be removed when adjacent or semi-adjacent vertices
@@ -17,31 +48,33 @@ import { BBox3D } from "./BBox3D.js";
  * developers, the best distance value to remove artifacts before
  * offsetting is 0.1 * scale.
  */
-const CLEAN_POLY_DIST = 0.001 * UnitConverter.from.mm.to.integer;
+const CLEAN_POLY_DIST = 0.0001 * UnitConverter.from.mm.to.integer;
 
 /*
- * Only relevant when JoinType = jtRound and/or EndType = etRound.
+ * @see {@link https://github.com/junmer/clipper-lib/blob/HEAD/Documentation.md#clipperlibclipperoffsetarctolerance}
+ * From the ClipperLib documentation:
+ * "Only relevant when JoinType = jtRound and/or EndType = etRound.
  * Since flattened paths can never perfectly represent arcs, this
- * field/property specifies a maximum acceptable imprecision
- * ('tolerance') when arcs are approximated in an offsetting
- * operation. Smaller values will increase 'smoothness' up to a point
- * though at a cost of performance and in creating more vertices to
- * construct the arc.
- * The default ArcTolerance is 0.25 units. This means that the maximum
- * distance the flattened path will deviate from the 'true' arc will
- * be no more than 0.25 units (before rounding).
- * Reducing tolerances below 0.25 will not improve smoothness since
- * vertex coordinates will still be rounded to integer values. The
- * only way to achieve sub-integer precision is through coordinate
- * scaling before and after offsetting (see example below).
- * It's important to make ArcTolerance a sensible fraction of the
- * offset delta (arc radius). Large tolerances relative to the offset
- * delta will produce poor arc approximations but, just as
- * importantly, very small tolerances will substantially slow
- * offsetting performance while providing unnecessary degrees of
- * precision.
+ * specifies a maximum acceptable imprecision ('tolerance') when arcs
+ * are approximated in an offsetting operation. Smaller values will
+ * increase 'smoothness' up to a point though at a cost of performance
+ * and in creating more vertices to construct the arc.  The default
+ * ArcTolerance is 0.25 units. This means that the maximum distance
+ * the flattened path will deviate from the 'true' arc will be no more
+ * than 0.25 units (before rounding).  Reducing tolerances below 0.25
+ * will not improve smoothness since vertex coordinates will still be
+ * rounded to integer values. The only way to achieve sub-integer
+ * precision is through coordinate scaling before and after offsetting
+ * (see example below).  It's important to make ArcTolerance a
+ * sensible fraction of the offset delta (arc radius). Large
+ * tolerances relative to the offset delta will produce poor arc
+ * approximations but, just as importantly, very small tolerances will
+ * substantially slow offsetting performance while providing
+ * unnecessary degrees of precision."
+ * Setting to 0.06 of the scaled value means the arc tolerance will be
+ * 0.06mm, more than enough for us.
  */
-const ARC_TOLERANCE = 0.25 * UnitConverter.from.mm.to.integer;
+const ARC_TOLERANCE = 0.06 * UnitConverter.from.mm.to.integer;
 
 /**
  * A single CutPaths object can represent both a disjoint set of CutPath
@@ -49,16 +82,6 @@ const ARC_TOLERANCE = 0.25 * UnitConverter.from.mm.to.integer;
  * with holes.
  */
 export class CutPaths extends Array {
-
-  /**
-   * Corner join type. See ClipperLib documentation for more.
-   * `jtRound` Approximate acute corners with a series of arc chords.
-   * `jtSquare` Flatten out acute edge joins that would produce
-   * excessively long and narrow 'spikes'.
-   * `jtMiter` where possible extend acute edge joins out, but switch
-   * to `jsSquare` if that would create long thin spikes.
-   */
-  static JoinType = ClipperLib.JoinType;
 
   /**
    * @param {CutPaths|CutPath|Array} paths if defined, initialise from this.
@@ -151,22 +174,26 @@ export class CutPaths extends Array {
    * Offset (bloat/shrink) closed paths by amount. Only closed paths are
    * offset, open paths are returned unchanged.
    * @param {number} amount positive expands, negative shrinks.
-   * @param {ClipperLib.JoinType} joinType optional path join type.
-   * Default is `ClipperLib.JoinType.jtMiter`.
-   * @param {ClipperLib.EndType} endType optional path end type.
-   * Default is `ClipperLib.EndType.etClosedPolygon`.
-   * @return {CutPaths} new geometry.
+   * @param {object} approx approximation parameters
+   * @param {JoinType?} approx.joinType path join type (ignored when
+   * shrinking, which always uses Mitred)
+   * @param {number?} approx.arcTolerance Arc tolerance
+   * @param {number?} approx.mitreLimit Mitre limit
    * @memberof Clipper
    */
-  offset(amount, joinType = ClipperLib.JoinType.jtMiter,
-         endType = ClipperLib.EndType.etClosedPolygon) {
+  offset(amount, approx = {}) {
 
-    const co = new ClipperLib.ClipperOffset(2, ARC_TOLERANCE);
+    const co = new ClipperLib.ClipperOffset(
+      approx.mitreLimit ?? 2,
+      approx.arcTolerance ?? ARC_TOLERANCE);
+    const jt = (amount < 0 || typeof approx.joinType === "undefined")
+          ? ClipperLib.JoinType.jtMiter : approx.joinType;
+
     const open = [];
     for (const p of this) {
       if (p.isClosed)
-        co.AddPath(p, joinType, endType);
-      else
+        co.AddPath(p, jt, ClipperLib.EndType.etClosedPolygon);
+      else // not supported
         open.push(p);
     }
     const offsetted = [];

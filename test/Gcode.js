@@ -138,10 +138,10 @@ describe("Gcode", () => {
     safeZ:       5,
     passDepth:   0.5,
     tabsDepth:   1,
-    plungeFeed:  50,
-    retractFeed: 100,
-    cutFeed:     80,
-    rapidFeed:   1000,
+    plungeRate:  50,
+    retractRate: 100,
+    cutRate:     80,
+    rapidRate:   1000,
     returnTo00:  true,
     workWidth:   300,
     workHeight:  180
@@ -179,10 +179,10 @@ describe("Gcode", () => {
     tabsDepth:   1,
     safeZ:       10,
     passDepth:   0.5,
-    plungeFeed:  50,
-    cutFeed:     60,
-    retractFeed: 200,
-    rapidFeed:   1000,
+    plungeRate:  50,
+    cutRate:     60,
+    retractRate: 200,
+    rapidRate:   1000,
     returnTo00:  true,
     workWidth:   300,
     workHeight:  180
@@ -197,7 +197,7 @@ describe("Gcode", () => {
       name: "Test",
       cutType: Cam.OP.Engrave,
       ramp: false,
-      spinSpeed: 2000,
+      rpm: 2000,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);
@@ -265,7 +265,7 @@ describe("Gcode", () => {
       cutType: 0,
       ramp: false,
       direction: "Conventional",
-      spinSpeed: 9999
+      rpm: 9999
     };
     const job = new Gcode.Generator(opJob);
     job.addOperation(op);
@@ -335,8 +335,8 @@ describe("Gcode", () => {
       decimal:     2,
       topZ:        0,      botZ:        -5,
       tabsDepth:   1,      safeZ:       10,      passDepth:   5,
-      plungeFeed:  4,      cutFeed:     80,
-      retractFeed: 200,      rapidFeed:   1000,
+      plungeRate:  4,      cutRate:     80,
+      retractRate: 200,      rapidRate:   1000,
       returnTo00:  true,      workWidth:   300,      workHeight:  180
     };
     const op = {
@@ -347,7 +347,7 @@ describe("Gcode", () => {
       name: "Test",
       cutType: Cam.OP.Engrave,
       ramp: true,
-      spinSpeed: 2000,
+      rpm: 2000,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);
@@ -389,8 +389,8 @@ describe("Gcode", () => {
       zScale:     1,    offsetX:    0,    offsetY:     0,
       decimal:    2,    topZ:       0,    botZ:        -5,
       tabsDepth:  1,    safeZ:      10,   passDepth:   5,
-      plungeFeed: 4,    cutFeed:    80,   retractFeed: 200,
-      rapidFeed:  1000, returnTo00: true,
+      plungeRate: 4,    cutRate:    80,   retractRate: 200,
+      rapidRate:  1000, returnTo00: true,
       workWidth:  300,  workHeight: 180
     };
     const op = {
@@ -398,7 +398,7 @@ describe("Gcode", () => {
         [ { X: -10, Y: -10, Z: -4 }, { X: 10, Y: -10, Z: -4 },
           { X: 10, Y: 10, Z: -4 }, { X: -10, Y: 10, Z: -4 } ]
       ], false),
-      name: "Test", cutType: Cam.OP.Engrave, spinSpeed: 2000,
+      name: "Test", cutType: Cam.OP.Engrave, rpm: 2000,
       direction: "Conventional",
       ramp: true
     };
@@ -440,20 +440,20 @@ describe("Gcode", () => {
     const opJob = {
       gunits:      "mm",  xScale:      1,   yScale:      1,
       zScale:      1,     offsetX:     0,   offsetY:     0,
-      decimal:     2,     retractFeed: 200, rapidFeed:   1000,
+      decimal:     2,     retractRate: 200, rapidRate:   1000,
       returnTo00:  true,  workWidth:   300, workHeight:  180,
       tabsDepth:   1,     safeZ:       10,  topZ:        0,
       botZ:        -5,
 
       passDepth:   4,
-      plungeFeed:  50, // ramp should be 45 degrees
-      cutFeed:     50
+      plungeRate:  50, // ramp should be 45 degrees
+      cutRate:     50
     };
     const op = {
       paths: new CutPaths([
         [ { X: -100, Y: 0, Z: -4 }, { X: 100, Y: 0, Z: -4 } ]
       ], false),
-      name: "Test", cutType: Cam.OP.Engrave, spinSpeed: 2000,
+      name: "Test", cutType: Cam.OP.Engrave, rpm: 2000,
       direction: "Conventional",
 
       ramp: true
@@ -494,8 +494,8 @@ describe("Gcode", () => {
       decimal:     2,
       topZ:        0,      botZ:        -5,
       tabsDepth:   1,      safeZ:       10,      passDepth:   5,
-      plungeFeed:  4,      cutFeed:     80,
-      retractFeed: 200,      rapidFeed:   1000,
+      plungeRate:  4,      cutRate:     80,
+      retractRate: 200,      rapidRate:   1000,
       returnTo00:  true,      workWidth:   300,      workHeight:  180
     };
     const op = {
@@ -506,7 +506,7 @@ describe("Gcode", () => {
       name: "Test",
       cutType: Cam.OP.Drill,
       ramp: true,
-      spinSpeed: 2000,
+      rpm: 2000,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);

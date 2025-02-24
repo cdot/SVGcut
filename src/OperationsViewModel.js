@@ -101,6 +101,31 @@ class OperationsViewModel extends ViewModel {
   };
 
   /**
+   * Promote the given operation.
+   * @param {OperationViewModel} op the operation to remove
+   */
+  promoteOperation(op) {
+    const where = this.operations.indexOf(op);
+    if (where === 0 || this.operations.length === 1) return;
+    this.operations.remove(op);
+    this.operations.splice(where - 1, 0, op);
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
+  };
+
+  /**
+   * Demote the given operation.
+   * @param {OperationViewModel} op the operation to remove
+   */
+  demoteOperation(op) {
+    const where = this.operations.indexOf(op);
+    if (where === this.operations.length - 1) return;
+    this.operations.remove(op);
+    this.operations.splice(where + 1, 0, op);
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
+    document.dispatchEvent(new Event("UPDATE_GCODE"));
+  };
+
+  /**
    * (Re)generate combinedGeometry from the paths associated with all
    * operations and recompile tool paths.
    */

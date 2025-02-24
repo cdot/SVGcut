@@ -12,7 +12,7 @@ import { GcodeGenerationViewModel } from "./GcodeGenerationViewModel.js";
 import { TabsViewModel } from "./TabsViewModel.js";
 import { MaterialViewModel } from "./MaterialViewModel.js";
 import { SelectionViewModel } from "./SelectionViewModel.js";
-import { CurveConversionViewModel } from "./CurveConversionViewModel.js";
+import { ApproximationViewModel } from "./ApproximationViewModel.js";
 import { ProjectViewModel } from "./ProjectViewModel.js";
 import { Simulation } from "./Simulation.js";
 import { Rect } from "./Rect.js";
@@ -120,7 +120,7 @@ export class SVGcut {
 
     // Create the simulation canvas.
     this.simulation = new Simulation(
-      "glShaders",
+      "glShaders", // relative URI
       document.getElementById("SimulationCanvas"),
       document.getElementById('TimeControl'),
       spot => { // stopWatch callback
@@ -139,7 +139,7 @@ export class SVGcut {
 
     this.models.Tool = new ToolViewModel(unitConverter);
     this.models.Material = new MaterialViewModel(unitConverter);
-    this.models.CurveConversion = new CurveConversionViewModel(unitConverter);
+    this.models.Approximation = new ApproximationViewModel(unitConverter);
     this.models.Selection = new SelectionViewModel();
     this.models.Operations = new OperationsViewModel(unitConverter);
     this.models.Tabs = new TabsViewModel(unitConverter);
@@ -181,8 +181,8 @@ export class SVGcut {
       // Set the simulation path from the Gcode
       const uc = this.models.GcodeGeneration.unitConverter;
       const topZ = this.models.Material.topZ.toUnits(uc.units());
-      const diam = this.models.Tool.diameter.toUnits(uc.units());
-      const ang = this.models.Tool.angle();
+      const diam = this.models.Tool.cutterDiameter.toUnits(uc.units());
+      const ang = Number(this.models.Tool.cutterAngle());
       const cutterH = uc.fromUnits(10, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
       //console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
@@ -395,8 +395,9 @@ export class SVGcut {
     //const bbox = this.getMainSVGBBox();
     // Set the viewBox to view all the contents of the main svg
     // Toolpaths may overlap this
-    const bbs = `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`;
-    console.debug("SETVB", bbs);
+    const d = Math.max(bbox.width, bbox.height);
+    const bbs = `${bbox.x} ${bbox.y} ${d} ${d}`;
+    //console.debug("SETVB", bbs);
     mSVG.setAttribute("viewBox", bbs);
   }
 
