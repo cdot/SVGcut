@@ -13,8 +13,9 @@ const DEFAULT_MITRE_LIMIT = 2; // deltas
 
 /**
  * View model for curve conversion parameters
+ * @extends ViewModel
  */
-class ApproximationViewModel extends ViewModel {
+export class ApproximationViewModel extends ViewModel {
 
   /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
@@ -104,4 +105,3 @@ class ApproximationViewModel extends ViewModel {
   }
 }
 
-export { ApproximationViewModel }

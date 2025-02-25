@@ -6,7 +6,7 @@ global.ClipperLib = ClipperLib;
 ClipperLib.use_xyz = true;
 
 import { UNit } from "./TestSupport.js";
-let CutPoint, CutPath, CutPaths, Gcode, Cam;
+let CutPoint, CutPath, CutPaths, Gcode;
 
 global.assert = assert;
 
@@ -16,14 +16,12 @@ describe("Gcode", () => {
       import("../src/CutPoint.js"),
       import("../src/CutPath.js"),
       import("../src/CutPaths.js"),
-      import("../src/Gcode.js"),
-      import("../src/Cam.js") ])
+      import("../src/Gcode.js") ])
     .then(mods => {
       CutPoint = mods[0].CutPoint;
       CutPath = mods[1].CutPath;
       CutPaths = mods[2].CutPaths;
       Gcode = mods[3];
-      Cam = mods[4];
     });
   });
 
@@ -130,13 +128,12 @@ describe("Gcode", () => {
     xScale:      10,
     yScale:      -7,
     zScale:      1,
-    offsetX:     100,
-    offsetY:     -100,
+    xOffset:     100,
+    yOffset:     -100,
     decimal:     1,
     topZ:        0,
     botZ:        -5,
     safeZ:       5,
-    passDepth:   0.5,
     tabsDepth:   1,
     plungeRate:  50,
     retractRate: 100,
@@ -171,16 +168,14 @@ describe("Gcode", () => {
     xScale:      1,
     yScale:      1,
     zScale:      1,
-    offsetX:     0,
-    offsetY:     0,
+    xOffset:     0,
+    yOffset:     0,
     decimal:     2,
     topZ:        0,
     botZ:        -5,
     tabsDepth:   1,
     safeZ:       10,
-    passDepth:   0.5,
     plungeRate:  50,
-    cutRate:     60,
     retractRate: 200,
     rapidRate:   1000,
     returnTo00:  true,
@@ -195,7 +190,10 @@ describe("Gcode", () => {
         [ { X: 20, Y: 20, Z: -2 }, { X: 30, Y: 30, Z: -2 } ]
       ], false),
       name: "Test",
-      cutType: Cam.OP.Engrave,
+      cutType: "Engrave",
+      cutRate:     60,
+      passDepth:   0.5,
+      precalculatedZ : false,
       ramp: false,
       rpm: 2000,
       direction: "Conventional"
@@ -252,7 +250,7 @@ describe("Gcode", () => {
     assert.equal(gcode.length, expected.length);
   });
 
-  it("engrave with precalculated Z", () => {
+  it("pocket with precalculated Z", () => {
     const op = {
       paths: new CutPaths([
         [
@@ -262,9 +260,12 @@ describe("Gcode", () => {
         ]
       ]),
       name: "Test",
-      cutType: 0,
+      cutType: "AnnularPocket",
       ramp: false,
       direction: "Conventional",
+      cutRate:     60,
+      passDepth:   0.5,
+      precalculatedZ : false,
       rpm: 9999
     };
     const job = new Gcode.Generator(opJob);
@@ -275,7 +276,7 @@ describe("Gcode", () => {
     while (gcode[gcode.length - 1][0] === ";")
       gcode.pop();
     const expected = [
-      '; *** Operation "Test" (Pocket (annular)) ***',
+      '; *** Operation "Test" (AnnularPocket) ***',
       '; Path 1',
       '; Pass 1:1',
       'G0 X0 Y0 ; Hang',
@@ -331,11 +332,11 @@ describe("Gcode", () => {
     const opJob = {
       gunits:      "mm",
       xScale:      1,      yScale:      1,      zScale:      1,
-      offsetX:     0,      offsetY:     0,
+      xOffset:     0,      yOffset:     0,
       decimal:     2,
       topZ:        0,      botZ:        -5,
-      tabsDepth:   1,      safeZ:       10,      passDepth:   5,
-      plungeRate:  4,      cutRate:     80,
+      tabsDepth:   1,      safeZ:       10,
+      plungeRate:  4,
       retractRate: 200,      rapidRate:   1000,
       returnTo00:  true,      workWidth:   300,      workHeight:  180
     };
@@ -345,9 +346,12 @@ describe("Gcode", () => {
           { X: 10, Y: 10, Z: -4 }, { X: -10, Y: 10, Z: -4 } ]
       ], true),
       name: "Test",
-      cutType: Cam.OP.Engrave,
+      cutType: "Engrave",
       ramp: true,
       rpm: 2000,
+      cutRate:     80,
+      passDepth:   5,
+      precalculatedZ : false,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);
@@ -386,10 +390,10 @@ describe("Gcode", () => {
   it("open path ramping", () => {
     const opJob = {
       gunits:     "mm",  xScale:     1,   yScale:      1,
-      zScale:     1,    offsetX:    0,    offsetY:     0,
+      zScale:     1,    xOffset:    0,    yOffset:     0,
       decimal:    2,    topZ:       0,    botZ:        -5,
-      tabsDepth:  1,    safeZ:      10,   passDepth:   5,
-      plungeRate: 4,    cutRate:    80,   retractRate: 200,
+      tabsDepth:  1,    safeZ:      10,
+      plungeRate: 4,    retractRate: 200,
       rapidRate:  1000, returnTo00: true,
       workWidth:  300,  workHeight: 180
     };
@@ -398,8 +402,11 @@ describe("Gcode", () => {
         [ { X: -10, Y: -10, Z: -4 }, { X: 10, Y: -10, Z: -4 },
           { X: 10, Y: 10, Z: -4 }, { X: -10, Y: 10, Z: -4 } ]
       ], false),
-      name: "Test", cutType: Cam.OP.Engrave, rpm: 2000,
+      name: "Test", cutType: "Engrave", rpm: 2000,
       direction: "Conventional",
+      cutRate:     80,
+      passDepth:   5,
+      precalculatedZ : false,
       ramp: true
     };
     const job = new Gcode.Generator(opJob);
@@ -437,23 +444,24 @@ describe("Gcode", () => {
 
   it("partial segment ramping", () => {
     // ramp to depth within a single segment
+    // ramp should be 45 degrees
     const opJob = {
       gunits:      "mm",  xScale:      1,   yScale:      1,
-      zScale:      1,     offsetX:     0,   offsetY:     0,
+      zScale:      1,     xOffset:     0,   yOffset:     0,
       decimal:     2,     retractRate: 200, rapidRate:   1000,
       returnTo00:  true,  workWidth:   300, workHeight:  180,
       tabsDepth:   1,     safeZ:       10,  topZ:        0,
       botZ:        -5,
-
-      passDepth:   4,
-      plungeRate:  50, // ramp should be 45 degrees
-      cutRate:     50
+      plungeRate:  50
     };
     const op = {
       paths: new CutPaths([
         [ { X: -100, Y: 0, Z: -4 }, { X: 100, Y: 0, Z: -4 } ]
       ], false),
-      name: "Test", cutType: Cam.OP.Engrave, rpm: 2000,
+      name: "Test", cutType: "Engrave", rpm: 2000,
+      cutRate:     50,
+      passDepth:   4,
+      precalculatedZ : false,
       direction: "Conventional",
 
       ramp: true
@@ -490,11 +498,11 @@ describe("Gcode", () => {
     const opJob = {
       gunits:      "mm",
       xScale:      1,      yScale:      1,      zScale:      1,
-      offsetX:     0,      offsetY:     0,
+      xOffset:     0,      yOffset:     0,
       decimal:     2,
       topZ:        0,      botZ:        -5,
-      tabsDepth:   1,      safeZ:       10,      passDepth:   5,
-      plungeRate:  4,      cutRate:     80,
+      tabsDepth:   1,      safeZ:       10,
+      plungeRate:  4,
       retractRate: 200,      rapidRate:   1000,
       returnTo00:  true,      workWidth:   300,      workHeight:  180
     };
@@ -504,9 +512,12 @@ describe("Gcode", () => {
           { X: 10, Y: 10, Z: -3 }, { X: -10, Y: 10, Z: -4 } ]
       ], true),
       name: "Test",
-      cutType: Cam.OP.Drill,
+      cutType: "Drill",
       ramp: true,
       rpm: 2000,
+      cutRate:     80,
+      passDepth:   5,
+      precalculatedZ : true,
       direction: "Conventional"
     };
     const job = new Gcode.Generator(opJob);

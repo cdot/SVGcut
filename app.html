@@ -82,15 +82,15 @@
           <input id="SpName" data-bind="value:projectName" />
           <label for="SpTemplate">Template only</label>
           <input id="SpTemplate" type="checkbox"
-                 data-bind="checked: templateOnly" />
+                 data-bind="checked:templateOnly" />
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  data-bind="click: saveProjectInBrowser, enabled: ">
+                  data-bind="click:saveProjectInBrowser,enabled: ">
             In Browser
           </button>
           <button type="button" class="btn btn-primary"
-                  data-bind="click: saveProjectInFile">
+                  data-bind="click:saveProjectInFile">
             Local file
           </button>
         </div>
@@ -109,7 +109,7 @@
                   aria-label="Close"/>
         </div>
         <div class="modal-body">
-          <p data-bind="text: getBrowserProjectsList()"/>
+          <p data-bind="text:getBrowserProjectsList()"/>
           <p>Select Project:
             <select id="SelectProject"
                     data-bind="options:browserProjects,value:selectedProject">
@@ -118,11 +118,11 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary"
-                  data-bind="click: gotoDeleteBrowserProject">
+                  data-bind="click:gotoDeleteBrowserProject">
             &#128465;
           </button>
           <button type="button" class="btn btn-primary"
-                  data-bind="click: loadProjectFromBrowser">
+                  data-bind="click:loadProjectFromBrowser">
             Load
           </button>
         </div>
@@ -236,14 +236,14 @@
                   </div>
                   <div class="card-list-cell">
                     <select id="OpOperation"
-                            data-bind="options: availableOperations,optionsText:function(entry){return App.longOpName(entry);},value:operation"
+                            data-bind="options:availableOperations,optionsText:function(op){return longOpName(op);},value:operation"
                             class="hover-help">
                     </select>
                   </div>
                   <div class="card-list-cell">
                     <input id="OpCutDepth"
                            type="number" step="any" min="0"
-                           data-bind="value: cutDepth"
+                           data-bind="value:cutDepth"
                            class="hover-help" />
                   </div>
                   <div class="card-list-cell">
@@ -260,7 +260,7 @@
                       </label>
                     </td>
                     <td>
-                      <input id="OpName" data-bind="value: name" />
+                      <input id="OpName" data-bind="value:name" />
                     </td>
                     <td><button name="OpName"
                                 class="helper">&#9432;</button></td>
@@ -285,7 +285,7 @@
                     <td><button name="OpCombine"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('direction')">
+                  <tr data-bind="visible:needs().direction">
                     <td>
                       <label for="OpDirection" class="control-label">
                         Direction
@@ -302,7 +302,7 @@
                     <td><button name="OpDirection"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('margin')">
+                  <tr data-bind="visible:needs().margin">
                     <td>
                       <label for="OpMargin" class="control-label">
                         Margin
@@ -311,13 +311,13 @@
                     <td>
                       <input id="OpMargin"
                              type="number" step="any"
-                             data-bind="value: margin" />
+                             data-bind="value:margin" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
                     <td><button name="OpMargin"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('ramp')">
+                  <tr data-bind="visible:needs().ramp">
                     <td>
                       <label for="OpRamp" class="control-label">
                         Ramp In
@@ -330,7 +330,7 @@
                     <td><button name="OpRamp"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('spacing')">
+                  <tr data-bind="visible:needs().spacing">
                     <td>
                       <label for="OpSpacing" class="control-label">
                         Spacing
@@ -339,13 +339,13 @@
                     <td>
                       <input id="OpSpacing"
                              type="number" step="any" min="0.001"
-                             data-bind="value: spacing" />
+                             data-bind="value:spacing" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
                     <td><button name="OpSpacing"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('width')">
+                  <tr data-bind="visible:needs().width">
                     <td>
                       <label for="OpWidth" class="control-label">
                         Width
@@ -360,7 +360,7 @@
                     <td><button name="OpWidth"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('passDepth')">
+                  <tr data-bind="visible:needs().passDepth">
                     <td>
                       <label for="OpPassDepth" class="control-label">
                         Pass Depth
@@ -374,7 +374,7 @@
                     <td><button name="OpPassDepth"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs('stepOver')">
+                  <tr data-bind="visible:needs().stepOver">
                     <td>
                       <label for="OpStepOver" class="control-label">
                         Step Over
@@ -383,7 +383,7 @@
                     <td>
                       <input id="OpStepOver"
                              type="number" step="1" min="1" max="100"
-                             data-bind="value: margin" />
+                             data-bind="value:stepOver" />
                     </td>
                     <td><button name="OpStepOver"
                                 class="helper">&#9432;</button></td>
@@ -462,7 +462,7 @@
                   <td>
                     <input id="TabsMaxCutDepth"
                            type="number" step="any" min="0.001"
-                           data-bind="value: maxCutDepth">
+                           data-bind="value:maxCutDepth">
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
                   <td><button name="TabsMaxCutDepth"
@@ -491,7 +491,7 @@
                   <div class="card-list-cell">
                     <input id="TabMargin"
                            type="number" step="any" min="0"
-                           data-bind="value: margin"
+                           data-bind="value:margin"
                            class="hover-help" />
                   </div>
                   <div class="card-list-cell">
@@ -527,7 +527,7 @@
                   </td>
                   <td colspan="2">
                     <select id="GcodeUnits"
-                            data-bind="value: units">
+                            data-bind="value:units">
                       <option>mm</option>
                       <option>inch</option>
                     </select>
@@ -543,7 +543,7 @@
                   </td>
                   <td colspan="2">
                     <select id="GcodeOrigin"
-                            data-bind="value: origin">
+                            data-bind="value:origin">
                       <option value="SVG page">SVG page</option>
                       <option value="Bounding box">Bounding box</option>
                       <option value="Centre">Centre</option>
@@ -560,12 +560,12 @@
                   <td>
                     <input id="GcodeExtraOffsetX"
                            type="number" step="any"
-                           data-bind="value: extraOffsetX" />
+                           data-bind="value:extraOffsetX" />
                   </td>
                   <td>
                     <input id="GcodeExtraOffsetY"
                            type="number" step="any"
-                           data-bind="value: extraOffsetY" />
+                           data-bind="value:extraOffsetY" />
                   </td>
                   <td><button name="GcodeExtraOffset"
                               class="helper">&#9432;</button></td>
@@ -889,7 +889,7 @@
                   </td><td>
                     <input id="ToolRapidRate"
                            type="number" step="any" min="1"
-                           data-bind="value: rapidRate" />
+                           data-bind="value:rapidRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                   <td><button name="ToolRapidRate"
@@ -903,7 +903,7 @@
                   <td>
                     <input id="ToolPlungeRate"
                            type="number" step="any" min="1"
-                           data-bind="value: plungeRate" />
+                           data-bind="value:plungeRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
                   <td><button name="ToolPlungeRate"
@@ -972,7 +972,7 @@
                   <td>
                     <input id="InputMatThickness"
                            type="number" step="any" min="0.001"
-                           data-bind="value: thickness"
+                           data-bind="value:thickness"
                            placeholder="Thickness" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -986,7 +986,7 @@
                   </td>
                   <td>
                     <select id="SelectMatZOrigin"
-                            data-bind="value: zOrigin">
+                            data-bind="value:zOrigin">
                       <option value="Top">Top</option>
                       <option value="Bottom">Bottom</option>
                     </select>
@@ -1002,7 +1002,7 @@
                   <td>
                     <input id="InputMatClearance"
                            type="number" step="any" min="0"
-                           data-bind="value: clearance"
+                           data-bind="value:clearance"
                            placeholder="Clearance"/>
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -1095,12 +1095,22 @@
   </div>
 
   <div class="d-none">
-    <!-- Text strings; kept here to contain translation to just the HTML -->
+    <!-- Text strings; kept here to limit translation to just the HTML -->
     <div id="TutorialSteps">
       <span name="Step1">Open the File menu and import one or more SVG files.</span>
       <span name="Step2">Click 1 or more paths.</span>
       <span name="Step3">Click "Create Operation" after you have finished selecting paths.</span>
       <span name="Step4">You're done! Open 'View->Simulation', or 'View->Gcode' to view your tool paths. Customise the operation to your tastes. Save your gcode.</span>
+    </div>
+    <div id="Generators">
+      <span name="AnnularPocket">Pocket (annular)</span>
+      <span name="Drill">Drill</span>
+      <span name="Engrave">Engrave</span>
+      <span name="Inside">Inside</span>
+      <span name="Outside">Outside</span>
+      <span name="Perforate">Perforate</span>
+      <span name="RasterPocket">Pocket (raster)</span>
+      <span name="VGroove">V Groove</span>
     </div>
     <div id="Popovers" style="display:none">
       <span name="SelectProject">Select a project stored in this browser.</span>
@@ -1201,6 +1211,7 @@
       <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
         <dl>
           <dt>Engrave</dt><dd>middle of the tool follows the paths.</dd>
+          <dt>V Groove</dt><dd>cuts a V-shaped groove of the specified width and depth (requires a V-bit cutter).</dd>
           <dt>Inside</dt><dd>cuts around the inside of closed paths.</dd>
           <dt>Outside</dt><dd>cuts around the outside of closed paths.</dd>
           <dt>Perforate</dt><dd>drills holes around the outside of closed paths, or along open paths.</dd>
@@ -1212,7 +1223,7 @@
       <span name="OpVMaxDepth" title="Max Cut Depth">Maximum depth this operation should cut.
         <p class="bg-danger">not implemented yet; this is ignored.</p></span>
       <div name="OpMargin" title="Margin">
-        Lets allows you to add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
+        Lets add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
         <dl>
           <dt>+ve</dt><dd>how much material to leave uncut.</dd>
           <dt>-ve<?dt><dd>how much extra material to cut.</dd>

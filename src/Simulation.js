@@ -14,7 +14,7 @@ const HALF_CIRCLE_SEGMENTS = 5;
  * started, the `setPath` method is used to load the path to be
  * simulated.
  */
-class Simulation {
+export class Simulation {
 
   /**
    * You can't do anything with it until you call start()
@@ -1206,4 +1206,3 @@ class Simulation {
   }
 }
 
-export { Simulation }

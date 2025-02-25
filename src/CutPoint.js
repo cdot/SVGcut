@@ -8,6 +8,7 @@ ClipperLib.use_xyz = true;
  * Extension of ClipperLib.IntPoint, used to represent points
  * in CutPath space. Just used to isolate ClipperLib from the rest
  * of the code as far as possible.
+ * @extends ClipperLib.IntPoint
  */
 export class CutPoint extends ClipperLib.IntPoint {
   /**

@@ -15,6 +15,10 @@ function formatZ(z) {
   return parseFloat(z).toFixed(3);
 }
 
+/**
+   * View model for the Material pane
+ * @extends ViewModel
+ */
 export class MaterialViewModel extends ViewModel {
 
   /**

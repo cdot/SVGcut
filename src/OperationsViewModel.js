@@ -14,8 +14,9 @@ import { Rect } from "./Rect.js";
 
 /**
  * ViewModel for the `Operations` card
+ * @extends ViewModel
  */
-class OperationsViewModel extends ViewModel {
+export class OperationsViewModel extends ViewModel {
 
   /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
@@ -189,4 +190,3 @@ class OperationsViewModel extends ViewModel {
   }
 }
 
-export { OperationsViewModel }

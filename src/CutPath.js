@@ -19,6 +19,7 @@ const CLEAN_PATH_DIST2 = CLEAN_PATH_DIST * CLEAN_PATH_DIST;
  * means you can't flag a path as closed. That's OK if you only process
  * polys, but if you have open paths it's a PITA. To work round this
  * problem we have to use our own path definiiton.
+ * @extends Array
  */
 export class CutPath extends Array {
 

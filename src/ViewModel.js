@@ -12,7 +12,7 @@
  * tables of sub-views.
  *
  */
-class ViewModel {
+export class ViewModel {
 
   /**
    * Models that bind to UI components that can be expressed in
@@ -153,5 +153,3 @@ class ViewModel {
       this[key](json[key]);
   }
 }
-
-export { ViewModel }

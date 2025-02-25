@@ -11,7 +11,14 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
-import * as Cam from "./Cam.js";
+import { AnnularPocket } from "./AnnularPocket.js";
+import { Drill } from "./Drill.js";
+import { Engrave } from "./Engrave.js";
+import { Inside } from "./Inside.js";
+import { Outside } from "./Outside.js";
+import { Perforate } from "./Perforate.js";
+import { RasterPocket } from "./RasterPocket.js";
+import { VGroove } from "./VGroove.js";
 
 const DEFAULT_RAMP = false;
 const DEFAULT_DIRECTION = "Conventional";
@@ -21,7 +28,7 @@ const DEFAULT_SPACING = 1;         //mm
 const DEFAULT_WIDTH = 0;           //mm
 
 const FIELDS = [
-  "name", "enabled", "combineOp", "operation", "cutDepth", "width",
+  "name", "enabled", "combineOp", "opName", "cutDepth", "width",
   "direction", "spacing", "ramp", "margin"
 ];
 
@@ -43,11 +50,24 @@ export const COMBINE = {
 };
 const DEFAULT_COMBINEOP = COMBINE.Group;
 
+// Map from operation name to class of generator.
+const GENERATORS = {
+  AnnularPocket: AnnularPocket,
+  Drill:         Drill,
+  Engrave:       Engrave,
+  Inside:        Inside,
+  Outside:       Outside,
+  Perforate:     Perforate,
+  RasterPocket:  RasterPocket,
+  VGroove:       VGroove
+};
+
 /**
  * ViewModel for an operation in the `Operations` card
  * @listens UPDATE_TOOL_PATHS signal to update all tool paths
+ * @extends ViewModel
  */
-class OperationViewModel extends ViewModel {
+export class OperationViewModel extends ViewModel {
 
   /**
    * @param {UnitConverter} unit converter to use
@@ -104,26 +124,26 @@ class OperationViewModel extends ViewModel {
      * The available operations. This is based on the
      * the mix of open and closed paths in the operandPaths.
      */
-    this.availableOperations = ko.observableArray([
-      Cam.OP.Engrave,
-      Cam.OP.Perforate,
-      Cam.OP.Drill
-    ]);
-
-    if (operandPaths && operandPaths.filter(p => p.isClosed).length > 0) {
-      this.availableOperations.push(
-        Cam.OP.Inside,
-        Cam.OP.Outside,
-        Cam.OP.AnnularPocket,
-        Cam.OP.RasterPocket);
-    }
+    this.availableOperations = ko.observableArray();
+    this.updateAvailableOperations();
 
     /**
-     * The operation type. Default is Engrave as it's simplest.
+     * The toolpath (and preview geometry) generator for the
+     * selected operation.
+     * @member {ToolpathGenerator}
+     */
+    this.toolpathGenerator = new (GENERATORS.Engrave)();
+
+    /**
+     * The operation name. Default is Engrave as it's simplest.
      * @member {observable.<string>}
      */
-    this.operation = ko.observable(Cam.OP.Engrave);
-    this.operation.subscribe(() => {
+    this.operation = ko.observable("Engrave");
+    this.operation.subscribe(value => {
+      // Instantiate a new toolpath generator for the chosen op
+      const genClass = GENERATORS[value];
+      this.toolpathGenerator = new (genClass)();
+      this.needs(this.toolpathGenerator.needs);
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.recombine();
     });
@@ -177,7 +197,7 @@ class OperationViewModel extends ViewModel {
     this.direction = ko.observable(DEFAULT_DIRECTION);
     this.direction.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
-      this.generateToolPaths();
+      this.generateToolpaths();
     });
 
     /**
@@ -196,7 +216,7 @@ class OperationViewModel extends ViewModel {
     this.cutDepth(App.models.Tool.passDepth());
     this.cutDepth.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
-      this.generateToolPaths();
+      this.generateToolpaths();
     });
 
     /**
@@ -276,6 +296,12 @@ class OperationViewModel extends ViewModel {
     });
 
     /**
+     * Determine which of the operation fields needs to be enabled for this
+     * operation.
+     */
+    this.needs = ko.observable({});
+
+    /**
      * Flag to lock out recombination, usually because we are in a
      * sequence of steps and recombination can wait. See recombine()
      * for more.
@@ -292,7 +318,21 @@ class OperationViewModel extends ViewModel {
     this.generatingToolpath = false;
 
     document.addEventListener(
-      "UPDATE_TOOL_PATHS", () => this.generateToolPaths());
+      "UPDATE_TOOL_PATHS", () => this.generateToolpaths());
+  }
+
+  /**
+   */
+  updateAvailableOperations() {
+    const haveClosed =
+          this.operandPaths.filter(p => p.isClosed).length > 0;
+    for (const opName of Object.keys(GENERATORS)) {
+      const op = GENERATORS[opName];
+      if (op.worksOnPaths() === "ALL" || op.worksOnPaths() === "OPEN")
+        this.availableOperations.push(opName);
+      else if (haveClosed && op.worksOnPaths() === "CLOSED")
+        this.availableOperations.push(opName);
+    }
   }
 
   /**
@@ -359,6 +399,18 @@ class OperationViewModel extends ViewModel {
   }
 
   /**
+   * Map from short (internal) generator name to long (translatable)
+   * name from HTML
+   * @param {string} shortName internal name e.g. "RasterPocket"
+   * @return {string} user-friendly, trabslatable name e.g. "Pocket (raster)"
+   */
+  longOpName(shortName) {
+    return document
+    .querySelector(`#Generators [name='${shortName}']`)
+    .textContent;
+  }
+
+  /**
    * Get the width of the path to be created by the tool as it cuts.
    * If the user specified width is less than the cutter diameter
    * then it uses the cutter diameter.
@@ -381,8 +433,6 @@ class OperationViewModel extends ViewModel {
   recombine() {
     if (this.disableRecombination)
       return;
-
-    const oper = this.operation();
 
     this.removeCombinedGeometry();
 
@@ -412,42 +462,13 @@ class OperationViewModel extends ViewModel {
 
     this.combinedGeometry = geom;
 
-    let previewGeometry = this.combinedGeometry;
+    if (this.combinedGeometry.length > 0) {
+      const params = structuredClone(App.models.Approximation.approximations);
+      params.margin = this.margin.toUnits("integer");
+      params.width = this.toolPathWidth();
 
-    // TODO: this could be farmed off to an event handler
-    if (previewGeometry.length > 0) {
-      let off = this.margin.toUnits("integer");
-
-      if (oper === Cam.OP.AnnularPocket
-          || oper === Cam.OP.Inside)
-        off = -off;
-
-      if (oper !== Cam.OP.Engrave && off !== 0)
-        previewGeometry = previewGeometry.offset(
-          off, App.models.Approximation.approximations);
-
-      if (oper === Cam.OP.Inside
-          || oper === Cam.OP.Outside
-          || oper === Cam.OP.Engrave
-          || oper === Cam.OP.Perforate
-          || oper === Cam.OP.Drill) {
-        const width = this.toolPathWidth();
-        if (oper === Cam.OP.Inside) {
-          previewGeometry = previewGeometry
-          .diff(previewGeometry
-                .offset(-width, App.models.Approximation.approximations));
-        } else if (oper === Cam.OP.Engrave) {
-          previewGeometry = previewGeometry
-          .offset(width / 2, App.models.Approximation.approximations)
-          .diff(previewGeometry
-                .offset(-width / 2, App.models.Approximation.approximations));
-        } else {
-          // Outside or Perforate or Drill
-          previewGeometry = previewGeometry
-          .offset(width, App.models.Approximation.approximations)
-          .diff(previewGeometry);
-        }
-      }
+      const previewGeometry = this.toolpathGenerator.generatePreviewGeometry(
+        this.combinedGeometry, params);
 
       if (previewGeometry.length > 0) {
         const segs = previewGeometry.toSegments();
@@ -463,7 +484,7 @@ class OperationViewModel extends ViewModel {
       }
     }
 
-    this.generateToolPaths();
+    this.generateToolpaths();
   }
 
   /**
@@ -471,7 +492,7 @@ class OperationViewModel extends ViewModel {
    * kept in `this.toolPaths`. Generating toolPaths invalidates the Gcode,
    * so triggers `UPDATE_GCODE` to signal this.
    */
-  generateToolPaths() {
+  generateToolpaths() {
     if (this.generatingToolpath)
       return;
 
@@ -483,7 +504,7 @@ class OperationViewModel extends ViewModel {
     //console.debug(`generateToolpath for the ${this.combinedGeometry.length} paths in ${this.name()}`);
 
     let geometry = this.combinedGeometry;
-    const oper = this.operation();
+
     const toolModel = App.models.Tool;
     const passDepth = (this.passDepth())
           ? this.passDepth.toUnits("integer")
@@ -506,46 +527,9 @@ class OperationViewModel extends ViewModel {
     params.width = Math.max(
       this.width.toUnits("integer"), params.cutterDiameter);
     params.spacing = this.spacing.toUnits("integer");
+    params.margin = this.margin.toUnits("integer");
 
-    // inset/outset the geometry as dictated by the margin
-    let off = this.margin.toUnits("integer");
-    if (oper === Cam.OP.AnnularPocket
-        || oper === Cam.OP.RasterPocket
-        || oper === Cam.OP.Inside)
-      off = -off; // inset
-    if (oper !== Cam.OP.Engrave && off !== 0)
-      geometry = geometry.offset(off, params);
-
-    let paths;
-    switch (oper) {
-
-    case Cam.OP.AnnularPocket:
-      paths = Cam.annularPocket(geometry, params);
-      break;
-
-    case Cam.OP.RasterPocket:
-      paths = Cam.rasterPocket(geometry, params);
-      break;
-
-    case Cam.OP.Inside:
-    case Cam.OP.Outside:
-      paths = Cam.outline(
-        geometry, oper === Cam.OP.Inside, // isInside
-        params);
-      break;
-
-    case Cam.OP.Perforate:
-      paths = Cam.perforate(geometry, params);
-      break;
-
-    case Cam.OP.Drill:
-      paths = Cam.drill(geometry, params);
-      break;
-
-    case Cam.OP.Engrave:
-      paths = Cam.engrave(geometry, params);
-      break;
-    }
+    const paths = this.toolpathGenerator.generateToolpaths(geometry, params);
 
     this.removeToolPaths();
     this.toolPaths(paths);
@@ -579,39 +563,23 @@ class OperationViewModel extends ViewModel {
     if (!this.enabled() || paths.length === 0)
       return undefined;
 
-    let overlap = 0, BB;
     // Expand the BB if necessary to account for the radius of the
     // tool cutting outside the tool path, Inside and Pocket ops
     // should already have accounted for it.
-    const op = this.operation();
-    if (op === Cam.OP.Engrave)
-      overlap = this.toolPathWidth() / 2;
-    else if (op === Cam.OP.Outside
-             || op === Cam.OP.Perforate
-             || op === Cam.OP.Drill)
-      overlap = this.toolPathWidth();
+    const bloat = this.toolpathGenerator.bbBloat(this.toolPathWidth());
+
+    let BB;
     for (const path of paths) {
       for (const point of path) {
         if (BB)
-          BB.enclose(point.X - overlap, point.Y - overlap)
-          .enclose(point.X + overlap, point.Y + overlap);
+          BB.enclose(point.X - bloat, point.Y - bloat)
+          .enclose(point.X + bloat, point.Y + bloat);
         else
-          BB = new Rect(point.X - overlap, point.Y - overlap,
-                        2 * overlap, 2 * overlap);
+          BB = new Rect(point.X - bloat, point.Y - bloat,
+                        2 * bloat, 2 * bloat);
       }
     }
     return BB;
-  }
-
-  /**
-   * Determine which of the operation fields needs to be enabled for this
-   * operation.
-   * @param {string} what which field e.g. "width"
-   * @return {boolean} true if the field is needed for the current op.
-   * @private
-   */
-  needs(what) {
-    return Cam.NEEDS[this.operation()].indexOf(what) >= 0;
   }
 
   /**
@@ -635,21 +603,14 @@ class OperationViewModel extends ViewModel {
   fromJson(json) {
     // suppress recombine until we're finished
     this.disableRecombination = true;
-
     for (const f of FIELDS)
       this.updateObservable(json, f);
-
-    if (this.operandPaths.filter(p => p.isClosed).length > 0) {
-      this.availableOperations.push(
-        Cam.OP.Inside,
-        Cam.OP.Outside,
-        Cam.OP.AnnularPocket,
-        Cam.OP.RasterPocket);
-    }
+    const genClass = GENERATORS[this.operation()];
+    this.toolpathGenerator = new (genClass)();
+    this.updateAvailableOperations();
 
     this.disableRecombination = false;
     this.recombine();
   };
 }
 
-export { OperationViewModel }

@@ -18,7 +18,6 @@ import { Simulation } from "./Simulation.js";
 import { Rect } from "./Rect.js";
 import * as Gcode from "./Gcode.js";
 import * as SVG from "./SVG.js";
-import * as Cam from "./Cam.js";
 
 /**
  * Format a time for display in a string e.g
@@ -208,13 +207,6 @@ export class SVGcut {
 
     return this.simulation.start()
     .then(() => this.models.Project.loadDefaults());
-  }
-
-  /**
-   * Get the long name for a Cam op
-   */
-  longOpName(op) {
-    return Cam.LONG_OP_NAME[op];
   }
 
   /**

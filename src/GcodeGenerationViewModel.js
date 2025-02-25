@@ -10,7 +10,7 @@ import * as Gcode from "./Gcode.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
-import * as Cam from "./Cam.js";
+import * as HoldingTabs from "./HoldingTabs.js";
 import { Rect } from "./Rect.js";
 
 const DEFAULT_UNITS = "mm";
@@ -22,8 +22,9 @@ const DEFAULT_RETURNTO00 = false;
 /**
  * ViewModel for Gcode Generation panel.
  * @listens UPDATE_GCODE triggers Gcode generation
+ * @extends ViewModel
  */
-class GcodeGenerationViewModel extends ViewModel {
+export class GcodeGenerationViewModel extends ViewModel {
 
   /**
    * Note that this view model has it's own unit converter.
@@ -200,22 +201,22 @@ class GcodeGenerationViewModel extends ViewModel {
   originOffset() {
     // Get the SVG bounding box in gcode units, with Y=0 at the top
     const svgBB = this.unitConverter.fromUnits(App.getMainSVGBBox(), "px");
-    let offsetX = svgBB.left + Number(this.extraOffsetX());
-    let offsetY = svgBB.bottom - Number(this.extraOffsetY());
-    // offsetY is measured from the top of the BB
+    let xOffset = svgBB.left + Number(this.extraOffsetX());
+    let yOffset = svgBB.bottom - Number(this.extraOffsetY());
+    // yOffset is measured from the top of the BB
 
     // Get the BB of the paths in gcode units, with Y=0 at the top
     const pathsBB = this.unitConverter.fromUnits(
       App.models.Operations.getBounds(), "integer");
     if (this.origin() === "Bounding box" || this.origin() === "Centre") {
-      offsetX += (pathsBB.left - svgBB.left);
-      offsetY += (pathsBB.bottom - svgBB.bottom);
+      xOffset += (pathsBB.left - svgBB.left);
+      yOffset += (pathsBB.bottom - svgBB.bottom);
       if (this.origin() === "Centre") {
-        offsetX += pathsBB.width / 2;
-        offsetY -= pathsBB.height / 2;
+        xOffset += pathsBB.width / 2;
+        yOffset -= pathsBB.height / 2;
       }
     }
-    return new Rect(offsetX, offsetY, pathsBB.width, pathsBB.height);
+    return new Rect(xOffset, yOffset, pathsBB.width, pathsBB.height);
   }
 
   /**
@@ -275,8 +276,8 @@ class GcodeGenerationViewModel extends ViewModel {
       returnTo00:  this.returnTo00(),
       workWidth:   Number(this.bbWidth()),
       workHeight:  Number(this.bbHeight()),
-      offsetX:     offset.x,
-      offsetY:     offset.y
+      xOffset:     offset.x,
+      yOffset:     offset.y
     });
 
     if (job.passDepth < 0) {
@@ -296,12 +297,12 @@ class GcodeGenerationViewModel extends ViewModel {
         rpm: op.rpm()
         ? Number(op.rpm())
         : Number(App.models.Tool.rpm()),
-        cutRate:   op.cutRate() 
+        cutRate:   op.cutRate()
         ? op.cutRate.toUnits(gunits)
         : App.models.Tool.cutRate.toUnits(gunits),
-        direction: op.direction()
+        direction: op.direction(),
+        precalculatedZ: op.toolpathGenerator.generatesZ
       };
-      const precalculatedZ = Cam.DRILL_OP[op.operation()];
 
       let paths = op.toolPaths();
       const cutZ = job.topZ - Number(op.cutDepth());
@@ -309,17 +310,18 @@ class GcodeGenerationViewModel extends ViewModel {
 
       // tabZ must be > the cutZ depth of the Operation. If it isn't,
       // or Z's were precalculated, then ignore the tab geometry
-      let tg = (tabZ <= cutZ || precalculatedZ) ? undefined : tabGeometry;
+      let tg = (tabZ <= cutZ || opCard.precalculatedZ)
+          ? undefined : tabGeometry;
 
       let cutPaths = new CutPaths();
-      if (precalculatedZ)
+      if (opCard.precalculatedZ) {
         cutPaths = cutPaths.concat(paths);
-      else {
+      } else {
         // Split paths over tab geometry and assign Z's where not
-        // already defined in Cam.
+        // already defined
         for (const path of paths) {
           cutPaths = cutPaths.concat(
-            Cam.splitPathOverTabs(path, tg, cutZ, tabZ));
+            HoldingTabs.splitPathOverTabs(path, tg, cutZ, tabZ));
         }
       }
       opCard.paths = cutPaths;
@@ -405,4 +407,3 @@ class GcodeGenerationViewModel extends ViewModel {
   };
 }
 
-export { GcodeGenerationViewModel }

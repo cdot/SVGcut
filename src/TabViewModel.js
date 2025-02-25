@@ -12,6 +12,7 @@ import { segments2d } from "./SVG.js";
 
 /**
  * View model for a holding tab within the `Tabs` card.
+ * @extends ViewModel
  */
 export class TabViewModel extends ViewModel {
 

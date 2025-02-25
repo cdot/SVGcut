@@ -12,8 +12,9 @@ const DEFAULT_MAXCUTDEPTH = 0.5;
 
 /**
  * View model for (holding) Tabs pane.
+ * @extends ViewModel
  */
-class TabsViewModel extends ViewModel {
+export class TabsViewModel extends ViewModel {
 
   /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
@@ -117,4 +118,3 @@ class TabsViewModel extends ViewModel {
   };
 }
 
-export { TabsViewModel }

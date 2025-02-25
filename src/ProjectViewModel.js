@@ -33,8 +33,9 @@ const DEFAULTS_PROJECT = "defaults";
 
 /**
  * View model that handles projects
+ * @extends ViewModel
  */
-class ProjectViewModel extends ViewModel {
+export class ProjectViewModel extends ViewModel {
 
   constructor() {
     super();
@@ -394,4 +395,3 @@ class ProjectViewModel extends ViewModel {
   }
 }
 
-export { ProjectViewModel }

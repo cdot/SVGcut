@@ -16,7 +16,7 @@ const INTEGER_PER_PX = INTEGER_PER_INCH / 96;
  * are: `mm`, `inch`, `px` and `integer`. Integer units are designed to
  * scale up numbers for more accurate integer operations.
  */
-class UnitConverter {
+export class UnitConverter {
 
   // Literate code; mm = inches * UnitConverter.from.inch.to.mm
   static from = {
@@ -131,4 +131,3 @@ class UnitConverter {
   };
 }
 
-export { UnitConverter }

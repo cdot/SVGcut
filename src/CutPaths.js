@@ -80,6 +80,7 @@ const ARC_TOLERANCE = 0.06 * UnitConverter.from.mm.to.integer;
  * A single CutPaths object can represent both a disjoint set of CutPath
  * (open and closed), or can represent a single closed polygon, possibly with
  * with holes.
+ * @extends Array
  */
 export class CutPaths extends Array {
 

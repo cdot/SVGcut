@@ -13,8 +13,9 @@ import * as SVG from "./SVG.js";
 
 /**
  * Support for selection in SVG views.
+ * @extends ViewModel
  */
-class SelectionViewModel extends ViewModel {
+export class SelectionViewModel extends ViewModel {
 
   /**
    * Note that this model doesn't require a unit converter, as it has
@@ -200,4 +201,3 @@ class SelectionViewModel extends ViewModel {
   jsonFieldName() { return "selection"; }
 }
 
-export { SelectionViewModel }

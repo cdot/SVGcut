@@ -18,8 +18,9 @@ const DEFAULT_SPINDLE_RPM = 1000; // rpm
 
 /**
  * View model for the Tool pane
+ * @extends ViewModel
  */
-class ToolViewModel extends ViewModel {
+export class ToolViewModel extends ViewModel {
 
   constructor(unitConverter) {
     super(unitConverter);
@@ -169,4 +170,3 @@ class ToolViewModel extends ViewModel {
   };
 }
 
-export { ToolViewModel }
