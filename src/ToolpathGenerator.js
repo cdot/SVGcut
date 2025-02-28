@@ -136,6 +136,7 @@ export class ToolpathGenerator {
    * @param {number?} params.margin margin, for those that use it
    */
   generatePreviewGeometry(geometry, params) {
-    assert(false, "Pure virtual");
+    return geometry.offset(params.cutterDiameter / 2, params)
+    .difference(geometry.offset(-params.cutterDiameter / 2, params));
   }
 }

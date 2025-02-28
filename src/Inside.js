@@ -52,12 +52,4 @@ export class Inside extends ToolpathGenerator {
 
     return this.outline(current, params);
   }
-
-  /**
-   * @override
-   */
-  generatePreviewGeometry(geometry, params) {
-    const w = params.width + (params.margin ?? 0);
-    return geometry.difference(geometry.offset(-w, params));
-  }
 }

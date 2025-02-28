@@ -57,7 +57,7 @@ input[type="number"] {
 }
 .combined-geometry {
   stroke: none;
-  fill: rgba(0, 0, 255, 0.3);
+  fill: rgba(20, 20, 200, 0.3);
   pointer-events: none;
 }
 .tabs-geometry {

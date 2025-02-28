@@ -458,28 +458,6 @@ export class OperationViewModel extends ViewModel {
 
     this.combinedGeometry = geom;
 
-    if (this.combinedGeometry.length > 0) {
-      const params = structuredClone(App.models.Approximation.approximations);
-      params.margin = this.margin.toUnits("integer");
-      params.width = this.toolPathWidth();
-
-      const previewGeometry = this.toolpathGenerator.generatePreviewGeometry(
-        this.combinedGeometry, params);
-
-      if (previewGeometry.length > 0) {
-        const segs = previewGeometry.toSegments();
-        if (segs && segs.length > 0) {
-          const svgel = document.createElementNS(
-            'http://www.w3.org/2000/svg', "path");
-          svgel.setAttribute("d", SVG.segments2d(segs));
-          svgel.setAttribute("class", "combined-geometry");
-          document.getElementById("CombinedGeometrySVGGroup")
-          .append(svgel);
-          this.previewSVG = svgel;
-        }
-      }
-    }
-
     this.generateToolpaths();
   }
 
@@ -538,7 +516,26 @@ export class OperationViewModel extends ViewModel {
     // Signal this change to other listeners
     document.dispatchEvent(new Event("UPDATE_GCODE"));
 
-    // Add the toolpaths to the SVG view
+    // Generate geometry for the cutter path
+    const tparms = structuredClone(App.models.Approximation.approximations);
+    tparms.margin = this.margin.toUnits("integer");
+    tparms.cutterDiameter = App.models.Tool.cutterDiameter.toUnits("integer");
+    const previewGeometry = this.toolpathGenerator.generatePreviewGeometry(
+      paths, tparms);
+    if (previewGeometry.length > 0) {
+      const segs = previewGeometry.toSegments();
+      if (segs && segs.length > 0) {
+        const svgel = document.createElementNS(
+          'http://www.w3.org/2000/svg', "path");
+        svgel.setAttribute("d", SVG.segments2d(segs));
+        svgel.setAttribute("class", "combined-geometry");
+        document.getElementById("CombinedGeometrySVGGroup")
+        .append(svgel);
+        this.previewSVG = svgel;
+      }
+    }
+
+    // Add the centre of the toolpaths to the SVG view
     const segs = this.toolPaths().toSegments();
     if (segs && segs.length > 0) {
       const svgel = document.createElementNS(

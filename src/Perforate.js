@@ -144,7 +144,6 @@ export class Perforate extends ToolpathGenerator {
    * @override
    */
   generatePreviewGeometry(geometry, params) {
-    // When the geometry is closed, this is excessive
-    return geometry.offset(params.width, params).difference(geometry);
+    return super.generatePreviewGeometry(geometry, params);
   }
 }

@@ -350,49 +350,30 @@ export class SVGcut {
   }
 
   /**
-   * Get the bounding box of the content in the content group of the SVG.
-   * This is the smallest box that encompasses the content.
-   * @return {Rect} the BB (in px units)
+   * Get the pixel dimensions of the SVG "page". This is computed by getting
+   * the dimensions of all the `svg` elements within the content
+   * group, on the basis that they are all placed at 0,0.
+   * @return {Rect} the bounds, x and y will always be 0.
    */
-  getMainSVGBBox() {
-    // When the main SVG element is hidden (e.g. when viewing the Simulation
-    // tab) then SVGElement.getCTM goes belly up and returns a mysterious
-    // transformation matrix that doesn't bear any relation to the viewport
-    // establishing element (as far as I can tell). Luckily we can cache the
-    // last computed BB and use that. It won't be exactly right when the
-    // operation is changed e.g from Inside to Outside while in the Simulation
-    // view, but it'll be close enough.
-    const isHidden = this.mainSVG.offsetWidth === 0
-          || this.mainSVG.offsetHeight === 0
-          || this.mainSVG.getClientRects().length === 0
-          || window.getComputedStyle(this.mainSVG).visibility === "hidden";
-    if (isHidden && this.bbCache) {
-      console.debug("BB from cache", this.bbCache);
-      return this.bbCache;
+  getPageDimensions() {
+    const svgs = document.querySelectorAll("#ContentSVGGroup > svg");
+    let bb = new Rect(0, 0, 1, 1); // pixels
+    for (const svg of svgs) {
+      const vb = SVG.getDimensions(svg);
+      if (vb)
+        bb.enclose(vb);
     }
-    
-    return this.bbCache = SVG.getBounds(this.mainSVG);
+    return bb;
   }
 
   /**
-   * Set the viewBox of the main SVG so that it fits the
+   * Set the viewBox of the main SVG so that everything fits in the
    * viewing area.
    * @private
    */
   fitSVG() {
-    let vb = this.mainSVG.dataset.baseBBox;
-    if (!vb) {
-      // Get the BB for the main SVG view
-      const bbox = this.mainSVG.getBBox();
-      // Mine; works even when the SVG hasn't been rendered, but is heavy.
-      //const bbox = this.getMainSVGBBox();
-      // Set the viewBox to view all the contents of the main svg
-      // Toolpaths may overlap this
-      const d = Math.max(bbox.width, bbox.height);
-      vb = `${bbox.x} ${bbox.y} ${d} ${d}`;
-      //console.debug("SETVB", bbs);
-    }
-    this.mainSVG.setAttribute("viewBox", vb);
+    const vb = this.getPageDimensions();
+    this.mainSVG.setAttribute("viewBox", vb.toString());
   }
 
   /**

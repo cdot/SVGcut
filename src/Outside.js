@@ -58,12 +58,4 @@ export class Outside extends ToolpathGenerator {
   bbBloat(toolPathWidth) {
     return toolPathWidth;
   }
-
-  /**
-   * @override
-   */
-  generatePreviewGeometry(geometry, params) {
-    const w = params.width + (params.margin ?? 0);
-    return geometry.offset(w, params).difference(geometry);
-   }
 }

@@ -503,11 +503,59 @@ export function segments2d(segs) {
 }
 
 /**
- * Get the bounding box for the element, in pixels. The standard
- * `SVGElement.getBBox` only works when the SVG has already been
- * rendered, but works for all SVG elements. This function works
- * even when the SVG hasn't been rendered yet, but only works for
- * the subset of SVG supported by SVGcut.
+ * Get the view box of the SVG which this element is in.
+ * @param {SVGElement} elem the element
+ * @throws {Error} if the element is not in an SVG with a viewBox
+ * @memberof SVG
+ */
+export function getViewBox(elem) {
+  let above = elem;
+  while (above && above.tagName.toLowerCase() !== "svg")
+    above = above.parentElement;
+  const vb = above.getAttribute("viewBox");
+  if (vb)
+    return new Rect(vb);
+  throw new Error("No viewBox on SVG");
+}
+
+/**
+ * Get the pixel dimensions of the SVG which this element is in.
+ * @param {SVGElement} elem the element
+ * @return {Rect} only width and height, x and y will always be 0.
+ * @throws {Error} if the element is not in an SVG with a viewBox
+ * @memberof SVG
+ */
+export function getDimensions(elem) {
+  let above = elem;
+  while (above && above.tagName.toLowerCase() !== "svg")
+    above = above.parentElement;
+  let w = above.width.baseVal.value;
+  let h = above.height.baseVal.value;
+  if (typeof w !== "undefined" && typeof h !== "undefined")
+    return new Rect(0, 0, w, h);
+
+  // If there is a viewbox but only one of w or h isn't defined,
+  // use the viewBox to apply the aspect ratio.
+  const vb = above.getAttribute("viewBox");  
+  if (!vb)
+    throw new Error("None of width, height, viewBox defined");
+
+  if (typeof w === "undefined") {
+    if (typeof h !== "undefined")
+      return new Rect(0, 0, h * vb.width / vb.height, h);
+  } else if (typeof h === "undefined")
+    return new Rect(0, 0, w, w * vb.height / vb.width);
+
+  return vb;
+}
+
+/**
+ * Get the bounding box for the geometry in the element, in pixels,
+ * ignoring the `viewBox`. The standard `SVGElement.getBBox` only
+ * works when the SVG has already been rendered, but works for all SVG
+ * elements. This function works even when the SVG hasn't been
+ * rendered yet, but only works for the subset of SVG supported by
+ * SVGcut.
  * @param {SVGElement} el the element to measure
  * @return {Rect} the bounds
  * @memberof SVG

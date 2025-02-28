@@ -142,7 +142,6 @@ export class ProjectViewModel extends ViewModel {
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           const svgEl = SVG.importFromText(e.target.result);
-          svgEl.dataset.baseBBox = svgEl.getAttribute("viewBox");
           document.getElementById("ContentSVGGroup").append(svgEl);
           App.fitSVG();
           lert.remove();

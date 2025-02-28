@@ -83,17 +83,23 @@ export class SelectionViewModel extends ViewModel {
   }
 
   /**
-   * Add the element to the current selection
-   * @param {SVGElement} elem the element hit
+   * Add the element to the current selection.
+   * When something is selected in the content SVG it is linearised
+   * here before being added to the selection SVG. That way when an
+   * operation is created, the paths can be converted to integer
+   * coordinates trivially. It also means the selection display shows
+   * the linearised paths, and not the original selected figure.
+   * @param {SVGElement} elem the element hit (an element in the content
+   * SVG)
    * @return {boolean} true if the element was selected, false otherwise
    * @private
    */
   addToSelection(elem) {
-    // When something is selected in the SVG it is automatically linearised
-    // before being added to the selection SVG. That way when an operation is
-    // created, the paths can simply be converted to integer coordinates
-    // without worrying about linearisation.
-    const vb = App.getMainSVGBBox();
+    // Get the viewbox for the SVG the elem is in, for calculating %ages
+    const vb = SVG.getViewBox(elem);
+
+    // Linearise, and add each generated path to the selection SVG
+    // with appropriate styling.
     try {
       const segs = SVG.segmentsFromElement(
         elem,
@@ -107,18 +113,18 @@ export class SelectionViewModel extends ViewModel {
         const newPath = document.createElementNS(
           'http://www.w3.org/2000/svg', "path");
         newPath.setAttribute("d", SVG.segments2d(segs));
-        let classes = "selected-path";
-        // .path loses 'Z', so have to save it somehow
+        newPath.classList.add("selected-path");
+        // .path loses 'Z', so we save it using a class (which also
+        // provides a rendering cue)
         if (segs[segs.length - 1][0] === 'Z') {
           if (elem.getAttribute("fill-rule") === "evenodd")
             newPath.setAttribute("fill-rule", "evenodd");
-          classes += " closed-path";
+          newPath.classList.add("closed-path");
           this.closedSelected(this.closedSelected() + 1);
         } else {
-          classes += " open-path";
+          newPath.classList.add("open-path");
           this.openSelected(this.openSelected() + 1);
         }
-        newPath.setAttribute("class", classes);
         this.svgGroup.appendChild(newPath);
         return true;
       }

@@ -49,14 +49,12 @@ export class Pocket extends ToolpathGenerator {
 
     const vBit = (params.cutterAngle > 0 && params.cutterAngle < Math.PI / 2);
 
-    // Shrink by half the cutter diameter to get the first orbit
-    let off = -params.cutterDiameter / 2;
-
-    // Add margin
+    // Shrink by half the cutter diameter plus the margin
+    // to get the first orbit
+    let off = params.cutterDiameter / 2;
     if (params.margin > 0)
-      off -= params.margin;
-
-    let current = geometry.offset(off, params);
+      off += params.margin;
+    let current = geometry.offset(-off, params);
 
     // take a copy of the shrunk pocket to clip against. Each time
     // the poly merges, there's a risk that an edge between the
@@ -66,16 +64,18 @@ export class Pocket extends ToolpathGenerator {
 
     // How much to shrink for each successive orbit
     let shrink = params.cutterDiameter * (1 - params.overlap);
+    // How much to step the cutter down on each orbit (vBit only)
     let zStep = -params.cutDepth;
     this.generatesZ = vBit;
     if (vBit) {
-      // If we have a vBit, shrink becomes the radius
+      // If we have a vBit, can't shrink more than the cutter radius
       shrink = Math.min(params.cutterDiameter / 2, shrink);
       zStep = shrink / Math.tan(params.cutterAngle);
     }
 
     const toolPaths = new CutPaths();
-    // Iterate, shrinking the pocket for each pass
+    // Iterate, shrinking the pocket for each pass until the pocket
+    // shrinks to 0
     let z = params.topZ;
     const innerPaths = [];
     while (current.length != 0) {
@@ -91,7 +91,7 @@ export class Pocket extends ToolpathGenerator {
           current[i].reverse();
       current = current.offset(-shrink, params);
     }
-    //toolPaths.mergePaths(clip);
+    toolPaths.mergePaths(clip);
     return toolPaths;
   }
 
@@ -228,13 +228,5 @@ export class Pocket extends ToolpathGenerator {
       assert(false, params.strategy);
       return geometry;
     }
-  }
-
-  /**
-   * @override
-   */
-  generatePreviewGeometry(geometry, params) {
-    const w = params.width + (params.margin ?? 0);
-    return geometry.offset(-w, params);
   }
 }

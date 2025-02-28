@@ -200,7 +200,7 @@ export class GcodeGenerationViewModel extends ViewModel {
    */
   originOffset() {
     // Get the SVG bounding box in gcode units, with Y=0 at the top
-    const svgBB = this.unitConverter.fromUnits(App.getMainSVGBBox(), "px");
+    const svgBB = this.unitConverter.fromUnits(App.getPageDimensions(), "px");
     let xOffset = svgBB.left + Number(this.extraOffsetX());
     let yOffset = svgBB.bottom - Number(this.extraOffsetY());
     // yOffset is measured from the top of the BB
