@@ -56,6 +56,6 @@ export class Drill extends ToolpathGenerator {
    * @override
    */
   generatePreviewGeometry(geometry, params) {
-    return geometry.offset(params.width, params).diff(geometry);
+    return geometry.offset(params.width, params).difference(geometry);
   }
 }

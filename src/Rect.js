@@ -15,10 +15,9 @@
 export class Rect {
 
   /**
-   * @param {number|Rect|DOMRect|SVGRect} x x
-   * origin, or an object (basically anything that defines
-   * x/y/width/height)
-   * copy-construct
+   * @param {number|Rect|DOMRect|SVGRect|string} x x
+   * origin, or an object, or a space-separated string (basically
+   * anything that defines x/y/width/height)
    * @param {number} y y origin, if x is a number
    * @param {number} width width of the rect (negative if the rect
    * extends to the left of the origin)
@@ -26,7 +25,13 @@ export class Rect {
    * origin)
    */
   constructor(x = 0, y = 0, width = 0, height = 0) {
-    if (typeof x === "object") {
+    if (typeof x === "string") {
+      const a = x.split(/\s+/);
+      x = Number(a[0]);
+      y = Number(a[1]);
+      width = Number(a[2]);
+      height = Number(a[3]);
+    } else if (typeof x === "object") {
       y = x.y;
       width = x.width;
       height = x.height;
@@ -190,7 +195,11 @@ export class Rect {
     return this;
   }
 
+  /**
+   * Return as a string "x y width height"
+   * @return {string}
+   */
   toString() {
-    return `Rect{${this.x},${this.y},${this.width},${this.height}}`;
+    return `${this.x} ${this.y} ${this.width} ${this.height}`;
   }
 }

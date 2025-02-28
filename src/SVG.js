@@ -485,7 +485,7 @@ export function segmentsFromElement(element, params) {
  * @return {SVGElement} the <svg> element
  * @memberof SVG
  */
-export function loadSVGFromText(content) {
+export function importFromText(content) {
   const container = document.createElement("div");
   container.innerHTML = String(content);
   const svgs = container.getElementsByTagName("svg");
@@ -515,7 +515,7 @@ export function segments2d(segs) {
 export function getBounds(el) {
   // Try getBBox first
   /* c8 ignore start */
-  if (typeof SVGGraphicsElement !== "undefined" && SVGGraphicsElement.getBBox) {
+  if (typeof el.getBBox === "function") {
     const system = el.getBBox();
     if (system) {
       if (system.baseVal &&

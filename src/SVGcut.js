@@ -350,7 +350,7 @@ export class SVGcut {
   }
 
   /**
-   * Get the bounding box of the content in the main SVG.
+   * Get the bounding box of the content in the content group of the SVG.
    * This is the smallest box that encompasses the content.
    * @return {Rect} the BB (in px units)
    */
@@ -370,6 +370,7 @@ export class SVGcut {
       console.debug("BB from cache", this.bbCache);
       return this.bbCache;
     }
+    
     return this.bbCache = SVG.getBounds(this.mainSVG);
   }
 
@@ -379,18 +380,19 @@ export class SVGcut {
    * @private
    */
   fitSVG() {
-    // Get the SVG and attribute it accordingly
-    const mSVG = this.mainSVG;
-    // Get the BB for the main SVG view
-    const bbox = mSVG.getBBox();
-    // Mine; works even when the SVG hasn't been rendered, but is heavy.
-    //const bbox = this.getMainSVGBBox();
-    // Set the viewBox to view all the contents of the main svg
-    // Toolpaths may overlap this
-    const d = Math.max(bbox.width, bbox.height);
-    const bbs = `${bbox.x} ${bbox.y} ${d} ${d}`;
-    //console.debug("SETVB", bbs);
-    mSVG.setAttribute("viewBox", bbs);
+    let vb = this.mainSVG.dataset.baseBBox;
+    if (!vb) {
+      // Get the BB for the main SVG view
+      const bbox = this.mainSVG.getBBox();
+      // Mine; works even when the SVG hasn't been rendered, but is heavy.
+      //const bbox = this.getMainSVGBBox();
+      // Set the viewBox to view all the contents of the main svg
+      // Toolpaths may overlap this
+      const d = Math.max(bbox.width, bbox.height);
+      vb = `${bbox.x} ${bbox.y} ${d} ${d}`;
+      //console.debug("SETVB", bbs);
+    }
+    this.mainSVG.setAttribute("viewBox", vb);
   }
 
   /**
@@ -478,7 +480,7 @@ export class SVGcut {
     for (const svgel of svgGroups) {
       if (container.svg[svgel.id]) {
         //console.debug("**** Reloading SVG", svgel.id);
-        const el = SVG.loadSVGFromText(container.svg[svgel.id]);
+        const el = SVG.importFromText(container.svg[svgel.id]);
         svgel.append(el);
       }
     }
@@ -495,14 +497,14 @@ export class SVGcut {
    * @param {number} scale scale amount, <1 to zoom in, >1 to zoom out
    */
   zoom(scale) {
-    let [x, y, width, height] = this.mainSVG
-        .getAttribute('viewBox').split(' ').map(Number);
+    let vb = new Rect(this.mainSVG.getAttribute('viewBox'));
 
-    let [width2, height2] = [width * scale, height * scale];
-    x += (width - width2) / 2;
-    y += (height - height2) / 2;
+    let [width2, height2] = [vb.width * scale, vb.height * scale];
+    vb.x += (vb.width - width2) / 2;
+    vb.y += (vb.height - height2) / 2;
 
-    this.mainSVG.setAttribute('viewBox', `${x} ${y} ${width2} ${height2}`);
+    this.mainSVG.setAttribute(
+      'viewBox', `${vb.x} ${vb.y} ${width2} ${height2}`);
   }
 
   zoomOut() {

@@ -44,7 +44,7 @@ export class Engrave extends ToolpathGenerator {
         copy.reverse();
       toolPaths.push(copy);
     }
-    toolPaths.mergePaths(geometry);
+    //toolPaths.mergePaths(geometry);
     return toolPaths;
   }
 
@@ -59,8 +59,6 @@ export class Engrave extends ToolpathGenerator {
    * @override
    */
   generatePreviewGeometry(geometry, params) {
-    return geometry
-    .offset(params.width / 2 - (params.margin ?? 0), params)
-    .diff(geometry.offset(-params.width / 2, params));
+    return geometry;
   }
 }

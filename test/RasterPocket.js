@@ -7,9 +7,9 @@ ClipperLib.use_xyz = true;
 import { UNit } from "./TestSupport.js";
 import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
-let CutPoint, CutPath, CutPaths, RasterPocket;
+let CutPoint, CutPath, CutPaths, Pocket;
 
-describe("RasterPocket", () => {
+describe("Pocket", () => {
   let page;
 
   // CutPath depends on ClipperLib
@@ -18,18 +18,18 @@ describe("RasterPocket", () => {
       import("../src/CutPoint.js"),
       import("../src/CutPath.js"),
       import("../src/CutPaths.js"),
-      import("../src/RasterPocket.js") ])
+      import("../src/Pocket.js") ])
     .then(mods => {
       CutPoint = mods[0].CutPoint;
       CutPath = mods[1].CutPath;
       CutPaths = mods[2].CutPaths;
-      RasterPocket = mods[3].RasterPocket;
+      Pocket = mods[3].Pocket;
       page = new CutPaths(
         [[{X:-10,Y:-10},{X:140,Y:-10},{X:140,Y:140},{X:-10,Y:140}]]);
     });
   });
 
-  it("raster pocket", () => {
+  it("flat x raster pocket", () => {
     const path = new CutPaths([[
       { X: -100, Y:   0 },
       { X:    0, Y: 100 },
@@ -41,9 +41,10 @@ describe("RasterPocket", () => {
       overlap: 0.5,
       climb: false,
       joinType: 0,
-      mitreLimit: 2
+      mitreLimit: 2,
+      strategy: "FlatXRaster"
     };
-    const gen = new RasterPocket();
+    const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);
     assert.almost(result, new CutPaths(
       [

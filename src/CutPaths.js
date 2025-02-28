@@ -238,7 +238,7 @@ export class CutPaths extends Array {
    * @param {CutPaths} paths second set of paths
    * @return {CutPaths} new geometry.
    */
-  diff(paths) {
+  difference(paths) {
     return this.clip(paths, ClipperLib.ClipType.ctDifference);
   }
 
@@ -247,7 +247,7 @@ export class CutPaths extends Array {
    * @param {CutPaths} paths second set of paths
    * @return {CutPaths} new geometry.
    */
-  intersection(paths2) {
+  intersect(paths2) {
     return this.clip(paths2, ClipperLib.ClipType.ctIntersection);
   }
 
@@ -287,7 +287,8 @@ export class CutPaths extends Array {
         const simplePolys = ClipperLib.Clipper.SimplifyPolygon(cleanPolys, fr);
         cleanPaths.push(new CutPath(simplePolys[0], true));
       } else {
-        // Remove duplicated vertices
+        // Remove duplicated vertices. Note: works in 2D and will kill
+        // vertices even if Z is different.
         path.unduplicate();
         const clean = ClipperLib.JS.Clean(path, CLEAN_POLY_DIST);
         cleanPaths.push(new CutPath(clean, false));

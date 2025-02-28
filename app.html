@@ -199,7 +199,7 @@
       <div class="col-sm-3 sidebar-left">
         <div id="ProjectView">
           <!-- Bound to ProjectViewModel -->
-          <span data-bind="text:projectChanged"></span>
+          <span data-bind="text:projectChanged()?'*':''"></span>
           <span id="ProjectName" data-bind="text:projectName">New project</span>
         </div>
         <div class="card" id="OperationsView">
@@ -274,15 +274,31 @@
                     <td>
                       <select id="OpCombine"
                               data-bind="value:combineOp">
-                        <!-- must match COMBINE enum -->
-                        <option value="0">Group</option>
-                        <option value="1">Union</option>
-                        <option value="2">Intersection</option>
-                        <option value="3">Difference</option>
-                        <option value="4">XOR</option>
+                        <option value="Group">Group</option>
+                        <option value="Union">Union</option>
+                        <option value="Intersect">Intersection</option>
+                        <option value="Difference">Difference</option>
+                        <option value="XOR">XOR</option>
                       </select>
                     </td>
                     <td><button name="OpCombine"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:needs().strategy">
+                    <td>
+                      <label for="OpStrategy" class="control-label">
+                        Pocket Strategy
+                      </label>
+                    </td>
+                    <td>
+                      <select id="OpStrategy"
+                              data-bind="value:strategy">
+                        <option value="Annular">Annular</option>
+                        <option value="XRaster">H Raster</option>
+                        <option value="YRaster">V Raster</option>
+                      </select>
+                    </td>
+                    <td><button name="OpStrategy"
                                 class="helper">&#9432;</button></td>
                   </tr>
                   <tr data-bind="visible:needs().direction">
@@ -293,8 +309,7 @@
                     </td>
                     <td>
                       <select id="OpDirection"
-                              data-bind="value:direction"
-                              data-bs-trigger="focus">
+                              data-bind="value:direction">
                         <option value="Conventional">Conventional</option>
                         <option value="Climb">Climb</option>
                       </select>
@@ -1103,14 +1118,13 @@
       <span name="Step4">You're done! Open 'View->Simulation', or 'View->Gcode' to view your tool paths. Customise the operation to your tastes. Save your gcode.</span>
     </div>
     <div id="Generators">
-      <span name="AnnularPocket">Pocket (annular)</span>
+      <!-- these are 1:1 in English but are defined here to support i18n -->
       <span name="Drill">Drill</span>
       <span name="Engrave">Engrave</span>
       <span name="Inside">Inside</span>
       <span name="Outside">Outside</span>
       <span name="Perforate">Perforate</span>
-      <span name="RasterPocket">Pocket (raster)</span>
-      <span name="VGroove">V Groove</span>
+      <span name="Pocket">Pocket</span>
     </div>
     <div id="Popovers" style="display:none">
       <span name="SelectProject">Select a project stored in this browser.</span>
@@ -1206,18 +1220,28 @@
       </div>
       <span name="OpDirection" title="Direction">What direction the cutter should travel.
         see <a href="https://en.wikipedia.org/wiki/Milling_cutter">Wikipedia</a> for the pros and cons of climb versus conventional milling.</span>
+      <div name="OpStrategy">
+        How to cut pockets.
+        <dl>
+          <dt>Annular</dt><dd>cut the pocket flat, at the cut depth,
+            using concentric orbits. If the bit is angled, will cut
+            the pocket such that the walls slope in at the same angle as
+            the cutting edge.</dd>
+          <dt>H/V Raster</dt><dd>cut the pocket flat, at the cut depth,
+            using horizontal/vertical passes of a flat bit. Will treat
+            an angled bit as if it was flat.</dd>
+        </dl>
+      </div>
       <span name="OpCutDepth" title="Cut Depth">
         How deep this operation should cut in total.</span>
       <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
         <dl>
+          <dt>Drill</dt><dd>drills a hole at each vertex of the path.</dd>
           <dt>Engrave</dt><dd>middle of the tool follows the paths.</dd>
-          <dt>V Groove</dt><dd>cuts a V-shaped groove of the specified width and depth (requires a V-bit cutter).</dd>
           <dt>Inside</dt><dd>cuts around the inside of closed paths.</dd>
           <dt>Outside</dt><dd>cuts around the outside of closed paths.</dd>
           <dt>Perforate</dt><dd>drills holes around the outside of closed paths, or along open paths.</dd>
-          <dt>Pocket (annular)</dt><dd>carves a pocket using annular rings (closed paths only).</dd>
-          <dt>Pocket (raster</dt><dd> carves a pocket using side-to-side movement (closed paths only).</dd>
-          <dt>Drill</dt><dd>drills a hole at each vertex of the path.</dd>
+          <dt>Pocket</dt><dd>carves a pocket, either using annular rings or raster movement of the tool (closed paths only).</dd>
         </dl>
       </div>
       <span name="OpVMaxDepth" title="Max Cut Depth">Maximum depth this operation should cut.

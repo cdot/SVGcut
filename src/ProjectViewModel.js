@@ -72,12 +72,13 @@ export class ProjectViewModel extends ViewModel {
     this.selectedProject = ko.observable();
 
     /**
-     * Marker next to project name that indicates a change
-     * @member {observable.<string>}
+     * True if one of the parameters saved with the project has changed
+     * since the last save.
+     * @member {observable.<boolean>}
      */
-    this.projectChanged = ko.observable("");
+    this.projectChanged = ko.observable(false);
     this.projectChanged.subscribe(v => {
-      if (v === "*") {
+      if (v) {
         for (const el of document.querySelectorAll(".change-activated"))
           el.classList.remove("disabled");
       } else {
@@ -111,7 +112,7 @@ export class ProjectViewModel extends ViewModel {
         const reader = new FileReader();
         reader.addEventListener("load", e => {
           App.loadSaveable(JSON.parse(e.target.result));
-          this.isChanged = false;
+          this.projectChanged(false);
           lert.remove();
           App.showAlert("loadedProject", "alert-success", file.name);
         });
@@ -140,7 +141,8 @@ export class ProjectViewModel extends ViewModel {
         const lert = App.showAlert("loadingSVG", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
-          const svgEl = SVG.loadSVGFromText(e.target.result);
+          const svgEl = SVG.importFromText(e.target.result);
+          svgEl.dataset.baseBBox = svgEl.getAttribute("viewBox");
           document.getElementById("ContentSVGGroup").append(svgEl);
           App.fitSVG();
           lert.remove();
@@ -162,7 +164,7 @@ export class ProjectViewModel extends ViewModel {
     });
 
     document.addEventListener(
-      "PROJECT_CHANGED", () => this.isChanged = true);
+      "PROJECT_CHANGED", () => this.projectChanged(true));
   }
 
   /**
@@ -202,7 +204,7 @@ export class ProjectViewModel extends ViewModel {
     json[name] = App.getSaveable(
       this.templateOnly() || name === DEFAULTS_PROJECT);
     localStorage.setItem(LOCAL_PROJECTS_AREA, JSON.stringify(json, null, 1));
-    this.isChanged = false;
+    this.projectChanged(false);
     App.showAlert("projectSavedInBrowser", "alert-info", name);
     this.getBrowserProjectsList();
   }
@@ -219,7 +221,7 @@ export class ProjectViewModel extends ViewModel {
     const filename = `${this.projectName()}.svgcut`;
     // No way to get a status report back, we just have to hope
     saveAs(blob, filename);
-    this.isChanged = false;
+    this.projectChanged(false);
   }
 
   /**
@@ -229,8 +231,8 @@ export class ProjectViewModel extends ViewModel {
   loadDefaults() {
     if (this.importProject(DEFAULTS_PROJECT)) {
       //console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
-      this.isChanged = false;
     }
+    this.projectChanged(false);
   }
 
   /**
@@ -260,7 +262,7 @@ export class ProjectViewModel extends ViewModel {
     const json = projects[name];
     if (json) {
       App.loadSaveable(json);
-      this.isChanged = false;
+      this.projectChanged(false);
       return true;
     }
 
@@ -291,21 +293,6 @@ export class ProjectViewModel extends ViewModel {
   }
 
   /**
-   * True if one of the parameters saved with the project has changed
-   * since the last save.
-   */
-  get isChanged() {
-    return this.projectChanged() === "*";
-  }
-
-  /**
-   * Set the changed status of the project
-   */
-  set isChanged(tf) {
-    this.projectChanged(tf ? "*" : "");
-  }
-
-  /**
    * True if there is gcode associated with the project.
    */
   haveGcode() {
@@ -332,7 +319,7 @@ export class ProjectViewModel extends ViewModel {
    * @private
    */
   confirmDataLoss(callback) {
-    if (this.isChanged) {
+    if (this.projectChanged()) {
       this.dataLossCallback = callback;
       App.showModal('ConfirmDataLossModal');
     } else

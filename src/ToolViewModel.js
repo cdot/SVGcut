@@ -45,11 +45,11 @@ export class ToolViewModel extends ViewModel {
     this.cutterAngle = ko.observable(DEFAULT_ANGLE);
     this.cutterAngle.subscribe(newValue => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
-      document.dispatchEvent(new Event("UPDATE_GCODE"));
+      App.models.Operations.recombine();
     });
 
     /**
-     * Depth of each tool pass.
+     * Depth of each tool pass. Operator can override.
      * @member {observable.<number>}
      */
     this.passDepth = ko.observable(
@@ -61,7 +61,7 @@ export class ToolViewModel extends ViewModel {
     });
 
     /**
-     * Fraction of the tool diameter, [0..1]
+     * Percentage of the tool diameter. Operator can override.
      * @member {observable.<number>}
      */
     this.stepOver = ko.observable(DEFAULT_STEP_OVER);
@@ -95,7 +95,7 @@ export class ToolViewModel extends ViewModel {
     });
 
     /**
-     * Tool cut rate mm/min
+     * Tool cut rate mm/min. Operator can override.
      * @member {observable.<number>}
      */
     this.cutRate = ko.observable(
@@ -107,7 +107,7 @@ export class ToolViewModel extends ViewModel {
     });
 
     /**
-     * Spindle speed (only one supported)
+     * Spindle speed. Operator can override.
      * @member {observable.<number>}
      */
     this.rpm = ko.observable(DEFAULT_SPINDLE_RPM);

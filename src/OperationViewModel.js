@@ -11,55 +11,41 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
-import { AnnularPocket } from "./AnnularPocket.js";
 import { Drill } from "./Drill.js";
 import { Engrave } from "./Engrave.js";
 import { Inside } from "./Inside.js";
 import { Outside } from "./Outside.js";
 import { Perforate } from "./Perforate.js";
-import { RasterPocket } from "./RasterPocket.js";
-import { VGroove } from "./VGroove.js";
+import { Pocket } from "./Pocket.js";
 
-const DEFAULT_RAMP = false;
 const DEFAULT_DIRECTION = "Conventional";
-const DEFAULT_CUTDEPTH = 1;        // mm
-const DEFAULT_MARGIN = 0;          // mm
-const DEFAULT_SPACING = 1;         //mm
-const DEFAULT_WIDTH = 0;           //mm
+const DEFAULT_STRATEGY  = "Annular";
+const DEFAULT_CUTDEPTH  = 1; // mm
+const DEFAULT_RAMP      = false;
+const DEFAULT_MARGIN    = 0; // mm
+const DEFAULT_SPACING   = 1; // mm
+const DEFAULT_WIDTH     = 0; // mm
 
 const FIELDS = [
   "name", "enabled", "combineOp", "opName", "cutDepth", "width",
-  "direction", "spacing", "ramp", "margin"
+  "direction", "spacing", "ramp", "margin", "strategy"
 ];
 
 /**
- * @typedef {number} CombineOp
- */
-
-/**
  * Boolean operations on closed polygons.
- * @enum {CombineOp}
+ * @typedef {('Group'|'Union'|'Intersect'|'Difference'|'XOR')} CombineOp
  * @memberof OperationViewModel
  */
-export const COMBINE = {
-  Group: 0,
-  Union: 1,
-  Intersect: 2,
-  Diff: 3,
-  Xor: 4
-};
-const DEFAULT_COMBINEOP = COMBINE.Group;
+const DEFAULT_COMBINEOP = "Group";
 
 // Map from operation name to class of generator.
 const GENERATORS = {
-  AnnularPocket: AnnularPocket,
   Drill:         Drill,
   Engrave:       Engrave,
   Inside:        Inside,
   Outside:       Outside,
   Perforate:     Perforate,
-  RasterPocket:  RasterPocket,
-  VGroove:       VGroove
+  Pocket:        Pocket
 };
 
 /**
@@ -196,6 +182,16 @@ export class OperationViewModel extends ViewModel {
      */
     this.direction = ko.observable(DEFAULT_DIRECTION);
     this.direction.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.generateToolpaths();
+    });
+
+    /**
+     * Pocketing strategy.
+     * @member {observable.<string>}
+     */
+    this.strategy = ko.observable(DEFAULT_STRATEGY);
+    this.strategy.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.generateToolpaths();
     });
@@ -401,7 +397,7 @@ export class OperationViewModel extends ViewModel {
   /**
    * Map from short (internal) generator name to long (translatable)
    * name from HTML
-   * @param {string} shortName internal name e.g. "RasterPocket"
+   * @param {string} shortName internal name e.g. "Pocket"
    * @return {string} user-friendly, trabslatable name e.g. "Pocket (raster)"
    */
   longOpName(shortName) {
@@ -440,17 +436,17 @@ export class OperationViewModel extends ViewModel {
     const closedPaths = this.operandPaths.filter(p => p.isClosed);
     let geom = new CutPaths(closedPaths[0]);
 
-    const bop = Number(this.combineOp());
-    if (bop === COMBINE.Group)
+    const bop = this.combineOp();
+    if (bop === "Group")
       geom = closedPaths;
     else {
       for (let i = 1; i < closedPaths.length; i++) {
         const others = new CutPaths(closedPaths[i]);
         switch (bop) {
-        case COMBINE.Intersect: geom = geom.intersection(others); break;
-        case COMBINE.Diff:      geom = geom.diff(others); break;
-        case COMBINE.Xor:       geom = geom.xor(others); break;
-        case COMBINE.Union:     geom = geom.union(others); break;
+        case "Intersect":  geom = geom.intersect(others); break;
+        case "Difference": geom = geom.difference(others); break;
+        case "XOR":        geom = geom.xor(others); break;
+        case "Union":      geom = geom.union(others); break;
         default: assert(false);
         }
       }
@@ -506,20 +502,20 @@ export class OperationViewModel extends ViewModel {
     let geometry = this.combinedGeometry;
 
     const toolModel = App.models.Tool;
-    const passDepth = (this.passDepth())
-          ? this.passDepth.toUnits("integer")
-          : toolModel.passDepth.toUnits("integer");
+    const passDepth = (this.passDepth()
+          ? this.passDepth : toolModel.passDepth).toUnits("integer");
     const stepOver = Number((this.stepOver())
                             ? this.stepOver()
                             : toolModel.stepOver());
     const zOnTop = App.models.Material.zOrigin() === "Top";
-    const cutDepth = Number(this.cutDepth());
-    const clear = App.models.Material.clearance();
+    const cutDepth = this.cutDepth.toUnits("integer");
+    const clear = App.models.Material.clearance.toUnits("integer");
 
     const params = App.models.Approximation.approximations;
     params.cutterDiameter = toolModel.cutterDiameter.toUnits("integer");
-    params.cutterAngle = Number(toolModel.cutterAngle());
-    params.overlap = 1 - stepOver / 100;
+    params.cutterAngle = toolModel.cutterAngle() * Math.PI / 180;
+    params.cutDepth = cutDepth;
+    params.overlap = 1 - stepOver / 100; // convert %age
     params.climb = (this.direction() === "Climb");
     params.safeZ = zOnTop ? clear : clear + cutDepth;
     params.topZ = zOnTop ? 0 : cutDepth;
@@ -528,6 +524,7 @@ export class OperationViewModel extends ViewModel {
       this.width.toUnits("integer"), params.cutterDiameter);
     params.spacing = this.spacing.toUnits("integer");
     params.margin = this.margin.toUnits("integer");
+    params.strategy = this.strategy();
 
     const paths = this.toolpathGenerator.generateToolpaths(geometry, params);
 

@@ -309,7 +309,7 @@ describe("CutPaths", () => {
         { X:    0, Y:  50, Z: -2 }
       ]
     ]);
-    const result = cps1.diff(cps2);
+    const result = cps1.difference(cps2);
     assert.deepEqual(result, new CutPaths([
       [
         { X: 33, Y: 67, Z: 0 },

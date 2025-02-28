@@ -45,7 +45,7 @@ export class Inside extends ToolpathGenerator {
       return new CutPaths();
     const off = -params.cutterDiameter / 2 - (params.margin ?? 0);
     const current = geometry.offset(off, params);
-    params.clipPoly = geometry.diff(
+    params.clipPoly = geometry.difference(
         geometry.offset(-(params.width - params.cutterDiameter / 2), params));
     params.step = -1;
     params.needReverse = params.climb;
@@ -58,6 +58,6 @@ export class Inside extends ToolpathGenerator {
    */
   generatePreviewGeometry(geometry, params) {
     const w = params.width + (params.margin ?? 0);
-    return geometry.diff(geometry.offset(-w, params));
+    return geometry.difference(geometry.offset(-w, params));
   }
 }

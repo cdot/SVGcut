@@ -32,6 +32,9 @@ input[type="number"] {
   text-decoration: none;
   padding: 0 0 0 3px;
 }
+.helper:hover {
+  color: "blue";
+}
 
 /* Layout of left and right sidebars */
 .sidebar-left {

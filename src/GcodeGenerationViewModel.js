@@ -265,7 +265,7 @@ export class GcodeGenerationViewModel extends ViewModel {
       // Scaling to apply to internal units in paths, to generate Gcode units.
       xScale:      UnitConverter.from.integer.to[gunits],
       yScale:      -UnitConverter.from.integer.to[gunits],
-      zScale:      1,
+      zScale:      UnitConverter.from.integer.to[gunits],
       decimal:     2, // 100th mm
       topZ:        App.models.Material.topZ.toUnits(gunits),
       botZ:        App.models.Material.botZ.toUnits(gunits),
@@ -364,6 +364,7 @@ export class GcodeGenerationViewModel extends ViewModel {
       y = this.unitConverter.toUnits(bb.y, "px");
     }
 
+    //console.log("UGCO",x, y, w, h);
     const xAxis = document.getElementById("X-Axis");
     const yAxis = document.getElementById("Y-Axis");
     xAxis.setAttribute("x1", x);

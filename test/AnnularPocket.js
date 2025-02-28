@@ -7,9 +7,9 @@ ClipperLib.use_xyz = true;
 import { UNit } from "./TestSupport.js";
 import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
-let CutPoint, CutPath, CutPaths, AnnularPocket;
+let CutPoint, CutPath, CutPaths, Pocket;
 
-describe("AnnularPocket", () => {
+describe("Annular Pocket", () => {
   let page;
 
   // CutPath depends on ClipperLib
@@ -18,17 +18,18 @@ describe("AnnularPocket", () => {
       import("../src/CutPoint.js"),
       import("../src/CutPath.js"),
       import("../src/CutPaths.js"),
-      import("../src/AnnularPocket.js") ])
+      import("../src/Pocket.js") ])
     .then(mods => {
       CutPoint = mods[0].CutPoint;
       CutPath = mods[1].CutPath;
       CutPaths = mods[2].CutPaths;
-      AnnularPocket = mods[3].AnnularPocket;
+      Pocket = mods[3].Pocket;
       page = new CutPaths(
         [[{X:-10,Y:-10},{X:140,Y:-10},{X:140,Y:140},{X:-10,Y:140}]]);
     });
   });
-  it("annular pocket", () => {
+
+  it("flat annular pocket", () => {
     const path = new CutPaths([[
       { X: -100, Y:   0 },
       { X:    0, Y: 100 },
@@ -37,12 +38,14 @@ describe("AnnularPocket", () => {
     ]], true);
     const params = {
       cutterDiameter: 10,
+      cutterAngle: 0,
       overlap: 0.5,
       climb: false,
       joinType: 0,
-      mitreLimit: 2
+      mitreLimit: 2,
+      strategy: "Annular"
     };
-    const gen = new AnnularPocket();
+    const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);
     assert.almost(result, new CutPaths(
       [
@@ -64,5 +67,28 @@ describe("AnnularPocket", () => {
           { X: -17, Y: 59, Z: 0 },
         ]
       ], false));
+  });
+
+  it("V pocket", () => {
+    const path = new CutPaths([[
+      { X: -100, Y:   0 },
+      { X:    0, Y: 100 },
+      { X:  100, Y:   0 },
+      { X:    0, Y:  50 }
+    ]], true);
+    const params = {
+      strategy: "Annular",
+      cutterDiameter: 10,
+      cutterAngle: Math.PI / 4,
+      cutDepth: 10,
+      topZ: 0,
+      overlap: 0.5,
+      climb: false,
+      joinType: 0,
+      mitreLimit: 2
+    };
+    const gen = new Pocket();
+    const result = gen.generateToolpaths(path, params);
+    console.log(result);
   });
 });

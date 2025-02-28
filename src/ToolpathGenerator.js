@@ -59,14 +59,8 @@ export class ToolpathGenerator {
   /**
    * Compute outline tool path.
    * @param {CutPaths} geometry
-   * @param {object} params named parameters
-   * @param {number} params.cutterDiameter is in "integer" units
-   * @param {number} params.width desired path width (may be wider than the
-   * cutter)
-   * @param {number} params.overlap is in the range [0, 1)
-   * @param {boolean} params.climb true for climb milling
-   * @param {JoinType} params.joinType join type
-   * @param {number} params.mitreLimit join mitre limit
+   * @param {object} params named parameters. All the parameters
+   * of generateToolpaths, plus:
    * @param {boolean} params.needReverse
    * @param {number} params.step
    * @param {CutPaths} params.clipPoly
@@ -100,10 +94,23 @@ export class ToolpathGenerator {
   }
 
   /**
-   * Subclasses must override.
+   * Subclasses must override. All input measurements are in "integer" units.
    * @param {CutPaths} geometry input geometry
-   * @param {object} params named parameters
-   * @param {number} params.cutterDiameter is in "integer" units
+   * @param {object} params named parameters. Not all are used by all
+   * operations.
+   * @param {number} params.cutterDiameter diameter of thickest part of cutter.
+   * @param {number} params.cutterAngle angle (radians) of cutter edge
+   * from axis of rotation
+   * @param {number} params.width desired path width (may be wider than the
+   * cutter)
+   * @param {number} params.spacing is the gap to leave between perforations
+   * @param {number} params.overlap is in the range [0, 1)
+   * @param {boolean} params.climb true for climb milling
+   * @param {JoinType} params.joinType join type
+   * @param {number} params.safeZ is the Z to which the tool is withdrawn
+   * @param {number} params.botZ is the depth of drill holes
+   * @param {JoinType} params.joinType edge join type
+   * @param {number} params.mitreLimit join mitre limit
    */
   generateToolpaths(geometry, params) {
     assert(false, "Pure virtual");
