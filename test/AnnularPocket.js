@@ -41,6 +41,8 @@ describe("Annular Pocket", () => {
       cutterAngle: 0,
       overlap: 0.5,
       climb: false,
+      cutDepth: 4,
+      topZ: 0,
       joinType: 0,
       mitreLimit: 2,
       strategy: "Annular"

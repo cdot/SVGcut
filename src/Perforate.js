@@ -7,10 +7,14 @@ ClipperLib.use_xyz = true;
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
+import { UnitConverter } from "./UnitConverter.js";
 import { ToolpathGenerator } from "./ToolpathGenerator.js";
 
+// A small scaling that brings values within the maximum resolution
+const FP_TOLERANCE = 1 - 1 / UnitConverter.from.mm.to.integer;
+
 /**
- * Drill al ine of perforations along the path (or outside it, in the case
+ * Drill a line of perforations along the path (or outside it, in the case
  * of a closed geometry).
  * @extends ToolpathGenerator
  */
@@ -32,25 +36,29 @@ export class Perforate extends ToolpathGenerator {
    * @param {object} params named parameters
    * @param {number} params.cutterDiameter in "integer" units
    * @param {number} params.spacing is the gap to leave between perforations
-   * @param {number} params.safeZ is the Z to which the tool is withdrawn
-   * @param {number} params.botZ is the depth of the perforations
-   * @return {CutPath}
+   * @return {CutPath} a path where each vertex is a drill hole position
    * @private
    */
-  perforatePath(path, params) {
+  perforatedPath(path, params) {
     assert(path instanceof CutPath);
+    assert(params.spacing >= 0);
+    assert(params.cutterDiameter > 0);
 
     // Measure the path
     let totalPathLength = path.perimeter();
 
-    if (path.isClosed)
-      path.push(path[0]); // duplicate first vertex
+    if (totalPathLength === 0)
+      return path;
 
     // Work out number of holes, and step between them, allowing spacing
     // between adjacent holes
-    const numHoles = Math.floor(
+    const numSteps = Math.ceil(
       totalPathLength / (params.cutterDiameter + params.spacing));
-    const step = totalPathLength / (numHoles - 1);
+    const step = totalPathLength / numSteps;
+
+    if (path.isClosed)
+      path.push(path[0]); // duplicate first vertex
+
     // Walk round the path stopping at every hole, generating a new path
     let newPath = new CutPath();
     let gap = 0; // distance along the path from the last hole;
@@ -66,9 +74,10 @@ export class Perforate extends ToolpathGenerator {
     while (segi < path.length) {
       // Place a hole here
       //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
-      newPath.push(...this.drillHole(segStart, params.safeZ, params.botZ));
+      newPath.push(new CutPoint(segStart.X, segStart.Y));
       gap = 0;
-      while (gap + segLen < step) {
+      while (gap + segLen < step * FP_TOLERANCE) {
+        // FP_TOLERANCE to defeat floating point error.
         if (++segi === path.length)
           break; // no more segments, we're done
         // Remaining segment isn't long enough for another hole.
@@ -90,8 +99,10 @@ export class Perforate extends ToolpathGenerator {
       segLen -= where;
       gap += where;
     }
-    if (path.isClosed)
+    if (path.isClosed) {
+      newPath.pop();
       path.pop(); // remove pseudo-vertex
+    }
 
     return newPath;
   }
@@ -107,43 +118,52 @@ export class Perforate extends ToolpathGenerator {
    * @param {number} params.cutterDiameter in "integer" units
    * @param {number} params.spacing is the gap to leave between perforations
    * @param {number} params.topZ is the Z to which the tool is withdrawn
+   * @param {number} params.safeZ is the Z to which the tool is withdrawn
    * @param {number} params.botZ is the depth of the perforations
    * @return {CutPaths}
    * @override
    */
   generateToolpaths(geometry, params) {
     assert(geometry instanceof CutPaths);
-    const toolPaths = new CutPaths();
+    const toolPath = new CutPath();
 
     // Bloat the closed paths by half the cutter diameter
     const bloated = new CutPaths();
     for (const path of geometry) {
+      let vertexPath = path;
       if (path.isClosed) {
         params.joinType ??= ClipperLib.JoinType.jtRound;
-        const bloated = new CutPaths(path)
-              .offset(params.cutterDiameter / 2, params)[0];
-        const ring = this.perforatePath(bloated, params);
-        toolPaths.push(ring);
-      } else { // just follow open paths
-        toolPaths.push(this.perforatePath(path, params));
+        vertexPath = new CutPaths(path)
+        .offset(params.cutterDiameter / 2, params)[0];
       }
+      const ring = this.perforatedPath(vertexPath, params);
+      for (const vertex of ring)
+        toolPath.push(...this.drillHole(vertex, params));
     }
 
-    return toolPaths;
+    return new CutPaths([ toolPath ], false);
   }
 
   /**
    * @override
    */
   bbBloat(toolPathWidth) {
-    // When the geometry is closed, this is excessive
+    // When the geometry is closed, this is excessive. But it's OK
+    // as an approximation for bounding box computation.
     return toolPathWidth;
   }
 
   /**
    * @override
    */
-  generatePreviewGeometry(geometry, params) {
-    return super.generatePreviewGeometry(geometry, params);
+  generatePreviewGeometry(toolPaths, params) {
+    const holes = new CutPaths();
+    for (const path of toolPaths) {
+      // A drill hole has 3 vertices, and a perforated path is a
+      // string of drill holes
+      for (let i = 0; i < path.length; i += 3)
+        holes.push(this.previewHole(path[i], params));
+    }
+    return holes;
   }
 }

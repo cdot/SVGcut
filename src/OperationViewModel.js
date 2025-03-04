@@ -517,11 +517,8 @@ export class OperationViewModel extends ViewModel {
     document.dispatchEvent(new Event("UPDATE_GCODE"));
 
     // Generate geometry for the cutter path
-    const tparms = structuredClone(App.models.Approximation.approximations);
-    tparms.margin = this.margin.toUnits("integer");
-    tparms.cutterDiameter = App.models.Tool.cutterDiameter.toUnits("integer");
     const previewGeometry = this.toolpathGenerator.generatePreviewGeometry(
-      paths, tparms);
+      paths, params);
     if (previewGeometry.length > 0) {
       const segs = previewGeometry.toSegments();
       if (segs && segs.length > 0) {

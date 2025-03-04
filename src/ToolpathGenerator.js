@@ -43,17 +43,37 @@ export class ToolpathGenerator {
   /**
    * Generate path step to create a hole
    * @param {CutPoint} pt where to drill the hole
-   * @param {number} safeZ is above the top of the hole
-   * @param {number} botZ is the bottom of the hole
+   * @param {object} params named parameters
+   * @param {number} params.safeZ is above the top of the hole
+   * @param {number} params.botZ is the bottom of the hole
    * @return {CutPath}
    * @protected
    */
-  drillHole(pt, safeZ, botZ) {
+  drillHole(pt, params) {
     return new CutPath([
-      { X: pt.X, Y: pt.Y, Z: safeZ },
-      { X: pt.X, Y: pt.Y, Z: botZ },
-      { X: pt.X, Y: pt.Y, Z: safeZ }
+      { X: pt.X, Y: pt.Y, Z: params.safeZ },
+      { X: pt.X, Y: pt.Y, Z: params.botZ },
+      { X: pt.X, Y: pt.Y, Z: params.safeZ }
     ], false);
+  }
+
+  /**
+   * Generate preview geometry for a drill hole.
+   * @param {CutPoint} pt where to drill the hole
+   * @param {object} params named parameters
+   * @param {number} cutterDiameter diameter to cutter tip
+   * @return {CutPath} a closed path
+   */
+  previewHole(pt, params) {
+    const hole = new CutPath();
+    const r = params.cutterDiameter / 2;
+    for (let theta = 0; theta < 2 * Math.PI; theta += Math.PI / 4) {
+      const dx = r * Math.cos(theta);
+      const dy = r * Math.sin(theta);
+      hole.push(new CutPoint(pt.X + dx, pt.Y + dy));
+    }
+    hole.isClosed = true;
+    return hole;
   }
 
   /**

@@ -4,6 +4,7 @@
 /* global ClipperLib */
 ClipperLib.use_xyz = true;
 
+import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { ToolpathGenerator } from "./ToolpathGenerator.js";
@@ -38,9 +39,8 @@ export class Drill extends ToolpathGenerator {
   generateToolpaths(geometry, params) {
     const drillPath = new CutPath();
     for (const path of geometry) {
-      for (const hole of path) {
-        drillPath.push(...this.drillHole(hole, params.safeZ, params.botZ));
-      }
+      for (const hole of path)
+        drillPath.push(...this.drillHole(hole, params));
     }
     return new CutPaths(drillPath);
   }
@@ -56,7 +56,11 @@ export class Drill extends ToolpathGenerator {
    * @override
    */
   generatePreviewGeometry(geometry, params) {
-    return geometry.offset(params.cutterDiameter / 2, params)
-    .difference(geometry.offset(-params.cutterDiameter / 2, params));
+    const holes = new CutPaths();
+    for (const path of geometry) {
+      for (const vertex of path)
+        holes.push(this.previewHole(vertex, params));
+    }
+    return holes;
   }
 }

@@ -59,6 +59,7 @@ export class Engrave extends ToolpathGenerator {
    * @override
    */
   generatePreviewGeometry(geometry, params) {
+    // A band half the cutter diameter either side of the cut path
     const w = params.cutterDiameter / 2;
     return geometry.offset(w, params).difference(geometry.offset(-w, params));
   }

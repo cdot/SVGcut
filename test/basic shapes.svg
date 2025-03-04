@@ -3,8 +3,8 @@
 
 <svg
    width="300mm"
-   height="180mm"
-   viewBox="0 0 300 180"
+   height="300mm"
+   viewBox="0 0 300 300"
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
@@ -35,33 +35,42 @@
   <defs id="defs1" />
   <!-- two rows of 4, each column 75 -->
 
-  <!-- closed figures -->
-  <!-- 0,0..75,75 -->
+  <!-- 0,0..75,75 CLOSED -->
   <rect id="rect" x="0" y="0" width="75" height="75"
         stroke="green" fill="#f0f0f0" />
-  <!-- 75,0..150,75 -->
+  <!-- 75,0..150,75 CLOSED -->
   <circle id="circle" cx="112.5" cy="37.5" r="37.5"
           stroke="red" fill="#f0f0f0" />
-  <!-- 150,0..225,75 -->
+  <!-- 150,0..225,75 CLOSED -->
   <ellipse id="ellipse" cx="187.5" cy="37.5" rx="37.5" ry="18.75"
            stroke="green" fill="#f0f0f0" />
-  <!-- 225,0..300,75 -->
+  <!-- 225,0..300,75 CLOSED -->
   <polygon points="225,0, 262.5,75, 300,0, 262.5,37.5"
            stroke="red" fill="#f0f0f0" />
 
-  <!-- 0,75..75,150 -->
+  <!-- 0,75..75,150 OPEN -->
   <line id="line" x1="0" y1="75" x2="75" y2="150"
         stroke="red" fill="none" />
 
-  <!-- 75,75..150,150 -->
+  <!-- 75,75..150,150 OPEN -->
   <polyline points="75,150, 112.5,112.5, 150,150, 112.5,75"
-            stroke="green" fill="none" />
+            stroke="green" fill="none" stroke-linecap="butt" />
 
-  <!-- 150,75..225,150 -->
+  <!-- 150,75..225,150 OPEN -->
   <path d="M150,75 225,150, 225,112.5, 150,112.5"
-        stroke="red" fill="none" />
+        stroke="red" fill="none" stroke-linecap="butt" />
 
-  <!-- 225,75..300,150 -->
+  <!-- 225,75..300,150 CLOSED -->
   <path d="M225,75 300,75 300,150 Z"
-        stroke="green" fill="#f0f0f0"" />
+        stroke="green" fill="#f0f0f0" />
+
+  <!-- 0,75..75,150 -->
+  <line id="line" x1="0" y1="75" x2="75" y2="150"
+        stroke="red" fill="none" stroke-linecap="butt" />
+
+  <!-- 0,150..75,225 -->
+  <line id="flatlineH" x1="0" y1="187.5" x2="75" y2="187.5"
+        stroke="green" fill="none" stroke-linecap="butt" />
+  <line id="flatlineV" x1="37.5" y1="150" x2="37.5" y2="225"
+        stroke="green" fill="none" stroke-linecap="butt" />
 </svg>

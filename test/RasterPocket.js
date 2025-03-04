@@ -38,11 +38,14 @@ describe("Pocket", () => {
     ]], true);
     const params = {
       cutterDiameter: 10,
+      cutterAngle: 90,
+      cutDepth: 3,
+      topZ: 0,
       overlap: 0.5,
       climb: false,
       joinType: 0,
       mitreLimit: 2,
-      strategy: "FlatXRaster"
+      strategy: "XRaster"
     };
     const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);

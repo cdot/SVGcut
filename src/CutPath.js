@@ -104,7 +104,18 @@ export class CutPath extends Array {
    * @return {number} perimeter
    */
   perimeter() {
-    return ClipperLib.JS.PerimeterOfPath(this, true, 1 /* number scale */);
+    let p0 = this[0];
+    let len = 0;
+    for (let i = 1; i < this.length; i++) {
+      const p1 = this[i];
+      len += Math.sqrt((p1.X - p0.X) * (p1.X - p0.X)
+                       + (p1.Y - p0.Y) * (p1.Y - p0.Y));
+      p0 = p1;
+    }
+    if (this.isClosed)
+      len += Math.sqrt((this[0].X - p0.X) * (this[0].X - p0.X)
+                       + (this[0].Y - p0.Y) * (this[0].Y - p0.Y));
+    return len;
   }
 
   /**
