@@ -6,6 +6,8 @@
 // import "bootstrap"
 /* global bootstrap */
 
+/* global ko */
+
 import { ToolViewModel } from "./ToolViewModel.js";
 import { OperationsViewModel } from "./OperationsViewModel.js";
 import { GcodeGenerationViewModel } from "./GcodeGenerationViewModel.js";
@@ -32,6 +34,35 @@ function formatTime(t) {
   const m = `0${t % 60}`.slice(-2);
   return `${Math.floor(t / 60)}:${m}:${s}`;
 }
+
+// knockout validation doesn't support dynamic values, so have to
+// do this. See
+// https://www.codeproject.com/tips/793259/using-observable-and-computed-for-validation-in-kn
+// Formatting messages in knockout-validation is a complete PITA, so we
+// keep this minimalistic
+// Allow val undefined or val >= min
+ko.validation.rules.MIN_NULL = {
+  validator: (val, min) =>
+  typeof val === "undefined" || Number(val) >= Number(min),
+  message: min => `< ${min}`
+};
+// Allow val >= min
+ko.validation.rules.MIN = {
+  validator: (val, min) => Number(val) >= Number(min),
+  message: min => `< ${min}`
+};
+// Allow undefined or val <= max
+ko.validation.rules.MAX_NULL = {
+  validator: (val, max) =>
+  typeof val === "undefined" || Number(val) <= Number(max),
+  message: max => `> ${max}`
+};
+// Allow val <= max
+ko.validation.rules.MAX = {
+  validator: (val, max) => Number(val) <= Number(max),
+  message: max => `> ${max}`
+};
+ko.validation.registerExtenders();
 
 /**
  * Singleton.
@@ -289,6 +320,26 @@ export class SVGcut {
       mouse.viewBox.x -= here.x - mouse.start.x;
       mouse.viewBox.y -= here.y - mouse.start.y;
     });
+  }
+
+  /**
+   * Use knockout validation to check all the models to ensure
+   * that all parameters are valid.
+   * @return {boolean} true if we're good to go
+   */
+  inputsAreValid() {
+    for (const model of Object.keys(this.models)) {
+      const vp = document.querySelector(`#${model}View>.card-header`);
+      if (this.models[model].isValid()) {
+        if (vp)
+          vp.classList.remove("errorInPane");
+      } else {
+        if (vp)
+          vp.classList.add("errorInPane");
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

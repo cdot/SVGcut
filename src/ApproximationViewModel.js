@@ -5,11 +5,7 @@
 /* global App */
 
 import { ViewModel } from "./ViewModel.js";
-
-const DEFAULT_MINSEGS = 5;
-const DEFAULT_MINSEGLEN = 0.25; //mm
-const DEFAULT_JOIN_TYPE = ClipperLib.JoinType.jtMiter;
-const DEFAULT_MITRE_LIMIT = 2; // deltas
+import { DEFAULT } from "./Constants.js";
 
 /**
  * View model for curve conversion parameters
@@ -27,7 +23,7 @@ export class ApproximationViewModel extends ViewModel {
      * Minimum number of segments in a curve. Used when selecting.
      * @member {observable.<number>}
      */
-    this.minSegs = ko.observable(DEFAULT_MINSEGS);
+    this.minSegs = ko.observable(DEFAULT.MIN_SEGS);
     this.minSegs.subscribe(() =>
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
@@ -36,7 +32,7 @@ export class ApproximationViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.minSegLen = ko.observable(
-      unitConverter.fromUnits(DEFAULT_MINSEGLEN, "mm"));
+      unitConverter.fromUnits(DEFAULT.MIN_SEG_LEN, "mm"));
     this.minSegLen.subscribe(() =>
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
     unitConverter.add(this.minSegLen);
@@ -45,14 +41,14 @@ export class ApproximationViewModel extends ViewModel {
      * Join type when offsetting polys during toolpath generation.
      * @member {observable.<number>}
      */
-    this.joinType = ko.observable(DEFAULT_JOIN_TYPE);
+    this.joinType = ko.observable(DEFAULT.JOIN_TYPE);
     this.joinType.subscribe(() => App.models.Operations.recombine());
 
     /**
      * Join mitre limit during toolpath generation.
      * @member {observable.<number>}
      */
-    this.mitreLimit = ko.observable(DEFAULT_MITRE_LIMIT);
+    this.mitreLimit = ko.observable(DEFAULT.MITRE_LIMIT);
     this.mitreLimit.subscribe(() => App.models.Operations.recombine());
   }
 
@@ -76,10 +72,10 @@ export class ApproximationViewModel extends ViewModel {
    * @override
    */
   reset() {
-    this.minSegs(DEFAULT_MINSEGS);
-    this.minSegLen(this.unitConverter.fromUnits(DEFAULT_MINSEGLEN, "mm"));
-    this.joinType(DEFAULT_JOIN_TYPE);
-    this.mitreLimit(DEFAULT_MITRE_LIMIT);
+    this.minSegs(DEFAULT.MIN_SEGS);
+    this.minSegLen(this.unitConverter.fromUnits(DEFAULT.MIN_SEG_LEN, "mm"));
+    this.joinType(DEFAULT.JOIN_TYPE);
+    this.mitreLimit(DEFAULT.MITRE_LIMIT);
   }
 
   /**

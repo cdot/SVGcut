@@ -35,6 +35,15 @@ export class OperationsViewModel extends ViewModel {
      * @member {observable.<Rect>}
      */
     this.boundingBox = ko.observable(new Rect());
+
+    /**
+     * Can an operation be added? Parameters have to be valid, and there
+     * has to be a selection
+     * @return {boolean} true if an operation can be added
+     */
+    this.canAddOperation = ko.computed(() => 
+      App.inputsAreValid()
+      && App.models.Selection.isSomethingSelected());
   }
 
   /**
@@ -141,6 +150,18 @@ export class OperationsViewModel extends ViewModel {
    */
   isSomethingSelected() {
     return App.models.Selection.isSomethingSelected();
+  }
+
+  /**
+   * @override
+   */
+  isValid() {
+    if (!super.isValid())
+      return false;
+    for (const op of this.operations())
+      if (!op.isValid())
+        return false;
+    return true;
   }
 
   /**

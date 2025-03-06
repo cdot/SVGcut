@@ -11,24 +11,18 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { Rect } from "./Rect.js";
 import * as SVG from "./SVG.js";
+import { ToolpathGenerator } from "./ToolpathGenerator.js";
 import { Drill } from "./Drill.js";
 import { Engrave } from "./Engrave.js";
-import { Inside } from "./Inside.js";
-import { Outside } from "./Outside.js";
 import { Perforate } from "./Perforate.js";
 import { Pocket } from "./Pocket.js";
+import { DEFAULT, MIN } from "./Constants.js";
 
-const DEFAULT_DIRECTION = "Conventional";
-const DEFAULT_STRATEGY  = "Annular";
-const DEFAULT_CUTDEPTH  = 1; // mm
-const DEFAULT_RAMP      = false;
-const DEFAULT_MARGIN    = 0; // mm
-const DEFAULT_SPACING   = 1; // mm
-const DEFAULT_WIDTH     = 0; // mm
-
+// Fields available in operation detail. Will be conditionally expanded
+// depending on the chosen operation.
 const FIELDS = [
   "name", "enabled", "combineOp", "opName", "cutDepth", "width",
-  "direction", "spacing", "ramp", "margin", "strategy"
+  "direction", "spacing", "ramp", "margin", "strategy", "offset"
 ];
 
 /**
@@ -36,16 +30,13 @@ const FIELDS = [
  * @typedef {('Group'|'Union'|'Intersect'|'Difference'|'XOR')} CombineOp
  * @memberof OperationViewModel
  */
-const DEFAULT_COMBINEOP = "Group";
 
 // Map from operation name to class of generator.
 const GENERATORS = {
-  Drill:         Drill,
-  Engrave:       Engrave,
-  Inside:        Inside,
-  Outside:       Outside,
-  Perforate:     Perforate,
-  Pocket:        Pocket
+  Engrave:   Engrave,
+  Pocket:    Pocket,
+  Drill:     Drill,
+  Perforate: Perforate
 };
 
 /**
@@ -100,7 +91,7 @@ export class OperationViewModel extends ViewModel {
      * combinedGeometry.
      * @member {observable.<string>}
      */
-    this.combineOp = ko.observable(DEFAULT_COMBINEOP);
+    this.combineOp = ko.observable(DEFAULT.COMBINE_OP);
     this.combineOp.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.recombine();
@@ -121,10 +112,16 @@ export class OperationViewModel extends ViewModel {
     this.toolpathGenerator = new (GENERATORS.Engrave)();
 
     /**
+     * Determine which of the operation fields needs to be enabled for this
+     * operation.
+     */
+    this.needs = ko.observable(this.toolpathGenerator.needs);
+
+    /**
      * The operation name. Default is Engrave as it's simplest.
      * @member {observable.<string>}
      */
-    this.operation = ko.observable("Engrave");
+    this.operation = ko.observable(DEFAULT.OPERATION);
     this.operation.subscribe(value => {
       // Instantiate a new toolpath generator for the chosen op
       const genClass = GENERATORS[value];
@@ -170,7 +167,7 @@ export class OperationViewModel extends ViewModel {
      * Enable ramping. See README.md
      * @member {observable.<boolean>}
      */
-    this.ramp = ko.observable(DEFAULT_RAMP);
+    this.ramp = ko.observable(DEFAULT.RAMP);
     this.ramp.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.updateGcode();
@@ -180,8 +177,18 @@ export class OperationViewModel extends ViewModel {
      * Either "Conventional" or "Climb". See README.md
      * @member {observable.<string>}
      */
-    this.direction = ko.observable(DEFAULT_DIRECTION);
+    this.direction = ko.observable(DEFAULT.DIRECTION);
     this.direction.subscribe(() => {
+      document.dispatchEvent(new Event("PROJECT_CHANGED"));
+      this.generateToolpaths();
+    });
+
+    /**
+     * Offset for engrave and perforate.
+     * @member {observable.<string>}
+     */
+    this.offset = ko.observable(DEFAULT.OFFSET);
+    this.offset.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.generateToolpaths();
     });
@@ -190,7 +197,7 @@ export class OperationViewModel extends ViewModel {
      * Pocketing strategy.
      * @member {observable.<string>}
      */
-    this.strategy = ko.observable(DEFAULT_STRATEGY);
+    this.strategy = ko.observable(DEFAULT.STRATEGY);
     this.strategy.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.generateToolpaths();
@@ -207,7 +214,9 @@ export class OperationViewModel extends ViewModel {
      * Maximum depth to cut to.
      * @member {observable.<number>}
      */
-    this.cutDepth = ko.observable(DEFAULT_CUTDEPTH);
+    this.cutDepth = ko.observable(DEFAULT.CUT_DEPTH)
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.CUT_DEPTH, "mm")) });
     unitConverter.add(this.cutDepth);
     this.cutDepth(App.models.Tool.passDepth());
     this.cutDepth.subscribe(() => {
@@ -219,7 +228,7 @@ export class OperationViewModel extends ViewModel {
      * Amount of material to leave uncut.
      * @member {observable.<number>}
      */
-    this.margin = ko.observable(DEFAULT_MARGIN);
+    this.margin = ko.observable(DEFAULT.MARGIN);
     unitConverter.add(this.margin);
     this.margin.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -230,7 +239,9 @@ export class OperationViewModel extends ViewModel {
      * Spacing of perforations.
      * @member {observable.<number>}
      */
-    this.spacing = ko.observable(DEFAULT_SPACING);
+    this.spacing = ko.observable(DEFAULT.SPACING)
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.SPACING, "mm")) });
     unitConverter.add(this.spacing);
     this.spacing.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -242,7 +253,8 @@ export class OperationViewModel extends ViewModel {
      * it will be rounded up.
      * @member {observable.<number>}
      */
-    this.width = ko.observable(DEFAULT_WIDTH);
+    this.width = ko.observable(DEFAULT.WIDTH)
+    .extend({ MIN: 0 });
     unitConverter.add(this.width);
     this.width.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -253,7 +265,9 @@ export class OperationViewModel extends ViewModel {
      * Override Tool Defaults
      * @member {observable.<number>}
      */
-    this.passDepth = ko.observable();
+    this.passDepth = ko.observable()
+    .extend({ MIN_NULL: ko.computed(() =>
+      unitConverter.fromUnits(MIN.PASS_DEPTH, "mm")) });
     unitConverter.add(this.passDepth);
     this.passDepth.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -264,7 +278,8 @@ export class OperationViewModel extends ViewModel {
      * Override Tool Defaults
      * @member {observable.<number>}
      */
-    this.stepOver = ko.observable();
+    this.stepOver = ko.observable()
+    .extend({ MIN_NULL: 1, MAX_NULL: 100 });
     this.stepOver.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       this.recombine();
@@ -274,7 +289,9 @@ export class OperationViewModel extends ViewModel {
      * Override Tool Defaults
      * @member {observable.<number>}
      */
-    this.cutRate = ko.observable();
+    this.cutRate = ko.observable()
+    .extend({ MIN_NULL: ko.computed(() =>
+      unitConverter.fromUnits(MIN.CUT_RATE, "mm")) });
     unitConverter.add(this.cutRate);
     this.cutRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -285,17 +302,12 @@ export class OperationViewModel extends ViewModel {
      * Override Tool Defaults
      * @member {observable.<number>}
      */
-    this.rpm = ko.observable();
+    this.rpm = ko.observable()
+    .extend({ MIN_NULL: 0 });
     this.rpm.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       document.dispatchEvent(new Event("UPDATE_GCODE"));
     });
-
-    /**
-     * Determine which of the operation fields needs to be enabled for this
-     * operation.
-     */
-    this.needs = ko.observable({});
 
     /**
      * Flag to lock out recombination, usually because we are in a
@@ -407,20 +419,6 @@ export class OperationViewModel extends ViewModel {
   }
 
   /**
-   * Get the width of the path to be created by the tool as it cuts.
-   * If the user specified width is less than the cutter diameter
-   * then it uses the cutter diameter.
-   * @return {number} in CutPoint units
-   */
-  toolPathWidth() {
-    const td = App.models.Tool.cutterDiameter.toUnits("integer");
-    const width = this.width.toUnits("integer");
-    if (width < td)
-      return td;
-    return width;
-  }
-
-  /**
    * (Re)generate geometry and tool paths from the paths associated
    * with this operation, by applying the requested combination op
    * (Intersect, Union etc.) The geometry is kept in this.combinedGeometry,
@@ -431,6 +429,9 @@ export class OperationViewModel extends ViewModel {
       return;
 
     this.removeCombinedGeometry();
+
+    if (!App.inputsAreValid())
+      return;
 
     // Combined paths operations are only applied to closed paths
     const closedPaths = this.operandPaths.filter(p => p.isClosed);
@@ -473,6 +474,11 @@ export class OperationViewModel extends ViewModel {
     if (!this.combinedGeometry)
       return;
 
+    this.removeToolPaths();
+
+    if (!App.inputsAreValid())
+      return;
+
     this.generatingToolpath = true;
 
     //console.debug(`generateToolpath for the ${this.combinedGeometry.length} paths in ${this.name()}`);
@@ -490,7 +496,10 @@ export class OperationViewModel extends ViewModel {
     const clear = App.models.Material.clearance.toUnits("integer");
 
     const params = App.models.Approximation.approximations;
-    params.cutterDiameter = toolModel.cutterDiameter.toUnits("integer");
+    // Don't allow cutter diameter <= 0
+    params.cutterDiameter = Math.max(
+      toolModel.cutterDiameter.toUnits("integer"),
+      ToolpathGenerator.FP_TOLERANCE);
     params.cutterAngle = toolModel.cutterAngle() * Math.PI / 180;
     params.cutDepth = cutDepth;
     params.overlap = 1 - stepOver / 100; // convert %age
@@ -503,10 +512,10 @@ export class OperationViewModel extends ViewModel {
     params.spacing = this.spacing.toUnits("integer");
     params.margin = this.margin.toUnits("integer");
     params.strategy = this.strategy();
+    params.offset = this.offset();
 
     const paths = this.toolpathGenerator.generateToolpaths(geometry, params);
 
-    this.removeToolPaths();
     this.toolPaths(paths);
 
     //console.debug(`generated ${paths.length} tool paths for ${this.name()}`);
@@ -517,6 +526,8 @@ export class OperationViewModel extends ViewModel {
     document.dispatchEvent(new Event("UPDATE_GCODE"));
 
     // Generate geometry for the cutter path
+    if (this.previewSVG)
+      this.previewSVG.remove();
     const previewGeometry = this.toolpathGenerator.generatePreviewGeometry(
       paths, params);
     if (previewGeometry.length > 0) {
@@ -554,10 +565,12 @@ export class OperationViewModel extends ViewModel {
     if (!this.enabled() || paths.length === 0)
       return undefined;
 
-    // Expand the BB if necessary to account for the radius of the
-    // tool cutting outside the tool path, Inside and Pocket ops
-    // should already have accounted for it.
-    const bloat = this.toolpathGenerator.bbBloat(this.toolPathWidth());
+    // How much to expand the BB if necessary to account for the
+    // radius of the tool cutting outside the tool path. This is
+    // an approximation only.
+    const tpw = Math.max(App.models.Tool.cutterDiameter.toUnits("integer"),
+                         this.width.toUnits("integer"));
+    const bloat = this.toolpathGenerator.bbBloat(tpw);
 
     let BB;
     for (const path of paths) {

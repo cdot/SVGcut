@@ -7,11 +7,7 @@ ClipperLib.use_xyz = true;
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
-import { UnitConverter } from "./UnitConverter.js";
 import { ToolpathGenerator } from "./ToolpathGenerator.js";
-
-// A small scaling that brings values within the maximum resolution
-const FP_TOLERANCE = 1 - 1 / UnitConverter.from.mm.to.integer;
 
 /**
  * Drill a line of perforations along the path (or outside it, in the case
@@ -21,7 +17,7 @@ const FP_TOLERANCE = 1 - 1 / UnitConverter.from.mm.to.integer;
 export class Perforate extends ToolpathGenerator {
 
   constructor() {
-    super({ spacing: true });
+    super({ spacing: true, offset: true });
     this.generatesZ = true;
   }
 
@@ -76,7 +72,7 @@ export class Perforate extends ToolpathGenerator {
       //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
       newPath.push(new CutPoint(segStart.X, segStart.Y));
       gap = 0;
-      while (gap + segLen < step * FP_TOLERANCE) {
+      while (gap + segLen < step * ToolpathGenerator.FP_TOLERANCE) {
         // FP_TOLERANCE to defeat floating point error.
         if (++segi === path.length)
           break; // no more segments, we're done
@@ -116,6 +112,7 @@ export class Perforate extends ToolpathGenerator {
    * @param {CutPaths} geometry
    * @param {object} params named parameters
    * @param {number} params.cutterDiameter in "integer" units
+   * @param {string} params.offset whether to cut On, Inside, or Outside
    * @param {number} params.spacing is the gap to leave between perforations
    * @param {number} params.topZ is the Z to which the tool is withdrawn
    * @param {number} params.safeZ is the Z to which the tool is withdrawn
@@ -127,14 +124,20 @@ export class Perforate extends ToolpathGenerator {
     assert(geometry instanceof CutPaths);
     const toolPath = new CutPath();
 
-    // Bloat the closed paths by half the cutter diameter
     const bloated = new CutPaths();
     for (const path of geometry) {
       let vertexPath = path;
       if (path.isClosed) {
-        params.joinType ??= ClipperLib.JoinType.jtRound;
-        vertexPath = new CutPaths(path)
-        .offset(params.cutterDiameter / 2, params)[0];
+        if (params.offset === "Outside") {
+          // Bloat the closed paths by half the cutter diameter
+          params.joinType ??= ClipperLib.JoinType.jtRound;
+          vertexPath = new CutPaths(path)
+          .offset(params.cutterDiameter / 2, params)[0];
+        } else if (params.offset === "Inside") {
+          params.joinType ??= ClipperLib.JoinType.jtMiter;
+          vertexPath = new CutPaths(path)
+          .offset(-params.cutterDiameter / 2, params)[0];
+        }
       }
       const ring = this.perforatedPath(vertexPath, params);
       for (const vertex of ring)

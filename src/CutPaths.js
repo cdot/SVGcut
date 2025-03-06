@@ -8,6 +8,7 @@ import { UnitConverter } from "./UnitConverter.js";
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { BBox3D } from "./BBox3D.js";
+import { CONST } from "./Constants.js";
 
 /**
  * @typedef {number} MitreLimit
@@ -39,42 +40,6 @@ import { BBox3D } from "./BBox3D.js";
  * + `etClosedPolygon` Ends are joined using the JoinType value and the
  * path filled as a polygon
  */
-
-/*
- * The distance parameter's default value is approximately √2 so that
- * a vertex will be removed when adjacent or semi-adjacent vertices
- * having their corresponding X and Y coordinates differing by no more
- * than 1 unit. However according to tests by the clipper-lib
- * developers, the best distance value to remove artifacts before
- * offsetting is 0.1 * scale.
- */
-const CLEAN_POLY_DIST = 0.0001 * UnitConverter.from.mm.to.integer;
-
-/*
- * @see {@link https://github.com/junmer/clipper-lib/blob/HEAD/Documentation.md#clipperlibclipperoffsetarctolerance}
- * From the ClipperLib documentation:
- * "Only relevant when JoinType = jtRound and/or EndType = etRound.
- * Since flattened paths can never perfectly represent arcs, this
- * specifies a maximum acceptable imprecision ('tolerance') when arcs
- * are approximated in an offsetting operation. Smaller values will
- * increase 'smoothness' up to a point though at a cost of performance
- * and in creating more vertices to construct the arc.  The default
- * ArcTolerance is 0.25 units. This means that the maximum distance
- * the flattened path will deviate from the 'true' arc will be no more
- * than 0.25 units (before rounding).  Reducing tolerances below 0.25
- * will not improve smoothness since vertex coordinates will still be
- * rounded to integer values. The only way to achieve sub-integer
- * precision is through coordinate scaling before and after offsetting
- * (see example below).  It's important to make ArcTolerance a
- * sensible fraction of the offset delta (arc radius). Large
- * tolerances relative to the offset delta will produce poor arc
- * approximations but, just as importantly, very small tolerances will
- * substantially slow offsetting performance while providing
- * unnecessary degrees of precision."
- * Setting to 0.06 of the scaled value means the arc tolerance will be
- * 0.06mm, more than enough for us.
- */
-const ARC_TOLERANCE = 0.06 * UnitConverter.from.mm.to.integer;
 
 /**
  * A single CutPaths object can represent both a disjoint set of CutPath
@@ -186,7 +151,7 @@ export class CutPaths extends Array {
 
     const co = new ClipperLib.ClipperOffset(
       approx.mitreLimit ?? 2,
-      approx.arcTolerance ?? ARC_TOLERANCE);
+      approx.arcTolerance ?? CONST.ARC_TOLERANCE);
     const jt = (amount < 0 || typeof approx.joinType === "undefined")
           ? ClipperLib.JoinType.jtMiter : approx.joinType;
 
@@ -279,7 +244,7 @@ export class CutPaths extends Array {
         // 3. that are within the specified distance of a semi-adjacent
         // vertex together with their out-lying vertices
         const cleanPolys = ClipperLib.Clipper.CleanPolygon(
-          path, CLEAN_POLY_DIST);
+          path, CONST.CLEAN_POLY_DIST);
         // Remove self-intersections
         const fr = fillRule === "evenodd"
             ? ClipperLib.PolyFillType.pftEvenOdd
@@ -290,7 +255,7 @@ export class CutPaths extends Array {
         // Remove duplicated vertices. Note: works in 2D and will kill
         // vertices even if Z is different.
         path.unduplicate();
-        const clean = ClipperLib.JS.Clean(path, CLEAN_POLY_DIST);
+        const clean = ClipperLib.JS.Clean(path, CONST.CLEAN_POLY_DIST);
         cleanPaths.push(new CutPath(clean, false));
       }
     }
@@ -340,7 +305,7 @@ export class CutPaths extends Array {
    */
   closestVertex(pt, closedOnly) {
     let best;
-    for (let i = 0; i < this.length; ++i) {
+    for (let i = 0; i < this.length; i++) {
       const path = this[i];
       if (typeof closedOnly === "undefined" || path.isClosed === closedOnly) {
         let cp = path.closestVertex(pt);
@@ -468,11 +433,11 @@ export class CutPaths extends Array {
 
       // re-order the points on the closest path to bring the closest
       // point to the front
-      path.makeLast(closestPathIndex);
+      path.makeFirst(closestPointIndex);
       path.push(path[0]); // close the "new" path
       // Does the edge from the current point to the closest point cross
       // the bounds?
-      if (bounds.crosses(currentPoint, path[0])) {
+      if (bounds && bounds.crosses(currentPoint, path[0])) {
         // it crosses, need a new path
         mergedPaths.push(currentPath);
         currentPath = path;

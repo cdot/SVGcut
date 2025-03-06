@@ -7,12 +7,10 @@ ClipperLib.use_xyz = true;
 import { UnitConverter } from "./UnitConverter.js";
 import { CutPoint } from "./CutPoint.js";
 import { BBox3D } from "./BBox3D.js";
+import { CONST } from "./Constants.js";
 
-/*
- * Remove path vertices closer than this.
- */
-const CLEAN_PATH_DIST = 0.0001 * UnitConverter.from.mm.to.integer;
-const CLEAN_PATH_DIST2 = CLEAN_PATH_DIST * CLEAN_PATH_DIST;
+// Remove path vertices closer than this.
+const CLEAN_PATH_DIST2 = CONST.CLEAN_PATH_DIST * CONST.CLEAN_PATH_DIST;
 
 /**
  * Paths processed by ClipperLib are simple arrays of points. That
@@ -126,15 +124,14 @@ export class CutPath extends Array {
    * distance
    */
   closestVertex(pt) {
-    let best, i = 0;
-    for (const tp of this) {
-      const d2 = pt.dist2(tp);
+    let best;
+    for (let i = 0; i < this.length; i++) {
+      const d2 = pt.dist2(this[i]);
       if (best && d2 < best.dist2) {
         best.pointIndex = i;
         best.dist2 = d2;
       } else if (!best)
         best = { pointIndex: i, dist2: d2 };
-      i++;
     }
     return best;
   }

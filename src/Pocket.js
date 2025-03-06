@@ -154,7 +154,7 @@ export class Pocket extends ToolpathGenerator {
     let off = -params.cutterDiameter / 2;
     // Add the margin
     if (params.margin !== 0)
-      off -= -params.margin;
+      off -= params.margin;
 
     let iPockets = geometry.offset(off, params);
 

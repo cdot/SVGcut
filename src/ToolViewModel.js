@@ -6,15 +6,7 @@
 /* global App */
 
 import { ViewModel } from "./ViewModel.js";
-
-const DEFAULT_STEP_OVER   = 40;   // percentage of tool diameter
-const DEFAULT_DIAMETER    = 1;    // mm
-const DEFAULT_ANGLE       = 90;   // degrees, 90=flat
-const DEFAULT_PASSDEPTH   = 0.2;  // mm
-const DEFAULT_RAPID_RATE  = 1000; // mm/min
-const DEFAULT_PLUNGE_RATE = 100;  // mm/min
-const DEFAULT_CUT_RATE    = 100;  // mm/min
-const DEFAULT_SPINDLE_RPM = 1000; // rpm
+import { DEFAULT, MIN } from "./Constants.js";
 
 /**
  * View model for the Tool pane
@@ -26,14 +18,16 @@ export class ToolViewModel extends ViewModel {
     super(unitConverter);
 
     /**
-     * Tool diameter mm, must be > 0
+     * Tool diameter mm, must be >= 0.01mm
      * @member {observable.<number>}
      */
-    this.cutterDiameter = ko.observable(
-      unitConverter.fromUnits(DEFAULT_DIAMETER, "mm"))
-    .extend({ min: unitConverter.fromUnits(0.01, "mm")});
+    this.cutterDiameter = ko
+    .observable(unitConverter.fromUnits(DEFAULT.TOOL_DIAMETER, "mm"))
+    .extend({
+      MIN: ko.computed(() => unitConverter.fromUnits(MIN.TOOL_DIAMETER, "mm"))
+    });
     unitConverter.add(this.cutterDiameter);
-    this.cutterDiameter.subscribe(() => {
+    this.cutterDiameter.subscribe(v => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       App.models.Operations.recombine();
     });
@@ -42,7 +36,9 @@ export class ToolViewModel extends ViewModel {
      * Tool v-bit angle
      * @member {observable.<number>}
      */
-    this.cutterAngle = ko.observable(DEFAULT_ANGLE);
+    this.cutterAngle = ko
+    .observable(DEFAULT.TOOL_ANGLE)
+    .extend({ MIN: 1, MAX: 90 });
     this.cutterAngle.subscribe(newValue => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       App.models.Operations.recombine();
@@ -52,8 +48,10 @@ export class ToolViewModel extends ViewModel {
      * Depth of each tool pass. Operator can override.
      * @member {observable.<number>}
      */
-    this.passDepth = ko.observable(
-      unitConverter.fromUnits(DEFAULT_PASSDEPTH, "mm"));
+    this.passDepth = ko
+    .observable(unitConverter.fromUnits(DEFAULT.PASS_DEPTH, "mm"))
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.PASS_DEPTH, "mm"))});
     unitConverter.add(this.passDepth);
     this.passDepth.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -64,7 +62,8 @@ export class ToolViewModel extends ViewModel {
      * Percentage of the tool diameter. Operator can override.
      * @member {observable.<number>}
      */
-    this.stepOver = ko.observable(DEFAULT_STEP_OVER);
+    this.stepOver = ko.observable(DEFAULT.STEP_OVER)
+    .extend({ MIN: 1, MAX: 100 });
     this.stepOver.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       App.models.Operations.recombine();
@@ -75,7 +74,9 @@ export class ToolViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.rapidRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_RAPID_RATE, "mm"));
+      unitConverter.fromUnits(DEFAULT.RAPID_RATE, "mm"))
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.RAPID_RATE, "mm")) });
     unitConverter.add(this.rapidRate);
     this.rapidRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -87,7 +88,9 @@ export class ToolViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.plungeRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_PLUNGE_RATE, "mm"));
+      unitConverter.fromUnits(DEFAULT.PLUNGE_RATE, "mm"))
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.PLUNGE_RATE, "mm")) });
     unitConverter.add(this.plungeRate);
     this.plungeRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -99,7 +102,9 @@ export class ToolViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.cutRate = ko.observable(
-      unitConverter.fromUnits(DEFAULT_CUT_RATE, "mm"));
+      unitConverter.fromUnits(DEFAULT.CUT_RATE, "mm"))
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.CUT_RATE, "mm")) });
     unitConverter.add(this.cutRate);
     this.cutRate.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -110,7 +115,8 @@ export class ToolViewModel extends ViewModel {
      * Spindle speed. Operator can override.
      * @member {observable.<number>}
      */
-    this.rpm = ko.observable(DEFAULT_SPINDLE_RPM);
+    this.rpm = ko.observable(DEFAULT.SPINDLE_RPM)
+    .extend({ MIN: 0 });
     this.rpm.subscribe(() => {
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
       document.dispatchEvent(new Event("UPDATE_GCODE"));
@@ -125,14 +131,14 @@ export class ToolViewModel extends ViewModel {
    * @override
    */
   reset() {
-    this.cutterDiameter(DEFAULT_DIAMETER);
-    this.cutterAngle(DEFAULT_ANGLE);
-    this.stepOver(DEFAULT_STEP_OVER);
-    this.passDepth(DEFAULT_PASSDEPTH);
-    this.rapidRate(DEFAULT_RAPID_RATE);
-    this.plungeRate(DEFAULT_PLUNGE_RATE);
-    this.cutRate(DEFAULT_CUT_RATE);
-    this.rpm(DEFAULT_SPINDLE_RPM);
+    this.cutterDiameter(DEFAULT.TOOL_DIAMETER);
+    this.cutterAngle(DEFAULT.TOOL_ANGLE);
+    this.stepOver(DEFAULT.STEP_OVER);
+    this.passDepth(DEFAULT.PASS_DEPTH);
+    this.rapidRate(DEFAULT.RAPID_RATE);
+    this.plungeRate(DEFAULT.PLUNGE_RATE);
+    this.cutRate(DEFAULT.CUT_RATE);
+    this.rpm(DEFAULT.SPINDLE_RPM);
   }
 
   /**

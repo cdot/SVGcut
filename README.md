@@ -65,7 +65,8 @@ Use the mouse to select the paths (the _geometry_) you want to convert
 to Gcode (shift+click to select another, `Select↘All` to select everything).
 They will change colour. In the `Operations` pane,
 click `Create Operation` to tell it what you want to do with the
-selected paths. There are a number of operations available, describedin detail in the popup help.
+selected paths. There are a number of operations available, described
+in detail in the popup help.
 
 The display will change to show what has been selected for
 the operation, and the tool paths generated for that operation.
@@ -103,7 +104,7 @@ operates in. If your machine supports the `G21` code you can just use
 the units you are most comfortable in.
 
 All CNC machines have a coordinate system where X increases to the right,
-Y away from the operator, and Z increases upwards. SVG cut shows you where
+Y away from the operator, and Z increases upwards. SVGcut shows you where
 the machine 0.0 is relative to your work using an axes cursor - green
 for Y, and red for X, same as Candle.
 
@@ -196,14 +197,13 @@ these, and more.
 + Perforate operation
 + Raster pocket operation
 + Drill operation (for PCBs)
-+ Per-operation spindle speed control
++ Per-operation overrides of some tool settings
 + Gcode text preview
 + Extensive newbie documentation
 
 Some features of `jscut` have been disabled/removed. This may be because
 they are deemed too esoteric, or the (undocumented) code was too
 complex to reverse engineer, for limited end-user value.
-+ `V Pocket` operation. V cutting is a complex process with many variables, and there are many more powerful tools out there that can handle it.
 - [Chilipeppr](http://www.chilipeppr.com/)
 - [Google Drive](https://drive.google.com/)
 - [Dropbox](https://www.dropbox.com/)

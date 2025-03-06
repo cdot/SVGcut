@@ -12,12 +12,7 @@ import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
 import * as HoldingTabs from "./HoldingTabs.js";
 import { Rect } from "./Rect.js";
-
-const DEFAULT_UNITS = "mm";
-const DEFAULT_ORIGIN = "SVG page";
-const DEFAULT_EXTRAOFFSETX = 0;
-const DEFAULT_EXTRAOFFSETY = 0;
-const DEFAULT_RETURNTO00 = false;
+import { DEFAULT } from "./Constants.js";
 
 /**
  * ViewModel for Gcode Generation panel.
@@ -41,7 +36,7 @@ export class GcodeGenerationViewModel extends ViewModel {
      * Units used in the Gcode pane, and the generated Gcode
      * @member {observable.<string>}
      */
-    this.units = ko.observable(DEFAULT_UNITS);
+    this.units = ko.observable(DEFAULT.GCODE_UNITS);
 
     this.unitConverter = new UnitConverter(this.units);
 
@@ -73,8 +68,8 @@ export class GcodeGenerationViewModel extends ViewModel {
      * True to return to machine 0,0 at the end of the GCode.
      * @member {observable.<boolean>}
      */
-    this.returnTo00 = ko.observable(DEFAULT_RETURNTO00);
-    this.returnTo00.subscribe(() => {
+    this.returnHome = ko.observable(DEFAULT.RETURN_HOME);
+    this.returnHome.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
     });
@@ -91,7 +86,7 @@ export class GcodeGenerationViewModel extends ViewModel {
      * with the centre of the work bounding box.
      * @member {observable.<string>}
      */
-    this.origin = ko.observable(DEFAULT_ORIGIN);
+    this.origin = ko.observable(DEFAULT.ORIGIN);
     this.origin.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -101,7 +96,7 @@ export class GcodeGenerationViewModel extends ViewModel {
      * Extra offset of the work origin from the machine origin
      * @member{observable.number}
      */
-    this.extraOffsetX = ko.observable(DEFAULT_EXTRAOFFSETX);
+    this.extraOffsetX = ko.observable(DEFAULT.EXTRA_X);
     this.extraOffsetX.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -123,7 +118,7 @@ export class GcodeGenerationViewModel extends ViewModel {
      * Extra offset of the work origin from the machine origin
      * @member{observable.number}
      */
-    this.extraOffsetY = ko.observable(DEFAULT_EXTRAOFFSETY);
+    this.extraOffsetY = ko.observable(DEFAULT.EXTRA_Y);
     this.extraOffsetY.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));
@@ -170,11 +165,11 @@ export class GcodeGenerationViewModel extends ViewModel {
    * @override
    */
   reset() {
-    this.units(DEFAULT_UNITS);
-    this.origin(DEFAULT_ORIGIN);
-    this.extraOffsetX(DEFAULT_EXTRAOFFSETX);
-    this.extraOffsetY(DEFAULT_EXTRAOFFSETY);
-    this.returnTo00(DEFAULT_RETURNTO00);
+    this.units(DEFAULT.GCODE_UNITS);
+    this.origin(DEFAULT.ORIGIN);
+    this.extraOffsetX(DEFAULT.EXTRA_X);
+    this.extraOffsetY(DEFAULT.EXTRA_Y);
+    this.returnHome(DEFAULT.RETURN_HOME);
     this.gcode([]);
     document.dispatchEvent(new Event("UPDATE_SIMULATION"));
   }
@@ -229,6 +224,11 @@ export class GcodeGenerationViewModel extends ViewModel {
     if (this.disable)
       return;
 
+    this.gcode([]);
+
+    if (!App.inputsAreValid())
+      return;
+
     // Get the set of enabled operations
     const ops = [];
     for (const op of App.models.Operations.operations()) {
@@ -273,7 +273,7 @@ export class GcodeGenerationViewModel extends ViewModel {
       plungeRate:  App.models.Tool.plungeRate.toUnits(gunits),
       retractRate: App.models.Tool.rapidRate.toUnits(gunits),
       rapidRate:   App.models.Tool.rapidRate.toUnits(gunits),
-      returnTo00:  this.returnTo00(),
+      returnHome:  this.returnHome(),
       workWidth:   Number(this.bbWidth()),
       workHeight:  Number(this.bbHeight()),
       xOffset:     offset.x,
@@ -390,7 +390,7 @@ export class GcodeGenerationViewModel extends ViewModel {
     return {
       units: this.unitConverter.units(),
       origin: this.origin(),
-      returnTo00: this.returnTo00(),
+      returnHome: this.returnHome(),
       extraOffsetX: this.extraOffsetX(),
       extraOffsetY: this.extraOffsetY()
     };
@@ -402,7 +402,7 @@ export class GcodeGenerationViewModel extends ViewModel {
   fromJson(json) {
     this.updateObservable(json, 'units');
     this.updateObservable(json, 'origin');
-    this.updateObservable(json, 'returnTo00');
+    this.updateObservable(json, 'returnHome');
     this.updateObservable(json, 'extraOffsetX');
     this.updateObservable(json, 'extraOffsetY');
   };

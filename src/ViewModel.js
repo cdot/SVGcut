@@ -4,6 +4,7 @@
 /* global bootstrap */
 // import "knockout"
 /* global ko */
+/* global assert */
 
 /**
  * Base class of all view models. There is a view model for each main panel
@@ -26,6 +27,22 @@ export class ViewModel {
      * @member {UnitConverter?}
      */
     this.unitConverter = unitConverter;
+  }
+
+  /**
+   * Check that all inputs are "isValid" as defined by
+   * knockout-validation - where it applies.
+   * @return {boolean} true if all inputs have valid values
+   */
+  isValid() {
+    for (const k of Object.keys(this)) {
+      if (ko.isObservable(this[k])
+          && typeof this[k].isValid === "function"
+          && !this[k].isValid()) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

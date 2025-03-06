@@ -7,9 +7,7 @@
 
 import { ViewModel } from "./ViewModel.js";
 import * as SVG from "./SVG.js";
-
-const DEFAULT_THICKNESS = 10; //mm
-const DEFAULT_CLEARANCE = 10; //mm
+import { DEFAULT } from "./Constants.js";
 
 function formatZ(z) {
   return parseFloat(z).toFixed(3);
@@ -32,7 +30,7 @@ export class MaterialViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.thickness = ko.observable(
-      unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
+      unitConverter.fromUnits(DEFAULT.THICKNESS, "mm"));
     unitConverter.add(this.thickness);
     this.thickness.subscribe(
       () => {
@@ -45,7 +43,7 @@ export class MaterialViewModel extends ViewModel {
      * @member {observable.<number>}
      */
     this.clearance = ko.observable(
-      unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
+      unitConverter.fromUnits(DEFAULT.CLEARANCE, "mm"));
     unitConverter.add(this.clearance);
     this.clearance.subscribe(
       () => {
@@ -57,7 +55,7 @@ export class MaterialViewModel extends ViewModel {
      * Z origin, Top or Bottom of the material
      * @member {observable.<string>}
      */
-    this.zOrigin = ko.observable("Top");
+    this.zOrigin = ko.observable(DEFAULT.Z_ORIGIN);
     this.zOrigin.subscribe(
       () => {
         document.dispatchEvent(new Event("UPDATE_GCODE"));
@@ -140,9 +138,9 @@ export class MaterialViewModel extends ViewModel {
    */
   reset() {
     this.thickness(
-      this.unitConverter.fromUnits(DEFAULT_THICKNESS, "mm"));
+      this.unitConverter.fromUnits(DEFAULT.THICKNESS, "mm"));
     this.clearance(
-      this.unitConverter.fromUnits(DEFAULT_CLEARANCE, "mm"));
+      this.unitConverter.fromUnits(DEFAULT.CLEARANCE, "mm"));
     this.zOrigin("Top");
   }
 

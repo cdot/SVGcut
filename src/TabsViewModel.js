@@ -7,8 +7,7 @@
 import { ViewModel } from "./ViewModel.js";
 import { CutPaths } from "./CutPaths.js";
 import { TabViewModel } from "./TabViewModel.js";
-
-const DEFAULT_MAXCUTDEPTH = 0.5;
+import { DEFAULT, MIN } from "./Constants.js";
 
 /**
  * View model for (holding) Tabs pane.
@@ -32,7 +31,9 @@ export class TabsViewModel extends ViewModel {
      * Maximum depth operations may cut to when they pass over tabs
      * @member {observable.<number>}
      */
-    this.maxCutDepth = ko.observable(DEFAULT_MAXCUTDEPTH);
+    this.maxCutDepth = ko.observable(DEFAULT.TAB_CUT_DEPTH)
+    .extend({ MIN: ko.computed(() =>
+      unitConverter.fromUnits(MIN.TAB_CUT_DEPTH, "mm")) });
     unitConverter.add(this.maxCutDepth);
     this.maxCutDepth.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));

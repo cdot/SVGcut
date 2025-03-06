@@ -9,6 +9,7 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { ViewModel } from "./ViewModel.js";
 import { segments2d } from "./SVG.js";
+import { DEFAULT } from "./Constants.js";
 
 /**
  * View model for a holding tab within the `Tabs` card.
@@ -59,7 +60,7 @@ export class TabViewModel extends ViewModel {
      * tab.
      * @member {observable.<number>}
      */
-    this.margin = ko.observable("0.0");
+    this.margin = ko.observable(DEFAULT.TAB_MARGIN);
     unitConverter.addComputed(this.margin);
     this.margin.subscribe(() => {
       this.recombine();
@@ -108,6 +109,9 @@ export class TabViewModel extends ViewModel {
    */
   recombine() {
     if (this.disableRecombination)
+      return;
+
+    if (!App.inputsAreValid())
       return;
 
     this.removeCombinedGeometry();

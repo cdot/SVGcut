@@ -139,7 +139,7 @@ describe("Gcode", () => {
     retractRate: 100,
     cutRate:     80,
     rapidRate:   1000,
-    returnTo00:  true,
+    returnHome:  true,
     workWidth:   300,
     workHeight:  180
   };
@@ -178,7 +178,7 @@ describe("Gcode", () => {
     plungeRate:  50,
     retractRate: 200,
     rapidRate:   1000,
-    returnTo00:  true,
+    returnHome:  true,
     workWidth:   300,
     workHeight:  180
   };
@@ -338,7 +338,7 @@ describe("Gcode", () => {
       tabsDepth:   1,      safeZ:       10,
       plungeRate:  4,
       retractRate: 200,      rapidRate:   1000,
-      returnTo00:  true,      workWidth:   300,      workHeight:  180
+      returnHome:  true,      workWidth:   300,      workHeight:  180
     };
     const op = {
       paths: new CutPaths([
@@ -394,7 +394,7 @@ describe("Gcode", () => {
       decimal:    2,    topZ:       0,    botZ:        -5,
       tabsDepth:  1,    safeZ:      10,
       plungeRate: 4,    retractRate: 200,
-      rapidRate:  1000, returnTo00: true,
+      rapidRate:  1000, returnHome: true,
       workWidth:  300,  workHeight: 180
     };
     const op = {
@@ -449,7 +449,7 @@ describe("Gcode", () => {
       gunits:      "mm",  xScale:      1,   yScale:      1,
       zScale:      1,     xOffset:     0,   yOffset:     0,
       decimal:     2,     retractRate: 200, rapidRate:   1000,
-      returnTo00:  true,  workWidth:   300, workHeight:  180,
+      returnHome:  true,  workWidth:   300, workHeight:  180,
       tabsDepth:   1,     safeZ:       10,  topZ:        0,
       botZ:        -5,
       plungeRate:  50
@@ -497,14 +497,14 @@ describe("Gcode", () => {
   it("precalculated drill path", () => {
     const opJob = {
       gunits:      "mm",
-      xScale:      1,      yScale:      1,      zScale:      1,
-      xOffset:     0,      yOffset:     0,
+      xScale:      1, yScale: 1, zScale: 1,
+      xOffset:     0, yOffset: 0,
       decimal:     2,
-      topZ:        0,      botZ:        -5,
-      tabsDepth:   1,      safeZ:       10,
-      plungeRate:  4,
-      retractRate: 200,      rapidRate:   1000,
-      returnTo00:  true,      workWidth:   300,      workHeight:  180
+      topZ:        0, botZ: -5, safeZ: 10,
+      workWidth: 300, workHeight:  180,
+      tabsDepth:   1,
+      plungeRate:  4, retractRate: 200, rapidRate: 1000,
+      returnHome:  true
     };
     const op = {
       paths: new CutPaths([

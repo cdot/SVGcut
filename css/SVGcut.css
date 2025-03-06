@@ -146,3 +146,12 @@ input[type="number"] {
   padding-right: 0.25em;
   vertical-align: middle;
 }
+
+/* Reporting input errors */
+.validationMessage {
+  color: white;
+  background-color: red;
+}
+.errorInPane {
+  background-color: #ffa07a;
+}

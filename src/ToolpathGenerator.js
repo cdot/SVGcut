@@ -7,11 +7,15 @@ ClipperLib.use_xyz = true;
 import { CutPoint } from "./CutPoint.js";
 import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
+import { UnitConverter } from "./UnitConverter.js";
 
 /**
  * Base class of all toolpath/preview geometry generators.
  */
 export class ToolpathGenerator {
+
+// A small scaling that brings values within the maximum resolution
+  static FP_TOLERANCE = 1 - 1 / UnitConverter.from.mm.to.integer;
 
   /**
    * @param {Object.<string,boolean>} needs list of UI options needed
@@ -77,43 +81,6 @@ export class ToolpathGenerator {
   }
 
   /**
-   * Compute outline tool path.
-   * @param {CutPaths} geometry
-   * @param {object} params named parameters. All the parameters
-   * of generateToolpaths, plus:
-   * @param {boolean} params.needReverse
-   * @param {number} params.step
-   * @param {CutPaths} params.clipPoly
-   * @return {CutPaths}
-   * @protected
-   */
-  outline(geometry, params) {
-    let currentWidth = params.cutterDiameter;
-    const eachWidth = params.cutterDiameter * (1 - params.overlap);
-
-    const toolPaths = new CutPaths();
-    while (currentWidth <= params.width) {
-      toolPaths.push(...geometry);
-      let i;
-      if (params.needReverse)
-        for (i = 0; i < geometry.length; ++i)
-          geometry[i].reverse();
-      const nextWidth = currentWidth + eachWidth;
-      if (nextWidth > params.width && params.width - currentWidth > 0) {
-        geometry = geometry.offset(params.width - currentWidth, params);
-        if (params.needReverse)
-          for (i = 0; i < geometry.length; ++i)
-            geometry[i].reverse();
-        break;
-      }
-      currentWidth = nextWidth;
-      geometry = geometry.offset(params.step * eachWidth, params);
-    }
-    toolPaths.mergePaths(params.clipPoly);
-    return toolPaths;
-  }
-
-  /**
    * Subclasses must override. All input measurements are in "integer" units.
    * @param {CutPaths} geometry input geometry
    * @param {object} params named parameters. Not all are used by all
@@ -149,8 +116,7 @@ export class ToolpathGenerator {
    * Generate preview geometry for the paths.
    * @param {CutPaths} geometry
    * @param {object} params named parameters
-   * @param {number} params.width desired path width (will be at least
-   * the cutter width)
+   * @param {number} params.cutterDiameter is in "integer" units
    * @param {JoinType} params.joinType join type for offsetting
    * @param {number} params.mitreLimit join mitre limit for offsetting
    * @param {number?} params.margin margin, for those that use it

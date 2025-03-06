@@ -41,6 +41,10 @@ export class CutPoint extends ClipperLib.IntPoint {
     return dx * dx + dy * dy;
   }
 
+  /**
+   * Get the distance between two points
+   * @param {CutPoint} b
+   */
   dist(b) {
     return Math.sqrt(this.dist2(b));
   }

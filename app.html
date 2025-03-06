@@ -56,7 +56,7 @@
             </tr>
           </table>
           <input id="TimeControl" class="form-range" type="range"
-                 max="1000" value="0" />
+                 min="0" max="1000" value="0" />
           <canvas id="SimulationCanvas" />
           <ul>
             <li>Use mouse to rotate view</li>
@@ -215,7 +215,7 @@
               <div style="display:inline-block">
                 <button
                   id="CreateOperationButton" class="btn btn-primary hover-help"
-                  data-bind="click:addOperation,enable:App.models.Selection.isSomethingSelected()">
+                  data-bind="click:addOperation,enable:canAddOperation">
                   Create Operation
                 </button>
               </div>
@@ -242,7 +242,7 @@
                   </div>
                   <div class="card-list-cell">
                     <input id="OpCutDepth"
-                           type="number" step="any" min="0"
+                           type="number"
                            data-bind="value:cutDepth"
                            class="hover-help" />
                   </div>
@@ -284,6 +284,23 @@
                     <td><button name="OpCombine"
                                 class="helper">&#9432;</button></td>
                   </tr>
+                  <tr data-bind="visible:needs().offset">
+                    <td>
+                      <label for="OpOffset" class="control-label">
+                        Offset
+                      </label>
+                    </td>
+                    <td>
+                      <select id="OpOffset"
+                              data-bind="value:offset">
+                        <option value="On">On</option>
+                        <option value="Inside">Inside</option>
+                        <option value="Outside">Outside</option>
+                      </select>
+                    </td>
+                    <td><button name="OpOffset"
+                                class="helper">&#9432;</button></td>
+                  </tr>
                   <tr data-bind="visible:needs().strategy">
                     <td>
                       <label for="OpStrategy" class="control-label">
@@ -317,7 +334,7 @@
                     <td><button name="OpDirection"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs().margin">
+                  <tr data-bind="visible:(needs().margin && offset()!=='On')">
                     <td>
                       <label for="OpMargin" class="control-label">
                         Margin
@@ -332,6 +349,36 @@
                     <td><button name="OpMargin"
                                 class="helper">&#9432;</button></td>
                   </tr>
+                  <tr data-bind="visible:needs().spacing">
+                    <td>
+                      <label for="OpSpacing" class="control-label">
+                        Spacing
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpSpacing"
+                             type="number"
+                             data-bind="value:spacing" />
+                      <span data-bind="text: App.models.Project.units"></span>
+                    </td>
+                    <td><button name="OpSpacing"
+                                class="helper">&#9432;</button></td>
+                  </tr>
+                  <tr data-bind="visible:(needs().width && offset()!=='On')">
+                    <td>
+                      <label for="OpWidth" class="control-label">
+                        Width
+                      </label>
+                    </td>
+                    <td>
+                      <input id="OpWidth"
+                             type="number"
+                             data-bind="value:width" />
+                      <span data-bind="text:App.models.Project.units"></span>
+                    </td>
+                    <td><button name="OpWidth"
+                                class="helper">&#9432;</button></td>
+                  </tr>
                   <tr data-bind="visible:needs().ramp">
                     <td>
                       <label for="OpRamp" class="control-label">
@@ -343,36 +390,6 @@
                              data-bind="checked:ramp" />
                     </td>
                     <td><button name="OpRamp"
-                                class="helper">&#9432;</button></td>
-                  </tr>
-                  <tr data-bind="visible:needs().spacing">
-                    <td>
-                      <label for="OpSpacing" class="control-label">
-                        Spacing
-                      </label>
-                    </td>
-                    <td>
-                      <input id="OpSpacing"
-                             type="number" step="any" min="0.001"
-                             data-bind="value:spacing" />
-                      <span data-bind="text: App.models.Project.units"></span>
-                    </td>
-                    <td><button name="OpSpacing"
-                                class="helper">&#9432;</button></td>
-                  </tr>
-                  <tr data-bind="visible:needs().width">
-                    <td>
-                      <label for="OpWidth" class="control-label">
-                        Width
-                      </label>
-                    </td>
-                    <td>
-                      <input id="OpWidth"
-                             type="number" step="any" min="0"
-                             data-bind="value:width" />
-                      <span data-bind="text:App.models.Project.units"></span>
-                    </td>
-                    <td><button name="OpWidth"
                                 class="helper">&#9432;</button></td>
                   </tr>
                   <tr data-bind="visible:needs().passDepth">
@@ -389,7 +406,7 @@
                     <td><button name="OpPassDepth"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:needs().stepOver">
+                  <tr data-bind="visible:(needs().stepOver && offset()!=='On')">
                     <td>
                       <label for="OpStepOver" class="control-label">
                         Step Over
@@ -397,7 +414,7 @@
                     </td>
                     <td>
                       <input id="OpStepOver"
-                             type="number" step="1" min="1" max="100"
+                             type="number" min="1" max="100"
                              data-bind="value:stepOver" />
                     </td>
                     <td><button name="OpStepOver"
@@ -410,7 +427,7 @@
                     </td>
                     <td>
                       <input id="OpCutRate"
-                             type="number" step="any" min="1"
+                             type="number" min="1"
                              data-bind="value:cutRate" />
                       <span data-bind="text:App.models.Project.units"></span>/min
                     </td>
@@ -425,7 +442,7 @@
                     </td>
                     <td>
                       <input id="OpRPM"
-                             type="number" step="any" min="0"
+                             type="number" min="0"
                              data-bind="value:rpm" />rpm
                     </td>
                     <td><button name="OpRPM"
@@ -476,7 +493,7 @@
                   </td>
                   <td>
                     <input id="TabsMaxCutDepth"
-                           type="number" step="any" min="0.001"
+                           type="number"
                            data-bind="value:maxCutDepth">
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -505,7 +522,7 @@
                   </div>
                   <div class="card-list-cell">
                     <input id="TabMargin"
-                           type="number" step="any" min="0"
+                           type="number" min="0"
                            data-bind="value:margin"
                            class="hover-help" />
                   </div>
@@ -599,7 +616,7 @@
                   </td>
                   <td>
                     <input id="GcodeReturn00" type="checkbox"
-                           data-bind="checked: returnTo00" />
+                           data-bind="checked: returnHome" />
                   </td>
                   <td><button name="GcodeReturn00"
                               class="helper">&#9432;</button></td>
@@ -851,7 +868,7 @@
                   </td>
                   <td>
                     <input id="ToolDiameter"
-                           type="number" step="any" min="0.001"
+                           type="number"
                            data-bind="value:cutterDiameter" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -865,7 +882,7 @@
                   </td>
                   <td>
                     <input id="ToolAngle"
-                           type="number" step="any" min="1" max="90"
+                           type="number"
                            data-bind="value:cutterAngle"/> &deg;
                   </td>
                   <td><button name="ToolAngle"
@@ -878,7 +895,7 @@
                   </td>
                   <td>
                     <input id="ToolPassDepth"
-                           type="number" step="any" min="0.001"
+                           type="number"
                            data-bind="value:passDepth"/>
                     <span data-bind="text:App.models.Project.units"></span>
                   </td>
@@ -891,7 +908,7 @@
                   </td>
                   <td>
                     <input id="ToolStepOver"
-                           type="number" step="1" min="1" max="100"
+                           type="number" min="1" max="100"
                            data-bind="value:stepOver">%
                   </td>
                   <td><button name="ToolStepOver"
@@ -917,7 +934,7 @@
                   </td>
                   <td>
                     <input id="ToolPlungeRate"
-                           type="number" step="any" min="1"
+                           type="number" min="1"
                            data-bind="value:plungeRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
@@ -931,7 +948,7 @@
                   </td>
                   <td>
                     <input id="ToolCutRate"
-                           type="number" step="any" min="1"
+                           type="number" min="1"
                            data-bind="value:cutRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
@@ -946,7 +963,7 @@
                   </td>
                   <td>
                     <input id="ToolRPM"
-                           type="number" step="any" min="0"
+                           type="number" min="0"
                            data-bind="value:rpm" />rpm
                   </td>
                   <td><button name="ToolRPM"
@@ -981,47 +998,47 @@
               <table class="card-table">
                 <tr>
                   <td>
-                    <label for="InputMatThickness" class="control-label">
+                    <label for="MaterialThickness" class="control-label">
                       Thickness</label>
                   </td>
                   <td>
-                    <input id="InputMatThickness"
-                           type="number" step="any" min="0.001"
+                    <input id="MaterialThickness"
+                           type="number" min="0.001"
                            data-bind="value:thickness"
                            placeholder="Thickness" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
-                  <td><button name="InputMatThickness"
+                  <td><button name="MaterialThickness"
                               class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td>
-                    <label for="SelectMatZOrigin" class="control-label">
+                    <label for="MaterialZOrigin" class="control-label">
                       Z Origin</label>
                   </td>
                   <td>
-                    <select id="SelectMatZOrigin"
+                    <select id="MaterialZOrigin"
                             data-bind="value:zOrigin">
                       <option value="Top">Top</option>
                       <option value="Bottom">Bottom</option>
                     </select>
                   </td>
-                  <td><button name="SelectMatZOrigin"
+                  <td><button name="MaterialZOrigin"
                               class="helper">&#9432;</button></td>
                 </tr>
                 <tr>
                   <td>
-                    <label for="InputMatClearance" class="control-label">
+                    <label for="MaterialClearance" class="control-label">
                       Clearance</label>
                   </td>
                   <td>
-                    <input id="InputMatClearance"
+                    <input id="MaterialClearance"
                            type="number" step="any" min="0"
                            data-bind="value:clearance"
                            placeholder="Clearance"/>
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
-                  <td><button name="InputMatClearance"
+                  <td><button name="MaterialClearance"
                               class="helper">&#9432;</button></td>
                 </tr>
               </table>
@@ -1198,9 +1215,9 @@
       <span name="GcodeReturn00" title="Finish at work origin">
         Move the tool to 0,0 after the last operation.</span>
       <!-- Material -->
-      <span name="InputMatThickness" title="Thickness">How thick is the material.</span>
-      <span name="SelectMatZOrigin">Where Z=0 is.</span>
-      <span name="InputMatClearance" title="Clearance">
+      <span name="MaterialThickness" title="Thickness">How thick is the material.</span>
+      <span name="MaterialZOrigin">Where Z=0 is.</span>
+      <span name="MaterialClearance" title="Clearance">
         How high to lift the tool when it moves quickly over the material.
         Increase this when using clamps or screws to fasten the material.</span>
       <!-- Operation -->
@@ -1220,7 +1237,7 @@
       </div>
       <span name="OpDirection" title="Direction">What direction the cutter should travel.
         see <a href="https://en.wikipedia.org/wiki/Milling_cutter">Wikipedia</a> for the pros and cons of climb versus conventional milling.</span>
-      <div name="OpStrategy">
+      <div name="OpStrategy" title="Pocket strategy">
         How to cut pockets.
         <dl>
           <dt>Annular</dt><dd>cut the pocket flat, at the cut depth,
@@ -1232,6 +1249,10 @@
             an angled bit as if it was flat.</dd>
         </dl>
       </div>
+      <span name="OpOffset" title="Offset">
+        Whether to cut on, inside, or outside, the selected paths. Open
+        paths are always cut "on".
+      </span>
       <span name="OpCutDepth" title="Cut Depth">
         How deep this operation should cut in total.</span>
       <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
@@ -1250,7 +1271,7 @@
         Lets add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
         <dl>
           <dt>+ve</dt><dd>how much material to leave uncut.</dd>
-          <dt>-ve<?dt><dd>how much extra material to cut.</dd>
+          <dt>-ve</dt><dd>how much extra material to cut.</dd>
         </dl>
       </div>
       <div name="OpSpacing" title="Spacing">

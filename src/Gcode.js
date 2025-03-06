@@ -288,7 +288,7 @@ export class Generator {
     assert(typeof this.plungeRate === "number");
     assert(typeof this.retractRate === "number");
     assert(typeof this.rapidRate === "number");
-    assert(typeof this.returnTo00 === "boolean");
+    assert(typeof this.returnHome === "boolean");
     assert(typeof this.workWidth === "number");
     assert(typeof this.workHeight === "number");
     assert(typeof this.xOffset === "number");
@@ -344,7 +344,7 @@ export class Generator {
       z: this.safeZ,
       f: this.rapidRate
     };
-    if (this.returnTo00) {
+    if (this.returnHome) {
       this.xScale = this.yScale = 1;
       this.xOffset = this.yOffset = 0;
       p.pt = new CutPoint(0, 0);
