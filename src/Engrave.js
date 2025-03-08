@@ -85,7 +85,7 @@ export class Engrave extends ToolpathGenerator {
       currentWidth += passWidth;
       geometry = geometry.offset(step * passWidth, params);
     }
-    toolPaths.mergePaths(clipPoly);
+    //toolPaths.mergePaths(clipPoly);
     return toolPaths;
   }
 

@@ -9,6 +9,9 @@ import { CutPath } from "./CutPath.js";
 import { CutPaths } from "./CutPaths.js";
 import { UnitConverter } from "./UnitConverter.js";
 
+// Delta angle (rad) for generating hole preview
+const HOLE_DTHETA = Math.PI / 8;
+
 /**
  * Base class of all toolpath/preview geometry generators.
  */
@@ -71,7 +74,7 @@ export class ToolpathGenerator {
   previewHole(pt, params) {
     const hole = new CutPath();
     const r = params.cutterDiameter / 2;
-    for (let theta = 0; theta < 2 * Math.PI; theta += Math.PI / 4) {
+    for (let theta = 0; theta < 2 * Math.PI; theta += HOLE_DTHETA) {
       const dx = r * Math.cos(theta);
       const dy = r * Math.sin(theta);
       hole.push(new CutPoint(pt.X + dx, pt.Y + dy));

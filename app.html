@@ -625,7 +625,6 @@
             </div> <!-- /card-body -->
           </div> <!-- /GcodeGenerationViewPane -->
         </div> <!-- GcodeGenerationView -->
-        <div id="AlertPlaceholder"></div>
       </div> <!-- /sidebar-left -->
 
       <!-- Middle column -->
@@ -845,8 +844,23 @@
         </div>
       </div>
 
-      <!-- right -->
+      <!-- right column -->
       <div class="col-sm-3 sidebar-right">
+        <div class="card" id="Messages">
+          <!-- Bound to GcodeGenerationViewModel -->
+          <div class="card-header">
+            <h3 class="card-title">
+              <a data-bs-toggle="collapse"
+                 href="#MessagesPane" class="nav-link">
+                Messages</a>
+            </h3>
+          </div>
+          <div id="MessagesPane" class="collapse show">
+            <div class="card-body">
+              <div id="AlertPlaceholder"></div>
+            </div> <!-- /card-body -->
+          </div> <!-- /MessagesPane -->
+        </div> <!-- /Messages -->
 
         <div class="card" id="ToolView">
           <!-- Bound to ToolViewModel -->
@@ -1258,9 +1272,7 @@
       <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
         <dl>
           <dt>Drill</dt><dd>drills a hole at each vertex of the path.</dd>
-          <dt>Engrave</dt><dd>middle of the tool follows the paths.</dd>
-          <dt>Inside</dt><dd>cuts around the inside of closed paths.</dd>
-          <dt>Outside</dt><dd>cuts around the outside of closed paths.</dd>
+          <dt>Engrave</dt><dd>tool follows on, inside or outside the paths</dd>
           <dt>Perforate</dt><dd>drills holes around the outside of closed paths, or along open paths.</dd>
           <dt>Pocket</dt><dd>carves a pocket, either using annular rings or raster movement of the tool (closed paths only).</dd>
         </dl>
