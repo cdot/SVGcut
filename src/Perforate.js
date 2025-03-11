@@ -40,6 +40,13 @@ export class Perforate extends ToolpathGenerator {
     assert(params.spacing >= 0);
     assert(params.cutterDiameter > 0);
 
+    // Normalise the vector between p1 and p2 and return the vector and len
+    function normalise(p1, p2) {
+      const dx = p2.X - p1.X, dy = p2.Y - p1.Y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      return [ { X: dx / len, Y: dy / len }, len ];
+    }
+
     // Measure the path
     let totalPathLength = path.perimeter();
 
@@ -57,43 +64,39 @@ export class Perforate extends ToolpathGenerator {
 
     // Walk round the path stopping at every hole, generating a new path
     let newPath = new CutPath();
-    let gap = 0; // distance along the path from the last hole;
-    let segi = 1; // index of end of current segment
-    // Start of the current segment
-    let segStart = path[0], segEnd = path[1];
-    // dimensions of the current segment
-    let dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
-    // Length of the current segment
-    let segLen = Math.sqrt(dx * dx + dy * dy);
-    // Unit vector for the current segment
-    let segVec = new CutPoint(dx / segLen, dy / segLen);
-    while (segi < path.length) {
+    let distFromLastHole = 0; // distance along the path from the last hole;
+    let segIndex = 1; // index of end of current segment
+    let lastHole = path[0]; // Where the last hole was drilled
+    let segEnd = path[1]; // end of current segment
+    // Normal vector of the current segment, and remaining length
+    // after distFromLastHole
+    let [ segVec, segRem ] = normalise(lastHole, segEnd);
+    while (segIndex < path.length) {
       // Place a hole here
-      //console.debug(`Hole at ${segStart.X},${segStart.Y}`);
-      newPath.push(new CutPoint(segStart.X, segStart.Y));
-      gap = 0;
-      while (gap + segLen < step * ToolpathGenerator.FP_TOLERANCE) {
+      //console.debug(`Hole at ${lastHole.X},${lastHole.Y}`);
+      newPath.push(new CutPoint(lastHole.X, lastHole.Y));
+      distFromLastHole = 0;
+      while (distFromLastHole + segRem <
+             step * ToolpathGenerator.FP_TOLERANCE) {
         // FP_TOLERANCE to defeat floating point error.
-        if (++segi === path.length)
+        if (++segIndex === path.length)
           break; // no more segments, we're done
         // Remaining segment isn't long enough for another hole.
         // Walk the path until we get to the segment that it's in.
-        segStart = segEnd;
-        segEnd = path[segi];
-        dx = segEnd.X - segStart.X, dy = segEnd.Y - segStart.Y;
-        segLen = Math.sqrt(dx * dx + dy * dy);
-        segVec = { X: dx / segLen, Y : dy / segLen };
-        if (gap + segLen > step)
+        lastHole = segEnd;
+        segEnd = path[segIndex];
+        [ segVec, segRem ] = normalise(lastHole, segEnd);
+        if (distFromLastHole + segRem > step)
           // hole is on this segment.
           break;
-        gap += segLen;
+        distFromLastHole += segRem;
       }
-      // Next hole is on this segment. Move segStart up to the hole.
-      const where = step - gap;
-      segStart = new CutPoint(segStart.X + segVec.X * where,
-                              segStart.Y + segVec.Y * where);
-      segLen -= where;
-      gap += where;
+      // Next hole is on this segment. Move lastHole up to the hole.
+      const where = step - distFromLastHole;
+      lastHole = new CutPoint(lastHole.X + segVec.X * where,
+                              lastHole.Y + segVec.Y * where);
+      segRem -= where;
+      distFromLastHole += where;
     }
     if (path.isClosed) {
       newPath.pop();
