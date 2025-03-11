@@ -5,7 +5,7 @@
 
 // import "bootstrap"
 /* global bootstrap */
-
+/* global DOMPoint */
 /* global ko */
 
 import { ToolViewModel } from "./ToolViewModel.js";
@@ -373,6 +373,12 @@ export class SVGcut {
     alp.prepend(alDiv);
 
     return alDiv;
+  }
+
+  clearAlerts() {
+    const alerts = document.querySelectorAll(".alert");
+    for (const alert of alerts)
+      alert.remove();
   }
 
   /**

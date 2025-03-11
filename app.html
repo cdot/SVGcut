@@ -364,7 +364,7 @@
                     <td><button name="OpSpacing"
                                 class="helper">&#9432;</button></td>
                   </tr>
-                  <tr data-bind="visible:(needs().width && offset()!=='On')">
+                  <tr data-bind="visible:(needs().width)">
                     <td>
                       <label for="OpWidth" class="control-label">
                         Width
@@ -846,22 +846,6 @@
 
       <!-- right column -->
       <div class="col-sm-3 sidebar-right">
-        <div class="card" id="Messages">
-          <!-- Bound to GcodeGenerationViewModel -->
-          <div class="card-header">
-            <h3 class="card-title">
-              <a data-bs-toggle="collapse"
-                 href="#MessagesPane" class="nav-link">
-                Messages</a>
-            </h3>
-          </div>
-          <div id="MessagesPane" class="collapse show">
-            <div class="card-body">
-              <div id="AlertPlaceholder"></div>
-            </div> <!-- /card-body -->
-          </div> <!-- /MessagesPane -->
-        </div> <!-- /Messages -->
-
         <div class="card" id="ToolView">
           <!-- Bound to ToolViewModel -->
           <div class="card-header">
@@ -1136,6 +1120,26 @@
             </div>
           </div>
         </div>
+
+        <div class="card" id="Messages">
+          <!-- Bound to GcodeGenerationViewModel -->
+          <div class="card-header">
+            <h3 class="card-title" style="display:inline-block">
+              <a data-bs-toggle="collapse"
+                 href="#MessagesPane" class="nav-link">
+                Messages</a>
+            </h3>
+            <div style="float:right">
+              <button id="MessagesClear"
+                      onclick="App.clearAlerts()">&#9114;</button>
+            </div>
+          </div>
+          <div id="MessagesPane" class="collapse show">
+            <div class="card-body">
+              <div id="AlertPlaceholder"></div>
+            </div> <!-- /card-body -->
+          </div> <!-- /MessagesPane -->
+        </div> <!-- /Messages -->
       </div>
     </div>
   </div>
