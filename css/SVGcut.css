@@ -66,7 +66,7 @@ input[type="number"] {
   pointer-events: none;
 }
 .tool-path {
-  stroke: #ffff00;
+  stroke: #ff00ff;
   fill: none;
   pointer-events: none;
 }
