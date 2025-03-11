@@ -137,14 +137,15 @@ export class CutPaths extends Array {
   }
 
   /**
-   * Offset (bloat/shrink) closed paths by amount. Only closed paths are
-   * offset, open paths are returned unchanged.
+   * Offset (bloat/shrink) paths by amount. Bloating an open path will
+   * result in a closed path.
    * @param {number} amount positive expands, negative shrinks.
    * @param {object} approx approximation parameters
    * @param {JoinType?} approx.joinType path join type (ignored when
    * shrinking, which always uses Mitred)
    * @param {number?} approx.arcTolerance Arc tolerance
    * @param {number?} approx.mitreLimit Mitre limit
+   * @return {CutPaths} a set of closed paths
    * @memberof Clipper
    */
   offset(amount, approx = {}) {
@@ -159,14 +160,13 @@ export class CutPaths extends Array {
     for (const p of this) {
       if (p.isClosed)
         co.AddPath(p, jt, ClipperLib.EndType.etClosedPolygon);
-      else // not supported
-        open.push(p);
+      else
+        co.AddPath(p, jt, ClipperLib.EndType.etOpenButt);
     }
     const offsetted = [];
     co.Execute(offsetted, amount);
+    // Open paths that are offset always end up closed.
     const res = new CutPaths(offsetted, true);
-    for (const p of open)
-      res.push(p);
     return res;
   }
 

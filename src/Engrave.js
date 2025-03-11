@@ -51,41 +51,56 @@ export class Engrave extends ToolpathGenerator {
     assert(typeof params.margin === "number");
     if (geometry.length === 0)
       return geometry;
+    if (params.width < params.cutterDiameter)
+      params.width = params.cutterDiameter;
+    
+    let offset, step = (params.offset === "Outside") ? 1 : -1;
+    if (params.offset === "On")
+      // "On" always follows the geometry with the middle of the path
+      offset = -params.width / 2;
+    else
+      // Outside and Inside respect params.margin
+      offset = params.margin;
+    // Note that "inner" and "outer" terms refer to an outside (step=1)
+    // cut and are reversed for Inside
+    const inner = offset + params.cutterDiameter / 2;
+    const outer = offset + params.width - params.cutterDiameter / 2;
 
-    let clipPoly, step = 1;
-    if (params.offset === "On") {
-      // "On" always follows the geometry. width and margin are ignored.
-      // TODO: support .width
-    } else {
-      const clipA = params.margin + params.cutterDiameter / 2;
-      const clipB = params.margin + params.width - params.cutterDiameter / 2;
-      if (params.offset === "Inside")
-        step = -1;
-      if (clipB !== clipA) {
+    function engravePath(path) {
+      let geometry = new CutPaths([ path ]);
+
+      let clipPoly;
+      if (outer !== inner) {
         clipPoly = geometry
-        .offset(step * clipA, params)
-        .difference(geometry.offset(step * clipB, params));
+        .offset(step * inner, params)
+        .difference(geometry.offset(step * outer, params));
       }
-      geometry = geometry.offset(step * clipA, params);
-    }
+      if (inner !== 0)
+        geometry = geometry.offset(step * inner, params);
 
-    let currentWidth = params.cutterDiameter;
-    let passWidth = params.cutterDiameter * (1 - params.overlap);
+      let currentWidth = params.cutterDiameter;
+      let passWidth = params.cutterDiameter * (1 - params.overlap);
+
+      const toolPaths = new CutPaths();
+      while (currentWidth <= params.width) {
+        if (!params.climb)
+          for (let i = 0; i < geometry.length; ++i)
+            geometry[i].reverse();
+        toolPaths.push(...geometry);
+        if (currentWidth + passWidth > params.width)
+          passWidth = params.width - currentWidth;
+        if (passWidth <= 0)
+          break;
+        currentWidth += passWidth;
+        geometry = geometry.offset(step * passWidth, params);
+      }
+      toolPaths.mergePaths(clipPoly);
+      return toolPaths;
+    }
 
     const toolPaths = new CutPaths();
-    while (currentWidth <= params.width) {
-      if (params.climb)
-        for (let i = 0; i < geometry.length; ++i)
-          geometry[i].reverse();
-      toolPaths.push(...geometry);
-      if (currentWidth + passWidth > params.width)
-        passWidth = params.width - currentWidth;
-      if (passWidth <= 0)
-        break;
-      currentWidth += passWidth;
-      geometry = geometry.offset(step * passWidth, params);
-    }
-    //toolPaths.mergePaths(clipPoly);
+    for (const path of geometry)
+      toolPaths.push(...engravePath(path));
     return toolPaths;
   }
 
@@ -94,21 +109,5 @@ export class Engrave extends ToolpathGenerator {
    */
   bbBloat(toolPathWidth) {
     return toolPathWidth;
-  }
-
-  /**
-   * Generate preview geometry for the paths.
-   * @param {CutPaths} geometry
-   * @param {object} params named parameters
-   * @param {number} params.width desired path width (will be at least
-   * the cutter width)
-   * @param {JoinType} params.joinType join type for offsetting
-   * @param {number} params.mitreLimit join mitre limit for offsetting
-   * @param {number?} params.margin margin
-   * @override
-   */
-  generatePreviewGeometry(geometry, params) {
-    return geometry.offset(params.width / 2, params)
-    .difference(geometry.offset(-params.width / 2, params));
   }
 }
