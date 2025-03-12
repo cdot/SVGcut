@@ -78,10 +78,6 @@ export class ViewModel {
       for (const node of candidates)
         connectHelper(node, "hover");
 
-      candidates = nodes.querySelectorAll(".manual-popover");
-      for (const node of candidates)
-        connectHelper(node, "manual");
-
       candidates = nodes.querySelectorAll(".helper");
       for (const node of candidates) {
         connectHelper(node);

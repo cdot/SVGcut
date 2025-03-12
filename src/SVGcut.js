@@ -191,14 +191,12 @@ export class SVGcut {
 
     window.addEventListener("resize", () => this.fitSVG());
 
-    // handle popovers flagged by trigger:"manual" and class="manual-popover"
-    const mans = document.querySelectorAll('.manual-popover');
+    // handle popovers flagged by class="hover-help"
+    const mans = document.querySelectorAll('.hover-help');
     for (const man of mans) {
       man.parentElement.addEventListener("mouseenter", () => {
-        if (man.disabled) {
-          const popover = bootstrap.Popover.getInstance(man);
-          popover.show();
-        }
+        const popover = bootstrap.Popover.getInstance(man);
+        popover.show();
       });
 
       man.parentElement.addEventListener("mouseleave", () => {

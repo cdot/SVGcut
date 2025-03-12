@@ -231,7 +231,7 @@
                   </div>
                   <div class="card-list-cell enable">
                     <input id="OpEnabled" type="checkbox"
-                           data-bind="checked: enabled"
+                           data-bind="checked:enabled"
                            class="hover-help" />
                   </div>
                   <div class="card-list-cell">
@@ -243,6 +243,7 @@
                   <div class="card-list-cell">
                     <input id="OpCutDepth"
                            type="number"
+                           step="any"
                            data-bind="value:cutDepth"
                            class="hover-help" />
                   </div>
@@ -342,7 +343,8 @@
                     </td>
                     <td>
                       <input id="OpMargin"
-                             type="number" step="any"
+                             type="number"
+                             step="any"
                              data-bind="value:margin" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
@@ -358,6 +360,7 @@
                     <td>
                       <input id="OpSpacing"
                              type="number"
+                             step="any"
                              data-bind="value:spacing" />
                       <span data-bind="text: App.models.Project.units"></span>
                     </td>
@@ -373,6 +376,7 @@
                     <td>
                       <input id="OpWidth"
                              type="number"
+                             step="any"
                              data-bind="value:width" />
                       <span data-bind="text:App.models.Project.units"></span>
                     </td>
@@ -400,6 +404,7 @@
                     </td>
                     <td>
                       <input id="OpPassDepth" type="number"
+                             step="any"
                              data-bind="value:passDepth" />
                       <span data-bind="text:App.models.Project.units"></span>
                     </td>
@@ -414,7 +419,10 @@
                     </td>
                     <td>
                       <input id="OpStepOver"
-                             type="number" min="1" max="100"
+                             type="number"
+                             step="any"
+                             min="1"
+                             max="100"
                              data-bind="value:stepOver" />
                     </td>
                     <td><button name="OpStepOver"
@@ -427,7 +435,9 @@
                     </td>
                     <td>
                       <input id="OpCutRate"
-                             type="number" min="1"
+                             type="number"
+                             step="any"
+                             min="1"
                              data-bind="value:cutRate" />
                       <span data-bind="text:App.models.Project.units"></span>/min
                     </td>
@@ -442,7 +452,9 @@
                     </td>
                     <td>
                       <input id="OpRPM"
-                             type="number" min="0"
+                             type="number"
+                             step="10"
+                             min="0"
                              data-bind="value:rpm" />rpm
                     </td>
                     <td><button name="OpRPM"
@@ -494,6 +506,7 @@
                   <td>
                     <input id="TabsMaxCutDepth"
                            type="number"
+                           step="any"
                            data-bind="value:maxCutDepth">
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -522,7 +535,9 @@
                   </div>
                   <div class="card-list-cell">
                     <input id="TabMargin"
-                           type="number" min="0"
+                           type="number"
+                           step="any"
+                           min="0"
                            data-bind="value:margin"
                            class="hover-help" />
                   </div>
@@ -591,12 +606,14 @@
                   </td>
                   <td>
                     <input id="GcodeExtraOffsetX"
-                           type="number" step="any"
+                           type="number"
+                           step="any"
                            data-bind="value:extraOffsetX" />
                   </td>
                   <td>
                     <input id="GcodeExtraOffsetY"
-                           type="number" step="any"
+                           type="number"
+                           step="any"
                            data-bind="value:extraOffsetY" />
                   </td>
                   <td><button name="GcodeExtraOffset"
@@ -867,6 +884,7 @@
                   <td>
                     <input id="ToolDiameter"
                            type="number"
+                           step="any"
                            data-bind="value:cutterDiameter" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -881,6 +899,7 @@
                   <td>
                     <input id="ToolAngle"
                            type="number"
+                           step="any"
                            data-bind="value:cutterAngle"/> &deg;
                   </td>
                   <td><button name="ToolAngle"
@@ -894,6 +913,7 @@
                   <td>
                     <input id="ToolPassDepth"
                            type="number"
+                           step="any"
                            data-bind="value:passDepth"/>
                     <span data-bind="text:App.models.Project.units"></span>
                   </td>
@@ -906,7 +926,10 @@
                   </td>
                   <td>
                     <input id="ToolStepOver"
-                           type="number" min="1" max="100"
+                           type="number"
+                           step="1"
+                           min="1"
+                           max="100"
                            data-bind="value:stepOver">%
                   </td>
                   <td><button name="ToolStepOver"
@@ -918,7 +941,9 @@
                       Rapid Rate</label>
                   </td><td>
                     <input id="ToolRapidRate"
-                           type="number" step="any" min="1"
+                           type="number"
+                           step="any"
+                           min="1"
                            data-bind="value:rapidRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
@@ -932,7 +957,9 @@
                   </td>
                   <td>
                     <input id="ToolPlungeRate"
-                           type="number" min="1"
+                           type="number"
+                           step="any"
+                           min="1"
                            data-bind="value:plungeRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
@@ -946,7 +973,9 @@
                   </td>
                   <td>
                     <input id="ToolCutRate"
-                           type="number" min="1"
+                           type="number"
+                           step="any"
+                           min="1"
                            data-bind="value:cutRate" />
                     <span data-bind="text: App.models.Project.units"></span>/min
                   </td>
@@ -961,7 +990,9 @@
                   </td>
                   <td>
                     <input id="ToolRPM"
-                           type="number" min="0"
+                           type="number"
+                           step="10"
+                           min="0"
                            data-bind="value:rpm" />rpm
                   </td>
                   <td><button name="ToolRPM"
@@ -1001,7 +1032,9 @@
                   </td>
                   <td>
                     <input id="MaterialThickness"
-                           type="number" min="0.001"
+                           type="number"
+                           step="any"
+                           min="0.001"
                            data-bind="value:thickness"
                            placeholder="Thickness" />
                     <span data-bind="text: App.models.Project.units"></span>
@@ -1031,7 +1064,9 @@
                   </td>
                   <td>
                     <input id="MaterialClearance"
-                           type="number" step="any" min="0"
+                           type="number"
+                           step="any"
+                           min="0"
                            data-bind="value:clearance"
                            placeholder="Clearance"/>
                     <span data-bind="text: App.models.Project.units"></span>
@@ -1064,7 +1099,9 @@
                   </td>
                   <td>
                     <input id="MinNumSegments"
-                           type="number" min="2"
+                           type="number"
+                           step="1"
+                           min="2"
                            data-bind="value:minSegs" />
                   </td>
                   <td><button name="MinNumSegments"
@@ -1078,7 +1115,9 @@
                   </td>
                   <td>
                     <input id="MinSegmentLength"
-                           type="number" step="any" min="0.001"
+                           type="number"
+                           step="any"
+                           min="0.001"
                            data-bind="value:minSegLen" />
                     <span data-bind="text: App.models.Project.units"></span>
                   </td>
@@ -1110,7 +1149,9 @@
                   </td>
                   <td>
                     <input id="MitreLimit"
-                           type="number" step="any" min="2"
+                           type="number"
+                           step="1"
+                           min="2"
                            data-bind="value:mitreLimit"/>
                   </td>
                   <td><button name="MitreLimit"
@@ -1122,7 +1163,7 @@
         </div>
 
         <div class="card" id="Messages">
-          <!-- Bound to GcodeGenerationViewModel -->
+          <!-- Bound to ProjectViewModel -->
           <div class="card-header">
             <h3 class="card-title" style="display:inline-block">
               <a data-bs-toggle="collapse"
@@ -1131,7 +1172,8 @@
             </h3>
             <div style="float:right">
               <button id="MessagesClear"
-                      onclick="App.clearAlerts()">&#9114;</button>
+                      class="hover-help"
+                      data-bind="click:App.clearAlerts()">&#9114;</button>
             </div>
           </div>
           <div id="MessagesPane" class="collapse show">
@@ -1268,21 +1310,19 @@
         </dl>
       </div>
       <span name="OpOffset" title="Offset">
-        Whether to cut on, inside, or outside, the selected paths. Open
-        paths are always cut "on".
+        Whether to cut On, Inside, or Outside, the selected paths. Open
+        paths are always cut "On".
       </span>
       <span name="OpCutDepth" title="Cut Depth">
         How deep this operation should cut in total.</span>
       <div name="OpOperation" title="Operation">Operation to perform on the selected paths.
         <dl>
           <dt>Drill</dt><dd>drills a hole at each vertex of the path.</dd>
-          <dt>Engrave</dt><dd>tool follows on, inside or outside the paths</dd>
-          <dt>Perforate</dt><dd>drills holes around the outside of closed paths, or along open paths.</dd>
+          <dt>Engrave</dt><dd>cut on, inside or outside the paths.</dd>
+          <dt>Perforate</dt><dd>drills evenly-spaced holes along paths.</dd>
           <dt>Pocket</dt><dd>carves a pocket, either using annular rings or raster movement of the tool (closed paths only).</dd>
         </dl>
       </div>
-      <span name="OpVMaxDepth" title="Max Cut Depth">Maximum depth this operation should cut.
-        <p class="bg-danger">not implemented yet; this is ignored.</p></span>
       <div name="OpMargin" title="Margin">
         Lets add a bit of extra space between the geometry and the tool path. You might need this for a <a href="https://en.wikipedia.org/wiki/Milling_cutter">roughing</a> pass.
         <dl>
@@ -1291,9 +1331,9 @@
         </dl>
       </div>
       <div name="OpSpacing" title="Spacing">
-        How much material to leave uncut between perforations.
+        Space between perforations.
       </div>
-      <span name="OpWidth" title="Width">Cut a path wider than the
+      <span name="OpWidth" title="Width">Engrave a path wider than the
         tool diameter.</span>
       <div name="OpOps" title="Operation">
         <dl>
@@ -1330,6 +1370,8 @@
         minimum. Larger values may produce spikes that are far slimmer
         than the tool diameter, so use with caution.
       </span>
+      <span name="MessagesClear" title="Clear Messages">
+        Clear the Messages pane.</span>
     </div>
     <div id="Alerts">
       <span name="unsupportedSVG"><strong>$1.$2=$3</strong> is not supported; try Inkscape's <strong>Object to Path</strong> command.</span>

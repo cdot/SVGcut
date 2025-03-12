@@ -182,6 +182,10 @@ SVGcut, select these paths and use `Create Tabs` on the `Holding Tabs` pane to
 specify them as tabs. When the cutter passes over these areas, it will
 be limited to cutting to the depth you specify.
 
+# Help
+If you are unsure what any option does, just click the &#9432; symbol
+next to the option and help will appear.
+
 # Relationship to `jscut`
 
 SVGcut is a fork of

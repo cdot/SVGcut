@@ -173,7 +173,7 @@ export class ProjectViewModel extends ViewModel {
     for (const id of [ "ProjectView", "Toolbar", "SaveProjectModal",
                        "LoadProjectFromBrowserModal",
                        "DeleteProjectFromBrowserModal",
-                       "ConfirmDataLossModal" ])
+                       "ConfirmDataLossModal", "Messages" ])
       super.bind(id);
   }
 
