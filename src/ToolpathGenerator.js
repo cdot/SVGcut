@@ -17,8 +17,9 @@ const HOLE_DTHETA = Math.PI / 8;
  */
 export class ToolpathGenerator {
 
-// A small scaling that brings values within the maximum resolution
-  static FP_TOLERANCE = 1 - 1 / UnitConverter.from.mm.to.integer;
+  // A small scaling that brings values within the maximum resolution
+  static FP_TOLERANCE =
+  (UnitConverter.from.mm.to.integer - 1) / UnitConverter.from.mm.to.integer;
 
   /**
    * @param {Object.<string,boolean>} needs list of UI options needed
@@ -125,6 +126,7 @@ export class ToolpathGenerator {
    * @param {number?} params.margin margin, for those that use it
    */
   generatePreviewGeometry(geometry, params) {
+    assert(params.cutterDiameter > 0);
     return geometry.offset(params.cutterDiameter / 2, params)
     .difference(geometry.offset(-params.cutterDiameter / 2, params));
   }

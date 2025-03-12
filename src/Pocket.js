@@ -65,7 +65,7 @@ export class Pocket extends ToolpathGenerator {
     // How much to shrink for each successive orbit
     let shrink = params.cutterDiameter * (1 - params.overlap);
     // How much to step the cutter down on each orbit (vBit only)
-    let zStep = -params.cutDepth;
+    let zStep = 0;
     this.generatesZ = vBit;
     if (vBit) {
       // If we have a vBit, can't shrink more than the cutter radius

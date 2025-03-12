@@ -57,16 +57,16 @@ describe("Annular Pocket", () => {
           { X: 0, Y: 56, Z: 0 },
           { X: 73, Y: 19, Z: 0 },
           { X: 0, Y: 92, Z: 0 },
+          { X: 0, Y: 84, Z: 0 },
           { X: -46, Y: 38, Z: 0 },
           { X: 0, Y: 62, Z: 0 },
           { X: 46, Y: 38, Z: 0 },
           { X: 0, Y: 84, Z: 0 },
-          { X: -46, Y: 38, Z: 0 },
+          { X: 0, Y: 76, Z: 0 },
           { X: -17, Y: 59, Z: 0 },
           { X: 0, Y: 68, Z: 0 },
           { X: 17, Y: 59, Z: 0 },
           { X: 0, Y: 76, Z: 0 },
-          { X: -17, Y: 59, Z: 0 },
         ]
       ], false));
   });
@@ -91,6 +91,24 @@ describe("Annular Pocket", () => {
     };
     const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);
-    console.log(result);
+    assert.almost(result, new CutPaths([
+      [
+        { X: 0, Y: 92, Z: -5 },
+        { X: -73, Y: 19, Z: -5 },
+        { X: 0, Y: 56, Z: -5 },
+        { X: 73, Y: 19, Z: -5 },
+        { X: 0, Y: 92, Z: -5 },
+        { X: 0, Y: 84, Z: -10 },
+        { X: -46, Y: 38, Z: -10 },
+        { X: 0, Y: 62, Z: -10 },
+        { X: 46, Y: 38, Z: -10 },
+        { X: 0, Y: 84, Z: -10 },
+        { X: 0, Y: 76, Z: -10 },
+        { X: -17, Y: 59, Z: -10 },
+        { X: 0, Y: 68, Z: -10 },
+        { X: 17, Y: 59, Z: -10 },
+        { X: 0, Y: 76, Z: -10 },
+      ]
+    ], false));
   });
 });

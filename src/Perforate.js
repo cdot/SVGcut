@@ -41,7 +41,7 @@ export class Perforate extends ToolpathGenerator {
     assert(params.cutterDiameter > 0);
 
     // Normalise the vector between p1 and p2 and return the vector and len
-    function normalise(p1, p2) {
+    function measure(p1, p2) {
       const dx = p2.X - p1.X, dy = p2.Y - p1.Y;
       const len = Math.sqrt(dx * dx + dy * dy);
       return [ { X: dx / len, Y: dy / len }, len ];
@@ -49,58 +49,45 @@ export class Perforate extends ToolpathGenerator {
 
     // Measure the path
     let totalPathLength = path.perimeter();
-
-    if (totalPathLength === 0)
+    if (totalPathLength < params.cutterDiameter + params.spacing)
       return path;
 
     // Work out number of holes, and step between them, allowing spacing
     // between adjacent holes
-    const numSteps = Math.ceil(
+    const numHoles = Math.ceil(
       totalPathLength / (params.cutterDiameter + params.spacing));
-    const step = totalPathLength / numSteps;
-
-    if (path.isClosed)
-      path.push(path[0]); // duplicate first vertex
+    const holeSpacing = totalPathLength / numHoles;
+    //console.debug("perim", totalPathLength, "nh",numHoles,"hs",holeSpacing);
 
     // Walk round the path stopping at every hole, generating a new path
     let newPath = new CutPath();
-    let distFromLastHole = 0; // distance along the path from the last hole;
-    let segIndex = 1; // index of end of current segment
-    let lastHole = path[0]; // Where the last hole was drilled
-    let segEnd = path[1]; // end of current segment
-    // Normal vector of the current segment, and remaining length
-    // after distFromLastHole
-    let [ segVec, segRem ] = normalise(lastHole, segEnd);
-    while (segIndex < path.length) {
-      // Place a hole here
-      //console.debug(`Hole at ${lastHole.X},${lastHole.Y}`);
-      newPath.push(new CutPoint(lastHole.X, lastHole.Y));
-      distFromLastHole = 0;
-      while (distFromLastHole + segRem <
-             step * ToolpathGenerator.FP_TOLERANCE) {
-        // FP_TOLERANCE to defeat floating point error.
-        if (++segIndex === path.length)
-          break; // no more segments, we're done
-        // Remaining segment isn't long enough for another hole.
-        // Walk the path until we get to the segment that it's in.
-        lastHole = segEnd;
-        segEnd = path[segIndex];
-        [ segVec, segRem ] = normalise(lastHole, segEnd);
-        if (distFromLastHole + segRem > step)
-          // hole is on this segment.
-          break;
-        distFromLastHole += segRem;
+    let distFromLastHole = 0; // distance along the path from the last hole
+    // (or the first vertex)
+    let segIndex = 0; // index of end of current segment
+    let segStart = path[segIndex++]; // start of current segment
+    let segEnd = path[segIndex++]; // end of current segment
+    let distfromLastHole = 0;
+    let segVec, segLength;
+    newPath.push(new CutPoint(segStart.X, segStart.Y));
+    while (newPath.length < numHoles) {
+      [ segVec, segLength ] = measure(segStart, segEnd);
+      //console.debug("seg",segStart, segEnd, segVec, segLength);
+      let remainLength = segLength;
+      while (distfromLastHole + remainLength >= holeSpacing) {
+        const excessLength = distfromLastHole + remainLength - holeSpacing;
+        const t = segLength - excessLength;
+        const hole = new CutPoint(
+          segStart.X + t * segVec.X, segStart.Y + t * segVec.Y);
+        //console.debug("Hole",hole);
+        newPath.push(hole);
+        remainLength = excessLength;
+        distfromLastHole = 0;
       }
-      // Next hole is on this segment. Move lastHole up to the hole.
-      const where = step - distFromLastHole;
-      lastHole = new CutPoint(lastHole.X + segVec.X * where,
-                              lastHole.Y + segVec.Y * where);
-      segRem -= where;
-      distFromLastHole += where;
-    }
-    if (path.isClosed) {
-      newPath.pop();
-      path.pop(); // remove pseudo-vertex
+      if (!path.isClosed && segIndex === path.length)
+        break;
+      distfromLastHole += remainLength;
+      segStart = segEnd;
+      segEnd = path[segIndex++ % path.length];
     }
 
     return newPath;

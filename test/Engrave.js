@@ -29,7 +29,7 @@ describe("Engrave", () => {
     });
   });
 
-  it("engrave", () => {
+  it("engrave closed", () => {
     const path = new CutPaths([[
       { X:   0, Y:   0 },
       { X: 100, Y:   0 },
@@ -37,6 +37,11 @@ describe("Engrave", () => {
       { X:   0, Y: 100 }
     ]], true);
     const params = {
+      offset: "On",
+      margin: 0,
+      overlap: 0,
+      width: 1,
+      cutterDiameter: 1,
       climb: false
     };
     const op = new Engrave();
@@ -51,25 +56,87 @@ describe("Engrave", () => {
     ], true));
   });
 
-  it("engrave climb", () => {
+  it("engrave closed wide", () => {
     const path = new CutPaths([[
       { X:   0, Y:   0 },
-      { X: 100, Y:   0 },
-      { X: 100, Y: 100 },
-      { X:   0, Y: 100 }
+      { X: 10000, Y:   0 },
+      { X: 10000, Y: 10000 },
+      { X:   0, Y: 10000 }
     ]], true);
     const params = {
-      climb: true
+      offset: "On",
+      margin: 0,
+      overlap: 0,
+      cutterDiameter: 100,
+      width: 200, // should give us 2 passes
+      climb: false
     };
     const op = new Engrave();
     const result = op.generateToolpaths(path, params);
-    assert.deepEqual(result,new CutPaths([
+    assert.deepEqual(result,new CutPaths(
       [
-        { X: 0, Y: 0, Z: 0 },
-        { X: 100, Y: 0, Z: 0 },
-        { X: 100, Y: 100, Z: 0 },
-        { X: 0, Y: 100, Z: 0 },
-      ]
-    ], true));
+        [
+          { X: 10050, Y: -50, Z: 0 },
+          { X: -50, Y: -50, Z: 0 },
+          { X: -50, Y: 10050, Z: 0 },
+          { X: 10050, Y: 10050, Z: 0 },
+          { X: 10050, Y: -50, Z: 0 },
+          { X: 9950, Y: 50, Z: 0 },
+          { X: 50, Y: 50, Z: 0 },
+          { X: 50, Y: 9950, Z: 0 },
+          { X: 9950, Y: 9950, Z: 0 },
+          { X: 9950, Y: 50, Z: 0 }
+        ]
+      ], false));
+  });
+
+  it("engrave open", () => {
+    const path = new CutPaths([[
+      { X: 0, Y: 0 },
+      { X: 10000, Y: 0 },
+    ]], false);
+    const params = {
+      offset: "On",
+      margin: 0,
+      overlap: 0,
+      cutterDiameter: 100,
+      width: 0,
+      climb: false
+    };
+    const op = new Engrave();
+    const result = op.generateToolpaths(path, params);
+    assert.deepEqual(result, new CutPaths(
+      [
+        [
+          { X: 10000, Y: 0, Z: 0 },
+          { X: 0, Y: 0, Z: 0 },
+        ]
+      ], false));
+  });
+
+  it("engrave open wide", () => {
+    const path = new CutPaths([[
+      { X: 0, Y: 0 },
+      { X: 10000, Y: 0 },
+    ]], false);
+    const params = {
+      offset: "On",
+      margin: 0,
+      overlap: 0,
+      cutterDiameter: 100,
+      width: 200, // should give us 2 passes
+      climb: false
+    };
+    const op = new Engrave();
+    const result = op.generateToolpaths(path, params);
+    assert.deepEqual(result, new CutPaths(
+      [
+        [
+          { X: 10000, Y: -50, Z: 0 },
+          { X: 0, Y: -50, Z: 0 },
+          { X: 0, Y: 50, Z: 0 },
+          { X: 10000, Y: 50, Z: 0 }
+        ]
+      ], false));
   });
 });

@@ -7,9 +7,9 @@ ClipperLib.use_xyz = true;
 import { UNit } from "./TestSupport.js";
 import { UnitConverter } from "../src/UnitConverter.js";
 const d = UnitConverter.from.px.to.integer;
-let CutPoint, CutPath, CutPaths, Outside;
+let CutPoint, CutPath, CutPaths, Engrave;
 
-describe("Outside", () => {
+describe("Engrave", () => {
 
   // CutPath depends on ClipperLib
   before(() => {
@@ -17,51 +17,56 @@ describe("Outside", () => {
       import("../src/CutPoint.js"),
       import("../src/CutPath.js"),
       import("../src/CutPaths.js"),
-      import("../src/Outside.js") ])
+      import("../src/Engrave.js") ])
     .then(mods => {
       CutPoint = mods[0].CutPoint;
       CutPath = mods[1].CutPath;
       CutPaths = mods[2].CutPaths;
-      Outside = mods[3].Outside;
+      Engrave = mods[3].Engrave;
     });
   });
 
   it("outside path", () => {
     const path = new CutPaths([[
       { X:   0, Y:   0 },
-      { X: 100, Y:   0 },
-      { X: 100, Y: 100 },
-      { X:   0, Y: 100 }
+      { X: 1000, Y:   0 },
+      { X: 1000, Y: 1000 },
+      { X:   0, Y: 1000 }
     ]], true);
     const params = {
-      cutterDiameter: 1,
-      width: 2,
+      cutterDiameter: 10,
+      offset: "Outside",
+      width: 20,
       overlap: 0.5,
+      margin: 0,
       climb: false
     };
-    const gen = new Outside();
+    const gen = new Engrave();
     const result = gen.generateToolpaths(path, params);
     assert.deepEqual(result, new CutPaths(
       [
         [
-          { X: 101, Y: -1, Z: 0 },
-          { X: -1, Y: -1, Z: 0 },
-          { X: -1, Y: 101, Z: 0 },
-          { X: 101, Y: 101, Z: 0 },
-          { X: 101, Y: -1, Z: 0 },
-          { X: -2, Y: -2, Z: 0 },
-          { X: -2, Y: 102, Z: 0 },
-          { X: 102, Y: 102, Z: 0 },
-          { X: 102, Y: -2, Z: 0 },
-          { X: -2, Y: -2, Z: 0 },
+          { X: 1005, Y: -5, Z: 0 },
+          { X: -5, Y: -5, Z: 0 },
+          { X: -5, Y: 1005, Z: 0 },
+          { X: 1005, Y: 1005, Z: 0 },
+          { X: 1005, Y: -5, Z: 0 },
         ],
         [
-          { X: -3, Y: -3, Z: 0 },
-          { X: -3, Y: 103, Z: 0 },
-          { X: 103, Y: 103, Z: 0 },
-          { X: 103, Y: -3, Z: 0 },
-          { X: -3, Y: -3, Z: 0 },
+          { X: 1010, Y: -10, Z: 0 },
+          { X: -10, Y: -10, Z: 0 },
+          { X: -10, Y: 1010, Z: 0 },
+          { X: 1010, Y: 1010, Z: 0 },
+          { X: 1010, Y: -10, Z: 0 },
+        ],
+        [
+          { X: 1015, Y: -15, Z: 0 },
+          { X: -15, Y: -15, Z: 0 },
+          { X: -15, Y: 1015, Z: 0 },
+          { X: 1015, Y: 1015, Z: 0 },
+          { X: 1015, Y: -15, Z: 0 },
         ]
       ], true));
   });
+  // TODO: test with margin
 });
