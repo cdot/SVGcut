@@ -54,13 +54,13 @@ export class Pocket extends ToolpathGenerator {
     let off = params.cutterDiameter / 2;
     if (params.margin > 0)
       off += params.margin;
-    let current = geometry.offset(-off, params);
 
-    // take a copy of the shrunk pocket to clip against. Each time
-    // the poly merges, there's a risk that an edge between the
+    let orbit = geometry.offset(-off, params);
+
+    // Each time the poly merges, there's a risk that an edge between the
     // outer poly and the inner poly might cross an edge of the
     // (non-convex) original poly, this is used to detect this.
-    const clip = new CutPaths(current);
+    const clip = new CutPaths(orbit);
 
     // How much to shrink for each successive orbit
     let shrink = params.cutterDiameter * (1 - params.overlap);
@@ -69,29 +69,40 @@ export class Pocket extends ToolpathGenerator {
     this.generatesZ = vBit;
     if (vBit) {
       // If we have a vBit, can't shrink more than the cutter radius
+      const tanTheta = Math.tan(params.cutterAngle);
       shrink = Math.min(params.cutterDiameter / 2, shrink);
-      zStep = shrink / Math.tan(params.cutterAngle);
+      zStep = shrink / tanTheta;
+      if (zStep > params.passDepth) {
+        zStep = params.passDepth;
+        shrink = zStep * tanTheta;
+      }
     }
 
     const toolPaths = new CutPaths();
     // Iterate, shrinking the pocket for each pass until the pocket
     // shrinks to 0
-    let z = params.topZ;
+    let z = params.topZ - zStep;
     const innerPaths = [];
-    while (current.length != 0) {
-      if (vBit) {
-        z -= zStep;
-        current.Z(Math.max(z, -params.cutDepth), true);
+    do {
+      let current = new CutPaths(orbit);
+      while (current.length != 0) {
+        if (vBit)
+          current.Z(z, true);
+        for (const path of current)
+          toolPaths.push(path);
+        if (params.climb)
+          // SMELL: why? Does offset reverse the path?
+          for (let i = 0; i < current.length; ++i)
+            current[i].reverse();
+        current = current.offset(-shrink, params);
+        // Pocket paths must be closed, or passDepth won't work
+        current.isClosed = true;
       }
-      for (const path of current)
-        toolPaths.push(path);
-      if (params.climb)
-        // SMELL: why? Does offset reverse the path?
-        for (let i = 0; i < current.length; ++i)
-          current[i].reverse();
-      current = current.offset(-shrink, params);
-    }
-    toolPaths.mergePaths(clip);
+      if (vBit)
+        z -= zStep;
+    } while (vBit && z >= -params.cutDepth); 
+    if (!vBit)
+      toolPaths.mergePaths(clip);
     return toolPaths;
   }
 
@@ -199,6 +210,7 @@ export class Pocket extends ToolpathGenerator {
    * @param {number} params.cutterDiameter bit diameter
    * @param {number} params.cutterAngle bit angle (radians)
    * @param {number} params.cutDepth maximum cut depth
+   * @param {number} params.passDepth cut pass cut depth
    * @param {number} params.topZ top of the material
    * @param {number} params.overlap is in the range [0, 1)
    * @param {boolean} params.climb true for climb milling
@@ -212,6 +224,7 @@ export class Pocket extends ToolpathGenerator {
     assert(typeof params.cutterDiameter === "number");
     assert(typeof params.cutterAngle === "number");
     assert(typeof params.cutDepth === "number");
+    assert(typeof params.passDepth === "number");
     assert(typeof params.topZ === "number");
     assert(typeof params.overlap === "number");
     assert(typeof params.climb === "boolean");

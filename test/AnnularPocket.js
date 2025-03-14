@@ -42,6 +42,7 @@ describe("Annular Pocket", () => {
       overlap: 0.5,
       climb: false,
       cutDepth: 4,
+      passDepth: 4,
       topZ: 0,
       joinType: 0,
       mitreLimit: 2,
@@ -49,7 +50,7 @@ describe("Annular Pocket", () => {
     };
     const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);
-    assert.almost(result, new CutPaths(
+    const expected = new CutPaths(
       [
         [
           { X: 0, Y: 92, Z: 0 },
@@ -68,7 +69,8 @@ describe("Annular Pocket", () => {
           { X: 17, Y: 59, Z: 0 },
           { X: 0, Y: 76, Z: 0 },
         ]
-      ], false));
+      ], false);
+    assert.almost(result, expected);
   });
 
   it("V pocket", () => {
@@ -83,6 +85,7 @@ describe("Annular Pocket", () => {
       cutterDiameter: 10,
       cutterAngle: Math.PI / 4,
       cutDepth: 10,
+      passDepth: 5,
       topZ: 0,
       overlap: 0.5,
       climb: false,
@@ -91,24 +94,45 @@ describe("Annular Pocket", () => {
     };
     const gen = new Pocket();
     const result = gen.generateToolpaths(path, params);
-    assert.almost(result, new CutPaths([
+    const expected = new CutPaths(
       [
-        { X: 0, Y: 92, Z: -5 },
-        { X: -73, Y: 19, Z: -5 },
-        { X: 0, Y: 56, Z: -5 },
-        { X: 73, Y: 19, Z: -5 },
-        { X: 0, Y: 92, Z: -5 },
-        { X: 0, Y: 84, Z: -10 },
-        { X: -46, Y: 38, Z: -10 },
-        { X: 0, Y: 62, Z: -10 },
-        { X: 46, Y: 38, Z: -10 },
-        { X: 0, Y: 84, Z: -10 },
-        { X: 0, Y: 76, Z: -10 },
-        { X: -17, Y: 59, Z: -10 },
-        { X: 0, Y: 68, Z: -10 },
-        { X: 17, Y: 59, Z: -10 },
-        { X: 0, Y: 76, Z: -10 },
-      ]
-    ], false));
+        [
+          { X: 0, Y: 92, Z: -5 },
+          { X: -73, Y: 19, Z: -5 },
+          { X: 0, Y: 56, Z: -5 },
+          { X: 73, Y: 19, Z: -5 },
+        ],
+        [
+          { X: 0, Y: 84, Z: -5 },
+          { X: -46, Y: 38, Z: -5 },
+          { X: 0, Y: 62, Z: -5 },
+          { X: 46, Y: 38, Z: -5 },
+        ],
+        [
+          { X: 0, Y: 76, Z: -5 },
+          { X: -17, Y: 59, Z: -5 },
+          { X: 0, Y: 68, Z: -5 },
+          { X: 17, Y: 59, Z: -5 },
+        ],
+        [
+          { X: 0, Y: 92, Z: -10 },
+          { X: -73, Y: 19, Z: -10 },
+          { X: 0, Y: 56, Z: -10 },
+          { X: 73, Y: 19, Z: -10 },
+        ],
+        [
+          { X: 0, Y: 84, Z: -10 },
+          { X: -46, Y: 38, Z: -10 },
+          { X: 0, Y: 62, Z: -10 },
+          { X: 46, Y: 38, Z: -10 },
+        ],
+        [
+          { X: 0, Y: 76, Z: -10 },
+          { X: -17, Y: 59, Z: -10 },
+          { X: 0, Y: 68, Z: -10 },
+          { X: 17, Y: 59, Z: -10 },
+        ]
+      ], true);
+    assert.almost(result, expected);
   });
 });

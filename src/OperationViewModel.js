@@ -502,6 +502,7 @@ export class OperationViewModel extends ViewModel {
       ToolpathGenerator.FP_TOLERANCE);
     params.cutterAngle = toolModel.cutterAngle() * Math.PI / 180;
     params.cutDepth = cutDepth;
+    params.passDepth = passDepth;
     params.overlap = 1 - stepOver / 100; // convert %age
     params.climb = (this.direction() === "Climb");
     params.safeZ = zOnTop ? clear : clear + cutDepth;

@@ -40,6 +40,7 @@ describe("Pocket", () => {
       cutterDiameter: 10,
       cutterAngle: 90,
       cutDepth: 3,
+      passDepth: 3,
       topZ: 0,
       overlap: 0.5,
       climb: false,
