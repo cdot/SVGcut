@@ -6,15 +6,15 @@
    height="300mm"
    viewBox="0 0 300 300"
    version="1.1"
-   id="svg1"
+   id="basic-shapes"
+   sodipodi:docname="basic shapes.svg"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
-   sodipodi:docname="circle.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview
-     id="namedview1"
+     id="namedview2"
      pagecolor="#ffffff"
      bordercolor="#000000"
      borderopacity="0.25"
@@ -23,54 +23,322 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="2.9148709"
-     inkscape:cx="217.16227"
-     inkscape:cy="122.13234"
+     showgrid="false"
+     inkscape:zoom="0.99281721"
+     inkscape:cx="507.64632"
+     inkscape:cy="338.9345"
      inkscape:window-width="1920"
      inkscape:window-height="1007"
      inkscape:window-x="0"
      inkscape:window-y="36"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
-  <defs id="defs1" />
-  <!-- two rows of 4, each column 75 -->
-
-  <!-- 0,0..75,75 CLOSED -->
-  <rect id="rect" x="0" y="0" width="75" height="75"
-        stroke="green" stroke-width="0.1" fill="#00a0f0" />
-  <!-- 75,0..150,75 CLOSED -->
-  <circle id="circle" cx="112.5" cy="37.5" r="37.5"
-          stroke="red" stroke-width="0.1" fill="#a000f0" />
-  <!-- 150,0..225,75 CLOSED -->
-  <ellipse id="ellipse" cx="187.5" cy="37.5" rx="37.5" ry="18.75"
-           stroke="green" stroke-width="0.1" fill="#00a0f0" />
-  <!-- 225,0..300,75 CLOSED -->
-  <polygon points="225,0, 262.5,75, 300,0, 262.5,37.5"
-           stroke="red" stroke-width="0.1" fill="#a000f0" />
-
-  <!-- 0,75..75,150 OPEN -->
-  <line id="line" x1="0" y1="75" x2="75" y2="150"
-        stroke="red" fill="none" />
-
-  <!-- 75,75..150,150 OPEN -->
-  <polyline points="75,150, 112.5,112.5, 150,150, 112.5,75"
-            stroke="green" fill="none" stroke-linecap="butt" />
-
-  <!-- 150,75..225,150 OPEN -->
-  <path d="M150,75 225,150, 225,112.5, 150,112.5"
-        stroke="red" fill="none" stroke-linecap="butt" />
-
-  <!-- 225,75..300,150 CLOSED -->
-  <path d="M225,75 300,75 300,150 Z"
-        stroke="green" fill="#f0f0f0" />
-
-  <!-- 0,75..75,150 -->
-  <line id="line" x1="0" y1="75" x2="75" y2="150"
-        stroke="red" fill="none" stroke-linecap="butt" />
-
-  <!-- 0,150..75,225 -->
-  <line id="flatlineH" x1="0" y1="187.5" x2="75" y2="187.5"
-        stroke="green" fill="none" stroke-linecap="butt" />
-  <line id="flatlineV" x1="37.5" y1="150" x2="37.5" y2="225"
-        stroke="green" fill="none" stroke-linecap="butt" />
+     inkscape:current-layer="basic-shapes" />
+  <defs
+     id="defs1">
+    <rect
+       x="-86.622189"
+       y="225.62059"
+       width="1261.0579"
+       height="110.79582"
+       id="rect5" />
+    <rect
+       x="-94.680068"
+       y="243.75081"
+       width="1248.9711"
+       height="94.680068"
+       id="rect4" />
+  </defs>
+  <!-- 6 rows of 6, each 50x50 -->
+  <!-- First row, closed -->
+  <rect
+     id="rect"
+     x="0"
+     y="0"
+     width="50"
+     height="50"
+     stroke="red"
+     stroke-width="0.1"
+     fill="#00a0f0" />
+  <circle
+     id="circle"
+     cx="75"
+     cy="25"
+     r="25"
+     stroke="green"
+     stroke-width="0.1"
+     fill="#a000f0" />
+  <ellipse
+     id="hellipse"
+     cx="125"
+     cy="25"
+     rx="25"
+     ry="12.50"
+     stroke="blue"
+     stroke-width="0.1"
+     fill="#00a0f0" />
+  <ellipse
+     id="vellipse"
+     cx="175"
+     cy="25"
+     rx="12.5"
+     ry="25"
+     stroke="red"
+     stroke-width="0.1"
+     fill="#00a0f0"
+     style="fill:#a000f0;fill-opacity:1" />
+  <polygon
+     points="200,0, 225,50, 250,0, 225,25"
+     stroke="green"
+     stroke-width="0.1"
+     fill="#a000f0"
+     id="polygon"
+     style="fill:#00a0f0;fill-opacity:1" />
+  <path
+     d="M250,50 275,0 300,50 275,25 Z"
+     stroke="blue"
+     fill="#f0f0f0"
+     id="cpath"
+     style="fill:#a000f0;fill-opacity:1;stroke-width:0.1;stroke-dasharray:none" />
+  <!-- Second row, open -->
+  <line
+     id="line"
+     x1="0"
+     y1="50"
+     x2="50"
+     y2="100"
+     stroke="green"
+     fill="none" />
+  <polyline
+     points="50,50 75,100 100,50 75,75"
+     stroke="blue"
+     fill="none"
+     stroke-linecap="butt"
+     id="polyline" />
+  <path
+     d="M100,50 125,100 150,50 125,75"
+     stroke="red"
+     fill="none"
+     stroke-linecap="butt"
+     id="opath" />
+  <line
+     id="flatlineH"
+     x1="150"
+     y1="75"
+     x2="200"
+     y2="75"
+     stroke="green"
+     fill="none"
+     stroke-linecap="butt" />
+  <line
+     id="flatlineV"
+     x1="225"
+     y1="50"
+     x2="225"
+     y2="100"
+     stroke="blue"
+     fill="none"
+     stroke-linecap="butt" />
+  <path
+     id="VH"
+     d="M250,75 h50 M275,50 v50"
+     stroke="red"
+     fill="none"
+     stroke-linecap="butt" />
+  <!-- third row - curves -->
+  <path
+     id="c-curves"
+     style="fill:#f0a000;stroke-width:0.1;stroke:#ff0000"
+     d="M 4.3305258,104.33053 c 9.7436832,-9.743686 41.3389472,0 41.3389472,0 0,0 9.743685,31.59526 0,41.33894 -9.743685,9.74369 -41.3389472,0 -41.3389472,0 0,0 -9.743683,-31.59526 0,-41.33894 z"
+     sodipodi:nodetypes="acaca" />
+  <path
+     id="a-curves-lower"
+     d="M 50,125 a 25,12.5 180 0 0 50,0"
+     style="stroke:#00ff00;fill:none" />
+  <path
+     id="a-curves-upper"
+     d="M 100,125 a 25,12.5 180 0 0 -50,0"
+     style="stroke:#0000ff;fill:none" />
+  <path
+     id="a-curves2-lower"
+     d="M 100,125 a 25,12.5 -180 0 0 50,0"
+     style="stroke:#ff0000;fill:none" />
+  <path
+     id="a-curves2-upper"
+     d="M 150,125 a 25,12.5 -180 0 0 -50,0"
+     style="stroke:#00ff00;fill:none" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="labels">
+    <text
+       xml:space="preserve"
+       style="font-size:4.23294px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.299972"
+       x="20.738392"
+       y="26.456871"
+       id="t_rect"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2"
+         style="text-align:start;text-anchor:start;stroke-width:0.299972"
+         x="20.738392"
+         y="26.456871">rect</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="69.36377"
+       y="26.57901"
+       id="t_circle"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="69.36377"
+         y="26.57901">circle</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="116.75974"
+       y="26.168688"
+       id="t_hellipse"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="116.75974"
+         y="26.168688">hellipse</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="166.97629"
+       y="26.168688"
+       id="t_vellipse"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="166.97629"
+         y="26.168688">vellipse</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="216.52103"
+       y="26.206913"
+       id="t_polygon"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9-7"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="216.52103"
+         y="26.206913">polygon</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="269.07858"
+       y="26.130463"
+       id="t_cpath"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9-7-3"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="269.07858"
+         y="26.130463">cpath</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23294px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.299972"
+       x="21.092859"
+       y="76.580345"
+       id="t_line"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-6"
+         style="text-align:start;text-anchor:start;stroke-width:0.299972"
+         x="21.092859"
+         y="76.580345">line</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="66.618637"
+       y="76.552467"
+       id="t_polyline"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-1"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="66.618637"
+         y="76.552467">polyline</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="118.95192"
+       y="76.552467"
+       id="t_opath"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-7"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="118.95192"
+         y="76.552467">opath</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="166.28174"
+       y="76.580544"
+       id="t_flatlineH"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9-2"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="166.28174"
+         y="76.580544">flatlineH</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="216.2337"
+       y="76.580544"
+       id="t_flatlineV"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9-7-2"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="216.2337"
+         y="76.580544">flatlineV</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23346px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.300009"
+       x="272.1431"
+       y="76.545403"
+       id="t_VH"
+       transform="scale(1.0000306,0.9999694)"><tspan
+         sodipodi:role="line"
+         id="tspan2-7-5-9-7-3-7"
+         style="text-align:start;text-anchor:start;stroke-width:0.300009"
+         x="272.1431"
+         y="76.545403">VH</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23289px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.299969"
+       x="15.710096"
+       y="126.54327"
+       id="t_c-curves"
+       transform="scale(1.0000195,0.99998051)"
+       inkscape:label="t_c-curves"><tspan
+         sodipodi:role="line"
+         id="tspan2-6-2"
+         style="text-align:start;text-anchor:start;stroke-width:0.299969"
+         x="15.710096"
+         y="126.54327">c-curves</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:4.23289px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke-width:0.299969"
+       x="67.606712"
+       y="125.82883"
+       id="t_a-curves"
+       transform="scale(1.0000195,0.99998051)"
+       inkscape:label="t_a-curves"><tspan
+         sodipodi:role="line"
+         id="tspan2-6-2-7"
+         style="text-align:start;text-anchor:start;stroke-width:0.299969"
+         x="67.606712"
+         y="125.82883">a-curves</tspan></text>
+  </g>
 </svg>

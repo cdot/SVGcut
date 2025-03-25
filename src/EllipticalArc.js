@@ -1,4 +1,5 @@
 /*Copyright Crawford Currie 2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
+/* global assert */
 import { Vector } from "flatten-js";
 
 // Per-ordinate divide
@@ -12,8 +13,9 @@ Vector.prototype.over = function (v) {
  * @namespace EllipticalArc
  */
 
-// PI/2 is apparently pixel-accurate. Use PI/4 for even better.
-const MAX_BEZIER_THETA = Math.PI / 4; // 45 degree bezier is OK
+// There is a limit to the arc of a curve that can be represented by a Bezier.
+// PI/2 is apparently pixel-accurate.
+const MAX_BEZIER_THETA = Math.PI / 2;
 
 /**
  * Return value from endpoint to centre transformation.
@@ -25,79 +27,81 @@ const MAX_BEZIER_THETA = Math.PI / 4; // 45 degree bezier is OK
  */
 
 /**
- * Perform the endpoint to center arc parameter conversion as detailed
- * in the SVG 2 spec. B.2.4 Conversion from endpoint to center paramaterization
- * parameterization.
+ * Perform the endpoint to centre arc parameter conversion as detailed
+ * in the SVG 2 spec. B.2.4 Conversion from endpoint to center
+ * parameterization and B.2.5 Correction of out of range radii
  * @param {Vector} p1 current position
  * @param {Vector} p2 finish position
  * @param {Vector} r Radii. May be scaled up, as per the SVG spec
- * @param {number} xAngle x axis rotation (radians)
- * @param {boolean} largeArc large arc flag
- * @param {boolean} sweep sweep flag
+ * @param {number} phi x axis rotation (radians)
+ * @param {boolean} fa large arc flag
+ * @param {boolean} fs sweep flag
  * @return {CentreArcParams}
  * @private
  * @memberof EllipticalArc
  */
-export function endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep) {
-  r.x = Math.abs(r.x); r.y = Math.abs(r.y);
+export function endpointToCentreArcParams(p1, p2, r, phi, fa, fs) {
+  const { abs, sin, cos, pow, sqrt } = Math;
 
-  // B.2.4 Step 1
-  const h = p1.subtract(p2).multiply(0.5);
-  const m = p1.add(p2).multiply(0.5);
-  const mp = h.rotate(-xAngle);
+  // B.2.5. Correction of out-of-range radii
+  // B.2.5. Step 1: Ensure radii are non-zero.
+  // This case is detected and dealt with in SVG.js
+  assert(r.x !== 0 && r.y !== 0);
 
-  // B.2.4 Step 2
-  let rs = new Vector(r.x * r.x, r.y * r.y);
-  const mps = new Vector(mp.x * mp.x, mp.y * mp.y);
+  const sinPhi = sin(phi); // 0 if phi = 0
+  const cosPhi = cos(phi); // 1 if phi = 0
 
-  // check if the radius is too small `pq < 0`, when `dq > rxs * rys`
-  // (see below)
-  // cr is the ratio (dq : rxs * rys)
-  const cr = mps.x / rs.x + mps.y / rs.y;
-  if (cr > 1) {
-    // scale up rX, rY equally so cr == 1
-    const s = Math.sqrt(cr);
-    r.x = s * r.x;
-    r.y = s * r.y;
-    rs = new Vector(r.x * r.x, r.y * r.y);
+  // Step 1: rotate line from p1 to p2 about Z by phi
+  // Place origin at midpoint of p1..p2
+  const m = new Vector((p1.x - p2.x) / 2, (p1.y - p2.y) / 2);
+  // Rotate to line up coordinate axes with the axes of the ellipse
+  const mp = new Vector(cosPhi * m.x + sinPhi * m.y,
+                        -sinPhi * m.x + cosPhi * m.y);
+  // Square it
+  const mp2 = new Vector(mp.x * mp.x, mp.y * mp.y);
+
+  //  B.2.5. Step 2: Ensure radii are positive
+  r.x = abs(r.x);
+  r.y = abs(r.y);
+
+  // B.2.5. Step 3: Ensure radii are large enough to span the arc
+  const r2 = new Vector(r.x * r.x, r.y * r.y);
+  const L = mp2.x / r2.x + mp2.y / r2.y;
+  if (L > 1) {
+    const L2 = sqrt(L);
+    r.x = L2 * r.x;
+    r.y = L2 * r.y;
+    r2.x = r.x * r.x;
+    r2.y = r.y * r.y;
   }
-  const denominator = rs.dot(mps);
-  const numerator = (rs.x * rs.y - denominator);
-  const square = numerator / denominator;
-  // use max to account for float precision
-  let root = Math.sqrt(Math.max(0, square));
-  if (largeArc === sweep)
-    root = -root;
 
-  const cp = new Vector(r.x * mp.y / r.y, -r.y * mp.x / r.x).multiply(root);
+  // Step 2: compute (cx', cy')
+  const sign = (fa === fs) ? -1 : 1;
 
-  // B.2.4 Step 3
-  const c = cp.rotate(xAngle).add(m);
-  //console.debug("c", c);
+  // `pow(sqrt(L) * r.x, 2)` will be less than `L * pow(r.x, 2)` when we
+  // run B.2.5. Correction of out-of-range radii
+  // so below value will be negative. We can abs to fix it
+  const M = sign * sqrt(abs(
+    (r2.x * r2.y - r2.x * mp2.y - r2.y * mp2.x) /
+    (r2.x * mp2.y + r2.y * mp2.x)));
+  const cp = new Vector(M * (r.x * mp.y) / r.y,
+                        M * (-r.y * mp.x) / r.x);
 
-  // B.2.4 Step 4
-  const v = mp.subtract(cp).over(r);
-  const stop = mp.add(cp).over(r).multiply(-1);
-  //console.debug("stop", stop);
+  // Step 3: Compute centre from (cx′, cy′)
+  const c = new Vector(cosPhi * cp.x - sinPhi * cp.y + (p1.x + p2.x) / 2,
+                       sinPhi * cp.x + cosPhi * cp.y + (p1.y + p2.y) / 2);
 
-  let theta = new Vector(1, 0).angleTo(v) % (2 * Math.PI);
-  //console.debug("theta", theta);
+  // Step 4: compute θ and dθ
+  const start = new Vector((mp.x - cp.x) / r.x, (mp.y - cp.y) / r.y);
+  const theta = new Vector(1, 0).angleTo(start);
 
-  let delta = v.angleTo(stop);
-  //console.debug("predelta", delta);
-  delta %= 2 * Math.PI;
-  //console.debug("delta", delta);
-  if (!sweep && delta > 0)
-    delta -= 2 * Math.PI;
-  else if (sweep && delta < 0)
-    delta += 2 * Math.PI;
+  let dTheta = start.angleTo(
+    new Vector((-mp.x - cp.x) / r.x, (-mp.y - cp.y) / r.y)) % (2 * Math.PI);
 
-  //console.debug(c.x + r.x * Math.cos(theta), c.y + r.y * Math.sin(theta));
-  return {
-    c: c,
-    theta: theta,
-    delta: delta
-  };
+  if (!fs && dTheta > 0) dTheta -= 2 * Math.PI;
+  if (fs && dTheta < 0) dTheta += 2 * Math.PI;
+
+  return { c: c, theta: theta, delta: dTheta };
 }
 
 /**
@@ -159,18 +163,27 @@ export function toBezier(c, theta, delta, r, xAngle) {
  * Each entry is the four control points p1, c1, c2, p2 for a curve.
  * @memberof EllipticalArc
  */
-export function toBeziers(p1, r, xAngle, largeArc, sweep, p2) {
+export function controlPoints(p1, r, xAngle, largeArc, sweep, p2) {
   const cap = endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
-  let theta = cap.theta;
-  const steps = Math.abs(cap.delta / MAX_BEZIER_THETA);
-  const step = cap.delta / steps;
-  const stop = theta + cap.delta;
+  // Split the curve into Bezier segments, each no more than
+  // MAX_BEZIER_THETA radians of the arc.
   const curves = [];
-  while (true) {
-    if (step < 0 && theta <= stop || step > 0 && theta >= stop)
-      break;
-    curves.push(toBezier(cap.c, theta, step, r, xAngle));
-    theta += step;
+  while (cap.delta !== 0) {
+    let ang = cap.delta;
+    if (Math.abs(ang) > MAX_BEZIER_THETA) {
+      if (ang < 0) {
+        ang = -MAX_BEZIER_THETA;
+        cap.delta += MAX_BEZIER_THETA;
+      } else {
+        ang = MAX_BEZIER_THETA;
+        cap.delta -= MAX_BEZIER_THETA;
+      }
+    } else {
+      ang = cap.delta;
+      cap.delta = 0;
+    }
+    curves.push(toBezier(cap.c, cap.theta, ang, r, xAngle));
+    cap.theta += ang;
   }
   return curves;
 }

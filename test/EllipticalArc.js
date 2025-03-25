@@ -7,7 +7,7 @@ import * as EllipticalArc from "../src/EllipticalArc.js";
 import { UNit } from "./TestSupport.js";
 
 function a(cx, cy, rx, ry, xang, laf, sf, x, y) {
-  return EllipticalArc.toBeziers(
+  return EllipticalArc.controlPoints(
     new Vector(cx, cx),
     new Vector(rx, ry),
     Math.PI * xang / 180,
@@ -29,6 +29,22 @@ describe("Elliptical Arc", () => {
   // PI = 3.14 = 180deg
   // PI*3/2 = 4.217 = 270deg
   // +ve rotation is clockwise
+
+  it("M 35,3 A 28,28 0 0 0 35,70", () => {
+    const p1 = new Vector(35, 3);
+    const p2 = new Vector(35, 70);
+    const r = new Vector(28, 28);
+    const xAngle = Math.PI;
+    const fA = false;
+    const fS = false;
+    
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, fA, fS);
+    assert.almost(cap.c.x, 35);
+    assert.almost(cap.c.y, 36.5);
+    assert.almost(cap.theta, Math.PI / 2);
+    assert.almost(cap.delta, -Math.PI);
+  });
 
   // See arcs.svg for coloured arcs
   it("a 10,10 0 0 0 10,10 red", () => {
@@ -157,6 +173,22 @@ describe("Elliptical Arc", () => {
     assert.almost(cap.delta, -D90);
   });
 
+  it("a 15,20 180 0 0 30,0", () => {
+    const p1 = new Vector(5, 20);
+    const p2 = new Vector(30, 0);
+    const r = new Vector(15, 20);
+    const xAngle = Math.PI;
+    const largeArc = false;
+    const sweep = false;
+    const cap = EllipticalArc.endpointToCentreArcParams(
+      p1, p2, r, xAngle, largeArc, sweep);
+    assert.almost(cap, {
+      c: { x: 15.680982812227507, y: 5.957739582727792 },
+      theta: 5.5048246820787945,
+      delta: -2.6657104039293777
+    });
+  });
+
   it("bez quad 1", () => {
     const p1 = new Vector(0, 10);
     const p2 = new Vector(10, 0);
@@ -205,19 +237,13 @@ describe("Elliptical Arc", () => {
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
+    const bez = EllipticalArc.controlPoints(p1, r, xAngle, largeArc, sweep, p2);
     assert.almost(bez, [
       [
-        new Vector(0, 10),
-        new Vector(2.651147734913025, 10),
-        new Vector(5.19642327058112, 8.94571235314983),
-        new Vector(7.0710678118654755, 7.071067811865475)
-      ],
-      [
-        new Vector(7.0710678118654755, 7.071067811865475),
-        new Vector(8.94571235314983, 5.1964232705811195),
-        new Vector(10, 2.6511477349130246),
-        new Vector(10, 0)
+        { x: 6.123233995736766e-16, y: 10 },
+        { x: 5.4858377035486345, y: 10 },
+        { x: 10, y: 5.485837703548634 },
+        { x: 10, y: 0 }
       ]
     ]);
   });
@@ -229,31 +255,19 @@ describe("Elliptical Arc", () => {
     const xAngle = Math.PI;
     const largeArc = false;
     const sweep = false;
-    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
-    // a semicircle should give us 4 curves
+    const bez = EllipticalArc.controlPoints(p1, r, xAngle, largeArc, sweep, p2);
+    // a semicircle should give us 2 curves
     assert.almost(bez, [
       [
         { x: 10, y: 0 },
-        { x: 10, y: 1.3255738674565123 },
-        { x: 10.527143823425085, y: 2.5982116352905598 },
-        { x: 11.464466094067262, y: 3.5355339059327378 }
-      ],
-      [
-        { x: 11.464466094067262, y: 3.5355339059327378 },
-        { x: 12.40178836470944, y: 4.472856176574916 },
-        { x: 13.674426132543488, y: 5 },
+        { x: 10, y: 2.742918851774317 },
+        { x: 12.257081148225684, y: 5 },
         { x: 15, y: 5 }
       ],
       [
         { x: 15, y: 5 },
-        { x: 16.325573867456512, y: 5 },
-        { x: 17.59821163529056, y: 4.472856176574915 },
-        { x: 18.535533905932738, y: 3.5355339059327373 }
-      ],
-      [
-        { x: 18.535533905932738, y: 3.5355339059327373 },
-        { x: 19.472856176574915, y: 2.5982116352905598 },
-        { x: 20, y: 1.3255738674565123 },
+        { x: 17.742918851774316, y: 5 },
+        { x: 20, y: 2.742918851774317 },
         { x: 20, y: 0 }
       ]
     ]);

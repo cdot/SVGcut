@@ -52,7 +52,7 @@ input[type="number"] {
 }
 .selected-path.open-path {
   stroke: rgba(255, 255, 0, 0.5);
-  stroke-width: 8px;
+  stroke-width: 5%;
   fill: none;
 }
 .combined-geometry {

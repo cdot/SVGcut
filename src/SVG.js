@@ -1,6 +1,7 @@
 /*Copyright Crawford Currie 2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 /* global assert */
 /* global structuredClone */
+/* global CustomEvent */
 
 import { Bezier } from "bezier-js";
 import { Vector } from "flatten-js";
@@ -32,12 +33,13 @@ import * as EllipticalArc from "./EllipticalArc.js";
  */
 function lineariseBezier(curve, params) {
   // SMELL: not a strict interpretation of "minSigLen" ;-)
-  const steps = Math.max(
+  let steps = Math.max(
     params.curveMinSegs, Math.round(curve.length() / params.curveMinSegLen));
   const lut = curve.getLUT(steps);
-  const segment = [ "L" ];
-  for (let i = 1; i < lut.length; i++)
-    segment.push(lut[i].x, lut[i].y);
+  const segment = [];
+  for (const pt of lut)
+    segment.push(pt.x, pt.y);
+  segment.unshift('L');
   return segment;
 }
 
@@ -55,6 +57,7 @@ function linearise(path, params) {
   let last = new Vector(0, 0), lastCP, xp, yp, i, j;
   let initialPoint = new Vector(0, 0); // coords of the last M or m
   const segments = [];
+
   for (const segment of path) {
     switch (segment[0]) {
 
@@ -74,7 +77,7 @@ function linearise(path, params) {
         const p2 = new Vector(segment[i + 4], segment[i + 5]);
         const curve = new Bezier(last, q1, q2, p2);
         const seg = lineariseBezier(curve, params);
-        seg.push(p2.x, p2.y);
+        //seg.push(p2.x, p2.y);
         segments.push(seg);
         lastCP = q2;
         last = p2;
@@ -197,22 +200,32 @@ function linearise(path, params) {
         const r = new Vector(segment[i], segment[i + 1]);
         const p2 = new Vector(segment[i + 5], segment[i + 6]);
         const xAngle = Math.PI * segment[i + 2] / 180;
-        const curves = EllipticalArc.toBeziers(
-          last, r, xAngle, segment[i + 3] > 0, segment[i + 4] > 0, p2);
-        for (const bez of curves) {
-          const curve = new Bezier(
-            bez[0].x, bez[0].y,
-            bez[1].x, bez[1].y,
-            bez[2].x, bez[2].y,
-            bez[3].x, bez[3].y);
-          segments.push(lineariseBezier(curve, params));
+        if (r.x === 0 || r.y === 0) {
+          // https://www.w3.org/TR/SVG/paths.html#ArcOutOfRangeParameters
+          // 9.5.1 If either rx or ry is 0, then this arc is treated
+          // as a straight line segment (a "lineto") joining the
+          // endpoints.
+          segments.push([ "L", p2.x, p2.y ]);
+        } else {
+          const curves = EllipticalArc.controlPoints(
+            last, r, xAngle, segment[i + 3] > 0, segment[i + 4] > 0, p2);
+          for (const bez of curves) {
+            const curve = new Bezier(
+              bez[0].x, bez[0].y,
+              bez[1].x, bez[1].y,
+              bez[2].x, bez[2].y,
+              bez[3].x, bez[3].y);
+            const seg = lineariseBezier(curve, params);
+            segments.push(seg);
+          }
         }
         last = p2;
       }
       break;
 
     default:
-      throw new Error(`Segment has an nsupported command: ${segment[0]}`);
+      console.error(segment);
+      throw new Error(`Segment has an unsupported command: '${segment[0]}'`);
     }
   }
   return segments;
@@ -230,12 +243,14 @@ export function parsePathD(s) {
   const bits = s.replace(/([MLHVCSQTAZ])(\d)/gi, "$1 $2").split(/[\s,]+/);
   let cmd;
   for (const bit of bits) {
+    if (bit === "") continue;
     if ("MmLlHhVvCcSsQqTtAaZz".indexOf(bit) >= 0) {
       if (cmd) cmds.push(cmd);
       cmd = [ bit ];
-    } else
+    } else {
       // will barf if format is snafu
       cmd.push(parseFloat(bit));
+    }
   }
   if (cmd.length > 0) cmds.push(cmd);
   return cmds;
@@ -382,8 +397,8 @@ export function segmentsFromElement(element, params) {
     if (rx > 0 && ry > 0) {
       // pathLength ignored
       pathString = `M ${cx - rx},${cy} ` +
-                   `a ${rx},${ry} 180 0 0 ${2 * rx},0 ` +
-                   `a ${rx},${ry} 180 0 0 ${-2 * rx},0 Z`;
+      `a ${rx},${ry} 180 0 0 ${2 * rx},0 ` +
+      `a ${rx},${ry} 180 0 0 ${-2 * rx},0 Z`;
     }
     break;
   }
@@ -465,14 +480,14 @@ export function segmentsFromElement(element, params) {
 
   if (pathString) {
     // Convert path to M, L and Z
-    const path = linearise(parsePathD(pathString), params);
+    const d = parsePathD(pathString);
+    const path = linearise(d, params);
     // and map to outermost SVG coordinate space
     try {
       unTransform(path, element);
     } catch (e) {
       // SVGElement doesn't have getCTM in node.js, works fine in browser.
     }
-
     return path;
   }
   return [];
@@ -499,7 +514,8 @@ export function importFromText(content) {
  * @memberof SVG
  */
 export function segments2d(segs) {
-  return segs.map(s => s.join(" ")).join(" ");
+  const d = segs.map(s => s.join(" ")).join(" ");
+  return d;
 }
 
 /**
