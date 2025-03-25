@@ -195,8 +195,9 @@ of pull requests and issues unaddressed. SVGcut has fixes for some of
 these, and more.
 + Support for saving and loading projects
 + Open paths (polylines) as well as closed (polygons)
++ Support for most of SVG
 + Cleaner selection
-+ Zoom and pan on paths
++ Zoom and pan
 + Easier to work with XY origins
 + Perforate operation
 + Raster pocket operation
@@ -208,6 +209,7 @@ these, and more.
 Some features of `jscut` have been disabled/removed. This may be because
 they are deemed too esoteric, or the (undocumented) code was too
 complex to reverse engineer, for limited end-user value.
+- VPocket
 - [Chilipeppr](http://www.chilipeppr.com/)
 - [Google Drive](https://drive.google.com/)
 - [Dropbox](https://www.dropbox.com/)
