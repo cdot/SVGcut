@@ -17,6 +17,226 @@ const HALF_CIRCLE_SEGMENTS = 5;
 export class Simulation {
 
   /**
+   * Canvas being rendered to.
+   * @member {HTMLCanvasElement}
+   */
+  #canvas;
+
+  /**
+   * Simulation time control.
+   * @member {HTMLElement}
+   */
+  #timeControl;
+
+  /**
+   * Simulation time report.
+   * @member {function}
+   */
+  #stopWatch;
+
+  /**
+   * Relative URI to load shaders from.
+   * @member {string}
+   */
+  #shaderURI;
+
+  /**
+   * @member {number}
+   */
+  #totalTime = 0;
+
+  /**
+   * Flag to indicate if the path texture has to be created.
+   * @member {boolean}
+   */
+  #needToCreatePathTexture = false;
+
+  /**
+   * Flag set if height map is required to be drawn.
+   * @member {boolean}
+   */
+  #needToDrawHeightMap = false;
+
+  /**
+     * True if the cutter is a v-bit.
+   * @member {boolean}
+   */
+  #isVBit = false;
+
+  /**
+   * Height of cutter cylinder.
+   * @member {number}
+   */
+  #cutterHeight = 0;
+
+  /**
+   * Cutter diameter.
+   * @member {number}
+   */
+  #cutterDiameter;
+
+  /**
+   * Tool (v bit) head angle, in radians
+   * @member {number}
+   */
+  #cutterAngle = Math.PI;
+
+  /**
+   * Where the user has asked to stop
+   * @member {object} {t,x,y,z,s}
+   */
+  #stopAt = { t: 0, x: 0, y: 0, z: 0, s: 0 };
+
+  /**
+   * Where to stop the simulation (snapshot time)
+   * @member {number}
+   */
+  #stopAtTime = 0;
+
+  /**
+   * gl shaders, initially mapped to shader type, will become the actual
+   * shader during load
+   * @member {object.<string,WebGLShader>}
+   */
+  #shaders = {};
+
+  /**
+   * GL buffer for material mesh
+   * @member {WebGLBuffer}
+   */
+  #meshBuffer;
+
+  /**
+   * Number of vertices in mesh buffer
+   * @member {number}
+   */
+  #meshNumVertices = 0;
+
+  /**
+   * GL buffer for tool cylinder
+   * @member {WebGLBuffer}
+   */
+  #cylBuffer;
+
+  /**
+   * Number of vertices in cylinder buffer
+   * @member {number}
+   */
+  #cylNumVertices = 0;
+
+  /**
+   * GL buffer for tool path
+   * @member {WebGLBuffer}
+   */
+  #pathBuffer = undefined;
+
+  /**
+   * Number of vertices in tool path buffer
+   * @member {number}
+   */
+  #pathNumVertices = 0;
+
+  /**
+   * @member {Float32Array}
+   */
+  #pathBufferContent;
+
+  /**
+   * @member {number}
+   */
+  #pathStride = 9;
+
+  /**
+   * @member {number}
+   */
+  #pathVerticesPerLine = 18;
+
+  /**
+   * @member {WebGLFramebuffer}
+   */
+  #pathFramebuffer;
+
+  /**
+   * @member {WebGLTexture}
+   */
+  #pathRgbaTexture;
+
+  /**
+   * @member {number}
+   */
+  #pathXOffset = 0;
+
+  /**
+   * @member {number}
+   */
+  #pathYOffset = 0;
+
+  /**
+   * @member {number}
+   */
+  #pathScale = 1;
+
+  /**
+   * @member {number}
+   */
+  #pathMinZ = -1;
+
+  /**
+   * Top of the material
+   * @member {number}
+   */
+  #pathTopZ = 0;
+
+  /**
+   * @member {number}
+   */
+  #pathNumPoints = 0;
+
+  /**
+   * Record of time and position. When a path is added to the simulation,
+   * an entry is added here that records time, x, y, and z coordinates
+   * so they can be seen during replay.
+   * @member {object[]} array of {t, x, y, z, f, s}
+   */
+  #timeSteps = [];
+
+  /**
+   * WebGL rendering context.
+   * @member {WebGLRenderingContext}
+   */
+  #gl;
+
+  /**
+   * Flag set true when the shaders and programs have been loaded
+   */
+  #ready = false;
+
+  /**
+   * @member {number}
+   */
+  #rotate = mat4.create();
+
+  /**
+   * Is a request pending?
+   */
+  #pendingRequest = false;
+
+  /**
+   * gl programs
+   * @member {object.<string,WebGLProgram>}
+   */
+   #programs = {
+     path: null,
+     heightMap: null,
+     basic: null
+   };
+
+  /**
+   * Map from shader name to gl type
+   */
+  #shaderTypes;
+
+  /**
    * You can't do anything with it until you call start()
    * @param {string} shaderURI URI to load shaders from.
    * @param {HTMLCanvasElement} canvas element to display the simulation in.
@@ -29,342 +249,139 @@ export class Simulation {
    */
   constructor(shaderURI, canvas, timeControl, stopWatch) {
 
-    /**
-     * Flag set true when the shaders and programs have been loaded
-     */
-    this.ready = false;
+    this.#canvas = canvas;
+    this.#timeControl = timeControl;
+    this.#stopWatch = stopWatch;
+    this.#shaderURI = shaderURI;
 
-    /**
-     * Canvas being rendered to
-     * @member {HTMLCanvasElement}
-     * @private
-     */
-    this.canvas = canvas;
+    const gl = canvas.getContext("webgl");
+    this.#gl = gl;
 
-    /**
-     * Simulation time control
-     * @member {HTMLElement}
-     * @private
-     */
-    this.timeControl = timeControl;
-
-    /**
-     * Simulation time report
-     * @member {function}
-     * @private
-     */
-    this.stopWatch = stopWatch;
-
-    /**
-     * Relative URI to load shaders from
-     * @member {string}
-     * @private
-     */
-    this.shaderURI = shaderURI;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.totalTime = 0;
-
-    /**
-     * Flag to indicate if the path texture has to be created
-     * @member {boolean}
-     * @private
-     */
-    this.needToCreatePathTexture = false;
-
-    /**
-     * @member {boolean}
-     * @private
-     */
-    this.needToDrawHeightMap = false;
-
-    /**
-     * @member {boolean}
-     * @private
-     */
-    this.isVBit = false;
-
-    /**
-     * Height of cutter cylinder
-     * @member {number}
-     * @private
-     */
-    this.cutterH = 0;
-
-    /**
-     * Tool diameter
-     * @member {number}
-     * @private
-     */
-    this.cutterDiameter = 0;
-
-    /**
-     * Tool head angle (v bit)
-     * @member {number}
-     * @private
-     */
-    this.cutterAngleRad = Math.PI;
-
-    /**
-     * Where the user has asked to stop
-     * @member {object} {t,x,y,z,s}
-     * @private
-     */
-    this.stopAt = { t: 0, x: 0, y: 0, z: 0, s: 0 };
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.rotate = mat4.create();
-
-    this.pendingRequest = false;
-
-    /**
-     * gl programs
-     * @member {object.<string,WebGLProgram>}
-     * @private
-     */
-    this.programs = {
-      path: null,
-      heightMap: null,
-      basic: null
+    this.#shaderTypes = {
+      pathVertex: gl.VERTEX_SHADER,
+      pathFragment: gl.FRAGMENT_SHADER,
+      heightMapVertex: gl.VERTEX_SHADER,
+      heightMapFragment: gl.FRAGMENT_SHADER,
+      basicVertex: gl.VERTEX_SHADER,
+      basicFragment: gl.FRAGMENT_SHADER
     };
 
-    /**
-     * gl shaders, initially mapped to shader type, will become the actual
-     * shader during load
-     * @member {object.<string,WebGLShader>}
-     * @private
-     */
-    this.shaders = {};
-
-    /**
-     * GL buffer for material mesh
-     * @member {WebGLBuffer}
-     * @private
-     */
-    this.meshBuffer = undefined;
-
-    /**
-     * Number of vertices in mesh buffer
-     * @member {number}
-     * @private
-     */
-    this.meshNumVertices = 0;
-
-    /**
-     * GL buffer for tool cylinder
-     * @member {WebGLBuffer}
-     * @private
-     */
-    this.cylBuffer = undefined;
-
-    /**
-     * Number of vertices in cylinder buffer
-     * @member {number}
-     * @private
-     */
-    this.cylNumVertices = 0;
-
-    /**
-     * GL buffer for tool path
-     * @member {WebGLBuffer}
-     * @private
-     */
-    this.pathBuffer = undefined;
-
-    /**
-     * Number of vertices in tool path buffer
-     * @member {number}
-     * @private
-     */
-    this.pathNumVertices = 0;
-
-    /**
-     * @member {Float32Array}
-     * @private
-     */
-    this.pathBufferContent = undefined;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathStride = 9;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathVerticesPerLine = 18;
-
-    /**
-     * @member {WebGLFramebuffer}
-     * @private
-     */
-    this.pathFramebuffer = undefined;
-
-    /**
-     * @member {WebGLTexture}
-     * @private
-     */
-    this.pathRgbaTexture = undefined;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathXOffset = 0;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathYOffset = 0;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathScale = 1;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathMinZ = -1;
-
-    /**
-     * Top of the material
-     * @member {number}
-     * @private
-     */
-    this.pathTopZ = 0;
-
-    /**
-     * @member {number}
-     * @private
-     */
-    this.pathNumPoints = 0;
-
-    /**
-     * Record of time and position. When a path is added to the simulation,
-     * an entry is added here that records time, x, y, and z coordinates
-     * so they can be seen during replay.
-     * @member {object[]} array of {t, x, y, z, f, s}
-     */
-    this.timeSteps = [];
-
-    /**
-     * WebGL rendering context. There is no need for a later version.
-     * @member {WebGLRenderingContext}
-     * @private
-     */
-    this.gl = canvas.getContext("webgl");
+    this.#constructMaterialBuffer();
+    this.#constructCutterBuffer();
   }
 
   /**
-   * @private
+   * Promise to initialise the GL context and load all required shaders.
+   * GL shaders are defined in external files with a `.shader.txt`
+   * extension that are loaded dynamically.
+   * @return {Promise} promise that resolves to undefined when the
+   * simulation is ready to accept new input.
+   * @throw {Error} if something goes horribly wrong
    */
-  constructMeshBuffer() {
+  start() {
+    return Promise.all(
+      Object.keys(this.#shaderTypes)
+      .map(name =>
+        this.#loadShader(name, this.#shaderTypes[name])
+        .then(shader => this.#shaders[name] = shader)))
+    .then(() => {
+      this.#programs.path = this.#linkRasterizePathProgram(this.#gl);
+      this.#programs.heightMap = this.#linkRenderHeightMapProgram(this.#gl);
+      this.#programs.basic = this.#linkBasicProgram(this.#gl);
+
+      this.setPath([], 0, 0, Math.PI / 2, 0);
+
+      this.#addEventListeners();
+
+      this.#ready = true;
+    });
+  }
+
+  /**
+   * Resize the simulation canvas.
+   * @param {number} w width
+   * @param {number} h height
+   */
+  resizeCanvas(w, h) {
+    this.#canvas.setAttribute("width", w);
+    this.#canvas.setAttribute("height", h);
+    if (this.#ready) {
+      this.#needToDrawHeightMap = true;
+      this.#requestFrame();
+    }
+  }
+
+  /**
+   * Construct the vertex buffer for the material.
+   */
+  #constructMaterialBuffer() {
     const numTriangles = RESOLUTION * (RESOLUTION - 1);
-    this.meshNumVertices = numTriangles * 3;
-    const bufferContent = new Float32Array(this.meshNumVertices * MESH_STRIDE);
+    this.#meshNumVertices = numTriangles * 3;
+    const buff = new Float32Array(this.#meshNumVertices * MESH_STRIDE);
     let pos = 0;
-    for (let y = 0; y < RESOLUTION - 1; ++y)
-      for (let x = 0; x < RESOLUTION; ++x) {
+    function addVertex(x, y) {
+      buff[pos++] = x;
+      buff[pos++] = y;
+    }
+    for (let y = 0; y < RESOLUTION - 1; y++) {
+      for (let x = 0; x < RESOLUTION; x++) {
         let left = x - 1;
-        if (left < 0)
+         if (left < 0)
           left = 0;
         let right = x + 1;
         if (right >= RESOLUTION)
           right = RESOLUTION - 1;
         if (!(x & 1) ^ (y & 1))
-          for (let i = 0; i < 3; ++i) {
-            bufferContent[pos++] = left;
-            bufferContent[pos++] = y + 1;
-            bufferContent[pos++] = x;
-            bufferContent[pos++] = y;
-            bufferContent[pos++] = right;
-            bufferContent[pos++] = y + 1;
-            if (i === 0) {
-              bufferContent[pos++] = left;
-              bufferContent[pos++] = y + 1;
-            } else if (i === 1) {
-              bufferContent[pos++] = x;
-              bufferContent[pos++] = y;
-            }
-            else {
-              bufferContent[pos++] = right;
-              bufferContent[pos++] = y + 1;
-            }
-            bufferContent[pos++] = i;
+          for (let i = 0; i < 3; i++) {
+            addVertex(left, y + 1);
+            addVertex(x, y);
+            addVertex(right, y + 1);
+            if (i === 0)
+              addVertex(left, y + 1);
+            else if (i === 1)
+              addVertex(x, y);
+            else
+              addVertex(right, y + 1);
+            buff[pos++] = i;
           }
         else
-          for (let i = 0; i < 3; ++i) {
-            bufferContent[pos++] = left;
-            bufferContent[pos++] = y;
-            bufferContent[pos++] = right;
-            bufferContent[pos++] = y;
-            bufferContent[pos++] = x;
-            bufferContent[pos++] = y + 1;
-            if (i === 0) {
-              bufferContent[pos++] = left;
-              bufferContent[pos++] = y;
-            } else if (i === 1) {
-              bufferContent[pos++] = right;
-              bufferContent[pos++] = y;
-            }
-            else {
-              bufferContent[pos++] = x;
-              bufferContent[pos++] = y + 1;
-            }
-            bufferContent[pos++] = i;
+          for (let i = 0; i < 3; i++) {
+            addVertex(left, y);
+            addVertex(right, y);
+            addVertex(x, y + 1);
+            if (i === 0)
+              addVertex(left, y);
+            else if (i === 1)
+              addVertex(right, y);
+            else
+              addVertex(x, y + 1);
+            buff[pos++] = i;
           }
       }
-
-    //bufferContent = new Float32Array([
-    //    1,1,126,1,64,126,    0,
-    //    1,1,126,1,64,126,    1,
-    //    1,1,126,1,64,126,    2,
-    //]);
-    //this.meshNumVertices = 3;
-
-    this.meshBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.meshBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER, bufferContent, this.gl.STATIC_DRAW);
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-  }
-
-  resizeCanvas(w, h) {
-    this.canvas.setAttribute("width", w);
-    this.canvas.setAttribute("height", h);
-    if (this.ready) {
-      this.needToDrawHeightMap = true;
-      this.requestFrame();
     }
+
+    const gl = this.#gl;
+    this.#meshBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.#meshBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER, buff, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
   /**
    * Allocate cutter shader mesh buffer
-   * @private
    */
-  constructCylBuffer() {
+  #constructCutterBuffer() {
     const numDivisions = 40;
     const numTriangles = numDivisions * 4;
-    this.cylNumVertices = numTriangles * 3;
-    const bufferContent = new Float32Array(this.cylNumVertices * CYL_STRIDE);
+    this.#cylNumVertices = numTriangles * 3;
+    const buff = new Float32Array(this.#cylNumVertices * CYL_STRIDE);
 
     let pos = 0;
     function addVertex(x, y, z) {
-      bufferContent[pos++] = x;
-      bufferContent[pos++] = y;
-      bufferContent[pos++] = z;
+      buff[pos++] = x;
+      buff[pos++] = y;
+      buff[pos++] = z;
     }
 
     let lastX = Math.cos(0) / 2;
@@ -389,24 +406,20 @@ export class Simulation {
       addVertex(lastX, lastY, 1);
       addVertex(x, y, 1);
 
-      lastX = x;
-      lastY = y;
+      lastX = x; lastY = y;
     }
 
-    this.cylBuffer = this.gl.createBuffer();
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cylBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, bufferContent,
-                       this.gl.STATIC_DRAW);
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+    const gl = this.#gl;
+    this.#cylBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.#cylBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, buff, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 
-  /**
-   * @private
-   */
-  linkBasicProgram(gl) {
+  #linkBasicProgram(gl) {
     const program = gl.createProgram();
-    gl.attachShader(program, this.shaders.basicVertex);
-    gl.attachShader(program, this.shaders.basicFragment);
+    gl.attachShader(program, this.#shaders.basicVertex);
+    gl.attachShader(program, this.#shaders.basicFragment);
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(
@@ -427,14 +440,11 @@ export class Simulation {
     return program;
   }
 
-  /**
-   * @private
-   */
-  linkRenderHeightMapProgram(gl) {
+  #linkRenderHeightMapProgram(gl) {
     const program = gl.createProgram();
 
-    gl.attachShader(program, this.shaders.heightMapVertex);
-    gl.attachShader(program, this.shaders.heightMapFragment);
+    gl.attachShader(program, this.#shaders.heightMapVertex);
+    gl.attachShader(program, this.#shaders.heightMapFragment);
     gl.linkProgram(program);
 
     if (!gl.getProgramParameter(program, gl.LINK_STATUS))
@@ -459,15 +469,14 @@ export class Simulation {
 
   /**
    * @throws {Error}
-   * @private
    */
-  linkRasterizePathProgram(gl) {
+  #linkRasterizePathProgram(gl) {
     const program = gl.createProgram();
-    gl.attachShader(program, this.shaders.pathVertex);
-    gl.attachShader(program, this.shaders.pathFragment);
+    gl.attachShader(program, this.#shaders.pathVertex);
+    gl.attachShader(program, this.#shaders.pathFragment);
     gl.linkProgram(program);
 
-    if (!gl.getProgramParameter(program, this.gl.LINK_STATUS))
+    if (!gl.getProgramParameter(program, this.#gl.LINK_STATUS))
       throw new Error("Could not initialise RasterizePath shaders");
 
     gl.useProgram(program);
@@ -489,26 +498,20 @@ export class Simulation {
     return program;
   }
 
-  /**
-   * @private
-   */
-  requestFrame() {
-    if (!this.pendingRequest) {
-      requestAnimationFrame(() => this.render());
-      this.pendingRequest = true;
+  #requestFrame() {
+    if (!this.#pendingRequest) {
+      requestAnimationFrame(() => this.#render());
+      this.#pendingRequest = true;
     }
   }
 
-  /**
-   * @private
-   */
-  vBit(idx, prev, curr, bufferContent, beginTime, time) {
+  #vBit(idx, prev, curr, buff, beginTime, time) {
     const coneHeight = -Math.min(curr.z, prev.z, 0) + 0.1;
     const coneDia = coneHeight * 2
-          * Math.sin(this.cutterAngleRad) / Math.cos(this.cutterAngleRad);
+          * Math.sin(this.#cutterAngle) / Math.cos(this.#cutterAngle);
     const coneDia_2 = coneDia / 2;
-    const stride = this.pathStride;
-    const pvpl = this.pathVerticesPerLine;
+    const stride = this.#pathStride;
+    const pvpl = this.#pathVerticesPerLine;
 
     let rotAngle;
     if (curr.x === prev.x && curr.y === prev.y)
@@ -521,23 +524,23 @@ export class Simulation {
     function addToBuffer(virtexIndex, command,
                          rawX, rawY, rawZ, rotCos, rotSin, zOffset = 0) {
       const base = stride * (idx * pvpl + virtexIndex);
-      bufferContent[base + 0] = prev.x;
-      bufferContent[base + 1] = prev.y;
-      bufferContent[base + 2] = prev.z + zOffset;
-      bufferContent[base + 3] = curr.x;
-      bufferContent[base + 4] = curr.y;
-      bufferContent[base + 5] = curr.z + zOffset;
-      bufferContent[base + 6] = beginTime;
-      bufferContent[base + 7] = time;
-      bufferContent[base + 8] = command;
-      bufferContent[base + 9] = rawX * rotCos - rawY * rotSin;
-      bufferContent[base + 10] = rawY * rotCos + rawX * rotSin;
-      bufferContent[base + 11] = rawZ;
+      buff[base + 0] = prev.x;
+      buff[base + 1] = prev.y;
+      buff[base + 2] = prev.z + zOffset;
+      buff[base + 3] = curr.x;
+      buff[base + 4] = curr.y;
+      buff[base + 5] = curr.z + zOffset;
+      buff[base + 6] = beginTime;
+      buff[base + 7] = time;
+      buff[base + 8] = command;
+      buff[base + 9] = rawX * rotCos - rawY * rotSin;
+      buff[base + 10] = rawY * rotCos + rawX * rotSin;
+      buff[base + 11] = rawZ;
     }
 
     if (Math.abs(curr.z - prev.z) >= xyDist * Math.PI
-        / 2 * Math.cos(this.cutterAngleRad)
-        / Math.sin(this.cutterAngleRad)) {
+        / 2 * Math.cos(this.#cutterAngle)
+        / Math.sin(this.#cutterAngle)) {
 
       // plunge or retract
       let index = 0;
@@ -556,17 +559,17 @@ export class Simulation {
                     coneDia_2 * Math.sin(a1), coneHeight, 1, 0);
       }
 
-      //if (index > this.pathVerticesPerLine)
+      //if (index > this.#pathVerticesPerLine)
       //    console.debug("oops...");
-      while (index < this.pathVerticesPerLine)
+      while (index < this.#pathVerticesPerLine)
         addToBuffer(index++, 200, 0, 0, 0, 1, 0);
     } else {
       //console.debug("cut");
       // cut
       const planeContactAngle = Math.asin(
         (prev.z - curr.z) / xyDist
-        * Math.sin(this.cutterAngleRad)
-        / Math.cos(this.cutterAngleRad));
+        * Math.sin(this.#cutterAngle)
+        / Math.cos(this.#cutterAngle));
       //console.debug("\nxyDist = ", xyDist);
       //console.debug("delta z = " + (z - prev.z));
       //console.debug("planeContactAngle = " + (planeContactAngle * 180 / Math.PI));
@@ -621,236 +624,220 @@ export class Simulation {
                     coneDia_2 * Math.sin(a1 + Math.PI), coneHeight, 1, 0);
       }
 
-      //if (index != this.pathVerticesPerLine)
+      //if (index != this.#pathVerticesPerLine)
       //    console.debug("oops...");
-      //while (index < this.pathVerticesPerLine)
+      //while (index < this.#pathVerticesPerLine)
       //    addToBuffer(index++, 200, 0, 0, 0, 1, 0);
     }
   }
 
   /**
    * Add a point to the buffer assuming a flat bit
-   * @private
    */
-  flatBit(idx, prev, curr, bufferContent, beginTime, time) {
-    for (let virtex = 0; virtex < this.pathVerticesPerLine; ++virtex) {
-      const base = idx * this.pathStride * this.pathVerticesPerLine
-          + virtex * this.pathStride;
-      bufferContent[base + 0] = prev.x;
-      bufferContent[base + 1] = prev.y;
-      bufferContent[base + 2] = prev.z;
-      bufferContent[base + 3] = curr.x;
-      bufferContent[base + 4] = curr.y;
-      bufferContent[base + 5] = curr.z;
-      bufferContent[base + 6] = beginTime;
-      bufferContent[base + 7] = time;
-      bufferContent[base + 8] = virtex;
+  #flatBit(idx, prev, curr, buff, beginTime, time) {
+    for (let virtex = 0; virtex < this.#pathVerticesPerLine; ++virtex) {
+      const base = idx * this.#pathStride * this.#pathVerticesPerLine
+          + virtex * this.#pathStride;
+      buff[base + 0] = prev.x;
+      buff[base + 1] = prev.y;
+      buff[base + 2] = prev.z;
+      buff[base + 3] = curr.x;
+      buff[base + 4] = curr.y;
+      buff[base + 5] = curr.z;
+      buff[base + 6] = beginTime;
+      buff[base + 7] = time;
+      buff[base + 8] = virtex;
     }
   }
 
-  /**
-   * @private
-   */
-  drawPath() {
-    if (!this.pathBuffer) {
-      this.pathBuffer = this.gl.createBuffer();
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.pathBuffer);
-      this.gl.bufferData(this.gl.ARRAY_BUFFER, GPU_MEM, this.gl.DYNAMIC_DRAW);
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
+  #drawPath() {
+    if (!this.#pathBuffer) {
+      this.#pathBuffer = this.#gl.createBuffer();
+      this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#pathBuffer);
+      this.#gl.bufferData(this.#gl.ARRAY_BUFFER, GPU_MEM, this.#gl.DYNAMIC_DRAW);
+      this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, null);
     }
 
-    this.gl.useProgram(this.programs.path);
+    this.#gl.useProgram(this.#programs.path);
 
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.viewport(0, 0, RESOLUTION, RESOLUTION);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.#gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.#gl.enable(this.#gl.DEPTH_TEST);
+    this.#gl.viewport(0, 0, RESOLUTION, RESOLUTION);
+    this.#gl.clear(this.#gl.COLOR_BUFFER_BIT | this.#gl.DEPTH_BUFFER_BIT);
 
     // Set program variables
-    this.gl.uniform1f(this.programs.path.resolution, RESOLUTION);
-    this.gl.uniform1f(this.programs.path.cutterDiameter, this.cutterDiameter);
-    this.gl.uniform2f(this.programs.path.pathXYOffset,
-                      this.pathXOffset, this.pathYOffset);
-    this.gl.uniform1f(this.programs.path.pathScale, this.pathScale);
-    this.gl.uniform1f(this.programs.path.pathMinZ, this.pathMinZ);
-    this.gl.uniform1f(this.programs.path.pathTopZ, this.pathTopZ);
-    this.gl.uniform1f(this.programs.path.stopAtTime, this.stopAt.t);
+    this.#gl.uniform1f(this.#programs.path.resolution, RESOLUTION);
+    this.#gl.uniform1f(this.#programs.path.cutterDiameter, this.#cutterDiameter);
+    this.#gl.uniform2f(this.#programs.path.pathXYOffset,
+                      this.#pathXOffset, this.#pathYOffset);
+    this.#gl.uniform1f(this.#programs.path.pathScale, this.#pathScale);
+    this.#gl.uniform1f(this.#programs.path.pathMinZ, this.#pathMinZ);
+    this.#gl.uniform1f(this.#programs.path.pathTopZ, this.#pathTopZ);
+    this.#gl.uniform1f(this.#programs.path.stopAtTime, this.#stopAt.t);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.pathBuffer);
-    this.gl.vertexAttribPointer(
-      this.programs.path.pos1, 3, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
-    this.gl.vertexAttribPointer(
-      this.programs.path.pos2, 3, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT,
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#pathBuffer);
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.pos1, 3, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT, 0);
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.pos2, 3, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT,
       3 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.path.startTime, 1, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT,
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.startTime, 1, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT,
       6 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.path.endTime, 1, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT,
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.endTime, 1, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT,
       7 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.path.command, 1, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT,
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.command, 1, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT,
       8 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.path.rawPos, 3, this.gl.FLOAT, false,
-      this.pathStride * Float32Array.BYTES_PER_ELEMENT,
+    this.#gl.vertexAttribPointer(
+      this.#programs.path.rawPos, 3, this.#gl.FLOAT, false,
+      this.#pathStride * Float32Array.BYTES_PER_ELEMENT,
       9 * Float32Array.BYTES_PER_ELEMENT);
 
-    this.gl.enableVertexAttribArray(this.programs.path.pos1);
-    this.gl.enableVertexAttribArray(this.programs.path.pos2);
-    this.gl.enableVertexAttribArray(this.programs.path.startTime);
-    this.gl.enableVertexAttribArray(this.programs.path.endTime);
-    this.gl.enableVertexAttribArray(this.programs.path.command);
-    if (this.isVBit)
-      this.gl.enableVertexAttribArray(this.programs.path.rawPos);
+    this.#gl.enableVertexAttribArray(this.#programs.path.pos1);
+    this.#gl.enableVertexAttribArray(this.#programs.path.pos2);
+    this.#gl.enableVertexAttribArray(this.#programs.path.startTime);
+    this.#gl.enableVertexAttribArray(this.#programs.path.endTime);
+    this.#gl.enableVertexAttribArray(this.#programs.path.command);
+    if (this.#isVBit)
+      this.#gl.enableVertexAttribArray(this.#programs.path.rawPos);
 
-    const numTriangles = this.pathNumVertices / 3;
+    const numTriangles = this.#pathNumVertices / 3;
     let lastTriangle = 0;
     const maxTriangles = Math.floor(
-      GPU_MEM / this.pathStride / 3 / Float32Array.BYTES_PER_ELEMENT);
+      GPU_MEM / this.#pathStride / 3 / Float32Array.BYTES_PER_ELEMENT);
 
     while (lastTriangle < numTriangles) {
       const n = Math.min(numTriangles - lastTriangle, maxTriangles);
       const b = new Float32Array(
-        this.pathBufferContent.buffer,
-        lastTriangle * this.pathStride * 3 * Float32Array.BYTES_PER_ELEMENT,
-        n * this.pathStride * 3);
-      this.gl.bufferSubData(this.gl.ARRAY_BUFFER, 0, b);
-      this.gl.drawArrays(this.gl.TRIANGLES, 0, n * 3);
+        this.#pathBufferContent.buffer,
+        lastTriangle * this.#pathStride * 3 * Float32Array.BYTES_PER_ELEMENT,
+        n * this.#pathStride * 3);
+      this.#gl.bufferSubData(this.#gl.ARRAY_BUFFER, 0, b);
+      this.#gl.drawArrays(this.#gl.TRIANGLES, 0, n * 3);
       lastTriangle += n;
     }
 
-    this.gl.disableVertexAttribArray(this.programs.path.pos1);
-    this.gl.disableVertexAttribArray(this.programs.path.pos2);
-    this.gl.disableVertexAttribArray(this.programs.path.startTime);
-    this.gl.disableVertexAttribArray(this.programs.path.endTime);
-    this.gl.disableVertexAttribArray(this.programs.path.command);
-    this.gl.disableVertexAttribArray(this.programs.path.rawPos);
+    this.#gl.disableVertexAttribArray(this.#programs.path.pos1);
+    this.#gl.disableVertexAttribArray(this.#programs.path.pos2);
+    this.#gl.disableVertexAttribArray(this.#programs.path.startTime);
+    this.#gl.disableVertexAttribArray(this.#programs.path.endTime);
+    this.#gl.disableVertexAttribArray(this.#programs.path.command);
+    this.#gl.disableVertexAttribArray(this.#programs.path.rawPos);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-    this.gl.useProgram(null);
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, null);
+    this.#gl.useProgram(null);
   }
 
-  /**
-   * @private
-   */
-  createPathFramebuffer() {
-    this.pathFramebuffer = this.gl.createFramebuffer();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.pathFramebuffer);
+  #createPathFramebuffer() {
+    this.#pathFramebuffer = this.#gl.createFramebuffer();
+    this.#gl.bindFramebuffer(this.#gl.FRAMEBUFFER, this.#pathFramebuffer);
 
-    this.pathRgbaTexture = this.gl.createTexture();
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.pathRgbaTexture);
-    this.gl.texImage2D(
-      this.gl.TEXTURE_2D, 0, this.gl.RGBA, RESOLUTION,
-      RESOLUTION, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER,
-                          this.gl.NEAREST);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER,
-                          this.gl.NEAREST);
-    this.gl.framebufferTexture2D(
-      this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D,
-      this.pathRgbaTexture, 0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    this.#pathRgbaTexture = this.#gl.createTexture();
+    this.#gl.activeTexture(this.#gl.TEXTURE0);
+    this.#gl.bindTexture(this.#gl.TEXTURE_2D, this.#pathRgbaTexture);
+    this.#gl.texImage2D(
+      this.#gl.TEXTURE_2D, 0, this.#gl.RGBA, RESOLUTION,
+      RESOLUTION, 0, this.#gl.RGBA, this.#gl.UNSIGNED_BYTE, null);
+    this.#gl.texParameteri(this.#gl.TEXTURE_2D, this.#gl.TEXTURE_MAG_FILTER,
+                          this.#gl.NEAREST);
+    this.#gl.texParameteri(this.#gl.TEXTURE_2D, this.#gl.TEXTURE_MIN_FILTER,
+                          this.#gl.NEAREST);
+    this.#gl.framebufferTexture2D(
+      this.#gl.FRAMEBUFFER, this.#gl.COLOR_ATTACHMENT0, this.#gl.TEXTURE_2D,
+      this.#pathRgbaTexture, 0);
+    this.#gl.bindTexture(this.#gl.TEXTURE_2D, null);
 
-    const renderbuffer = this.gl.createRenderbuffer();
-    this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, renderbuffer);
-    this.gl.renderbufferStorage(
-      this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16,
+    const renderbuffer = this.#gl.createRenderbuffer();
+    this.#gl.bindRenderbuffer(this.#gl.RENDERBUFFER, renderbuffer);
+    this.#gl.renderbufferStorage(
+      this.#gl.RENDERBUFFER, this.#gl.DEPTH_COMPONENT16,
       RESOLUTION, RESOLUTION);
-    this.gl.framebufferRenderbuffer(
-      this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER,
+    this.#gl.framebufferRenderbuffer(
+      this.#gl.FRAMEBUFFER, this.#gl.DEPTH_ATTACHMENT, this.#gl.RENDERBUFFER,
       renderbuffer);
-    this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
+    this.#gl.bindRenderbuffer(this.#gl.RENDERBUFFER, null);
 
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.#gl.bindFramebuffer(this.#gl.FRAMEBUFFER, null);
   }
 
-  /**
-   * @private
-   */
-  createPathTexture() {
-    if (!this.pathFramebuffer)
-      this.createPathFramebuffer();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.pathFramebuffer);
-    this.drawPath();
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-    this.needToCreatePathTexture = false;
-    this.needToDrawHeightMap = true;
+  #createPathTexture() {
+    if (!this.#pathFramebuffer)
+      this.#createPathFramebuffer();
+    this.#gl.bindFramebuffer(this.#gl.FRAMEBUFFER, this.#pathFramebuffer);
+    this.#drawPath();
+    this.#gl.bindFramebuffer(this.#gl.FRAMEBUFFER, null);
+    this.#needToCreatePathTexture = false;
+    this.#needToDrawHeightMap = true;
   }
 
-  /**
-   * @private
-   */
-  drawHeightMap() {
-    this.gl.useProgram(this.programs.heightMap);
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    this.gl.enable(this.gl.DEPTH_TEST);
-    const canvasSize = Math.min(this.canvas.width, this.canvas.height);
-    this.gl.viewport((this.canvas.width - canvasSize) / 2,
-                     (this.canvas.height - canvasSize) / 2,
+  #drawHeightMap() {
+    this.#gl.useProgram(this.#programs.heightMap);
+    this.#gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.#gl.enable(this.#gl.DEPTH_TEST);
+    const canvasSize = Math.min(this.#canvas.width, this.#canvas.height);
+    this.#gl.viewport((this.#canvas.width - canvasSize) / 2,
+                     (this.#canvas.height - canvasSize) / 2,
                      canvasSize, canvasSize);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.#gl.clear(this.#gl.COLOR_BUFFER_BIT | this.#gl.DEPTH_BUFFER_BIT);
 
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.pathRgbaTexture);
+    this.#gl.activeTexture(this.#gl.TEXTURE0);
+    this.#gl.bindTexture(this.#gl.TEXTURE_2D, this.#pathRgbaTexture);
 
-    this.gl.uniform1f(this.programs.heightMap.resolution, RESOLUTION);
-    this.gl.uniform1f(this.programs.heightMap.pathScale, this.pathScale);
-    this.gl.uniform1f(this.programs.heightMap.pathMinZ, this.pathMinZ);
-    this.gl.uniform1f(this.programs.heightMap.pathTopZ, this.pathTopZ);
-    this.gl.uniformMatrix4fv(
-      this.programs.heightMap.rotate, false, this.rotate);
-    this.gl.uniform1i(this.programs.heightMap.heightMap, 0);
+    this.#gl.uniform1f(this.#programs.heightMap.resolution, RESOLUTION);
+    this.#gl.uniform1f(this.#programs.heightMap.pathScale, this.#pathScale);
+    this.#gl.uniform1f(this.#programs.heightMap.pathMinZ, this.#pathMinZ);
+    this.#gl.uniform1f(this.#programs.heightMap.pathTopZ, this.#pathTopZ);
+    this.#gl.uniformMatrix4fv(
+      this.#programs.heightMap.rotate, false, this.#rotate);
+    this.#gl.uniform1i(this.#programs.heightMap.heightMap, 0);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.meshBuffer);
-    this.gl.vertexAttribPointer(
-      this.programs.heightMap.pos0, 2, this.gl.FLOAT, false,
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#meshBuffer);
+    this.#gl.vertexAttribPointer(
+      this.#programs.heightMap.pos0, 2, this.#gl.FLOAT, false,
       MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT, 0);
-    this.gl.vertexAttribPointer(
-      this.programs.heightMap.pos1, 2, this.gl.FLOAT, false,
+    this.#gl.vertexAttribPointer(
+      this.#programs.heightMap.pos1, 2, this.#gl.FLOAT, false,
       MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT,
       2 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.heightMap.pos2, 2, this.gl.FLOAT, false,
+    this.#gl.vertexAttribPointer(
+      this.#programs.heightMap.pos2, 2, this.#gl.FLOAT, false,
       MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT,
       4 * Float32Array.BYTES_PER_ELEMENT);
-    this.gl.vertexAttribPointer(
-      this.programs.heightMap.thisPos, 2, this.gl.FLOAT, false,
+    this.#gl.vertexAttribPointer(
+      this.#programs.heightMap.thisPos, 2, this.#gl.FLOAT, false,
       MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT,
       6 * Float32Array.BYTES_PER_ELEMENT);
-    //this.gl.vertexAttribPointer(this.programs.heightMap.command, 1, this.gl.FLOAT, false, MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
+    //this.#gl.vertexAttribPointer(this.#programs.heightMap.command, 1, this.#gl.FLOAT, false, MESH_STRIDE * Float32Array.BYTES_PER_ELEMENT, 8 * Float32Array.BYTES_PER_ELEMENT);
 
-    this.gl.enableVertexAttribArray(this.programs.heightMap.pos0);
-    this.gl.enableVertexAttribArray(this.programs.heightMap.pos1);
-    this.gl.enableVertexAttribArray(this.programs.heightMap.pos2);
-    this.gl.enableVertexAttribArray(this.programs.heightMap.thisPos);
-    //this.gl.enableVertexAttribArray(this.programs.heightMap.command);
+    this.#gl.enableVertexAttribArray(this.#programs.heightMap.pos0);
+    this.#gl.enableVertexAttribArray(this.#programs.heightMap.pos1);
+    this.#gl.enableVertexAttribArray(this.#programs.heightMap.pos2);
+    this.#gl.enableVertexAttribArray(this.#programs.heightMap.thisPos);
+    //this.#gl.enableVertexAttribArray(this.#programs.heightMap.command);
 
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, this.meshNumVertices);
+    this.#gl.drawArrays(this.#gl.TRIANGLES, 0, this.#meshNumVertices);
 
-    this.gl.disableVertexAttribArray(this.programs.heightMap.pos0);
-    this.gl.disableVertexAttribArray(this.programs.heightMap.pos1);
-    this.gl.disableVertexAttribArray(this.programs.heightMap.pos2);
-    this.gl.disableVertexAttribArray(this.programs.heightMap.thisPos);
-    //this.gl.disableVertexAttribArray(this.programs.heightMap.command);
+    this.#gl.disableVertexAttribArray(this.#programs.heightMap.pos0);
+    this.#gl.disableVertexAttribArray(this.#programs.heightMap.pos1);
+    this.#gl.disableVertexAttribArray(this.#programs.heightMap.pos2);
+    this.#gl.disableVertexAttribArray(this.#programs.heightMap.thisPos);
+    //this.#gl.disableVertexAttribArray(this.#programs.heightMap.command);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-    this.gl.useProgram(null);
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, null);
+    this.#gl.bindTexture(this.#gl.TEXTURE_2D, null);
+    this.#gl.useProgram(null);
 
-    this.needToDrawHeightMap = false;
+    this.#needToDrawHeightMap = false;
   }
 
-  /**
-   * @private
-   */
-  drawCutter() {
+  #drawCutter() {
 
     function lowerBound(data, offset, stride, begin, end, value) {
       while (begin < end) {
@@ -868,105 +855,94 @@ export class Simulation {
       return v0 + (v1 - v0) * a;
     }
 
-    if (this.pathNumPoints === 0) {
-      //console.debug("Simulation.drawCutter: no points");
+    if (this.#pathNumPoints === 0) {
+      //console.debug("Simulation.#drawCutter: no points");
       return;
     }
 
-    const i = lowerBound(this.pathBufferContent, 7,
-                         this.pathStride * this.pathVerticesPerLine,
-                         0, this.pathNumPoints, this.stopAt.t);
+    const i = lowerBound(this.#pathBufferContent, 7,
+                         this.#pathStride * this.#pathVerticesPerLine,
+                         0, this.#pathNumPoints, this.#stopAt.t);
     let x, y, z;
-    if (i < this.pathNumPoints) {
-      const offset = i * this.pathStride * this.pathVerticesPerLine;
-      const beginTime = this.pathBufferContent[offset + 6];
-      const endTime = this.pathBufferContent[offset + 7];
+    if (i < this.#pathNumPoints) {
+      const offset = i * this.#pathStride * this.#pathVerticesPerLine;
+      const beginTime = this.#pathBufferContent[offset + 6];
+      const endTime = this.#pathBufferContent[offset + 7];
       let ratio;
       if (endTime === beginTime)
         ratio = 0;
       else
-        ratio = (this.stopAt.t - beginTime) / (endTime - beginTime);
-      x = mix(this.pathBufferContent[offset + 0],
-              this.pathBufferContent[offset + 3], ratio);
-      y = mix(this.pathBufferContent[offset + 1],
-              this.pathBufferContent[offset + 4], ratio);
-      z = mix(this.pathBufferContent[offset + 2],
-              this.pathBufferContent[offset + 5], ratio);
+        ratio = (this.#stopAt.t - beginTime) / (endTime - beginTime);
+      x = mix(this.#pathBufferContent[offset + 0],
+              this.#pathBufferContent[offset + 3], ratio);
+      y = mix(this.#pathBufferContent[offset + 1],
+              this.#pathBufferContent[offset + 4], ratio);
+      z = mix(this.#pathBufferContent[offset + 2],
+              this.#pathBufferContent[offset + 5], ratio);
     }
     else {
-      let offset = (i - 1) * this.pathStride * this.pathVerticesPerLine;
-      x = this.pathBufferContent[offset + 3];
-      y = this.pathBufferContent[offset + 4];
-      z = this.pathBufferContent[offset + 5];
+      let offset = (i - 1) * this.#pathStride * this.#pathVerticesPerLine;
+      x = this.#pathBufferContent[offset + 3];
+      y = this.#pathBufferContent[offset + 4];
+      z = this.#pathBufferContent[offset + 5];
     }
 
-    this.gl.useProgram(this.programs.basic);
+    this.#gl.useProgram(this.#programs.basic);
 
     // Set program variables
-    this.gl.uniform3f(this.programs.basic.scale,
-                      this.cutterDiameter * this.pathScale,
-                      this.cutterDiameter * this.pathScale,
-                      this.cutterH * this.pathScale);
-    this.gl.uniform3f(this.programs.basic.translate,
-                      (x + this.pathXOffset) * this.pathScale,
-                      (y + this.pathYOffset) * this.pathScale,
-                      (z - this.pathTopZ) * this.pathScale);
-    this.gl.uniformMatrix4fv(this.programs.basic.rotate, false, this.rotate);
+    this.#gl.uniform3f(this.#programs.basic.scale,
+                      this.#cutterDiameter * this.#pathScale,
+                      this.#cutterDiameter * this.#pathScale,
+                      this.#cutterHeight * this.#pathScale);
+    this.#gl.uniform3f(this.#programs.basic.translate,
+                      (x + this.#pathXOffset) * this.#pathScale,
+                      (y + this.#pathYOffset) * this.#pathScale,
+                      (z - this.#pathTopZ) * this.#pathScale);
+    this.#gl.uniformMatrix4fv(this.#programs.basic.rotate, false, this.#rotate);
     // Set the colour of the cutter according to the value of s. A stationary
     // cutter will be green, while a working cutter will be red
-    if (this.stopAt.s === 0)
-      this.gl.uniform4fv(this.programs.basic.colour, [0, 0.7, 0, 1]);
+    if (this.#stopAt.s === 0)
+      this.#gl.uniform4fv(this.#programs.basic.colour, [0, 0.7, 0, 1]);
     else
-      this.gl.uniform4fv(this.programs.basic.colour, [0.8, 0, 0, 1]);
+      this.#gl.uniform4fv(this.#programs.basic.colour, [0.8, 0, 0, 1]);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.cylBuffer);
-    this.gl.vertexAttribPointer(this.programs.basic.vPos, 3,
-                                this.gl.FLOAT, false,
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, this.#cylBuffer);
+    this.#gl.vertexAttribPointer(this.#programs.basic.vPos, 3,
+                                this.#gl.FLOAT, false,
                                 CYL_STRIDE * Float32Array.BYTES_PER_ELEMENT, 0);
 
-    this.gl.enableVertexAttribArray(this.programs.basic.vPos);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, this.cylNumVertices);
-    this.gl.disableVertexAttribArray(this.programs.basic.vPos);
+    this.#gl.enableVertexAttribArray(this.#programs.basic.vPos);
+    this.#gl.drawArrays(this.#gl.TRIANGLES, 0, this.#cylNumVertices);
+    this.#gl.disableVertexAttribArray(this.#programs.basic.vPos);
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-    this.gl.useProgram(null);
+    this.#gl.bindBuffer(this.#gl.ARRAY_BUFFER, null);
+    this.#gl.useProgram(null);
   }
 
-  /**
-   * @private
-   */
-  render() {
-    this.pendingRequest = true;
+  #render() {
+    this.#pendingRequest = true;
 
-    if (this.needToCreatePathTexture)
-      this.createPathTexture();
+    if (this.#needToCreatePathTexture)
+      this.#createPathTexture();
 
-    if (this.needToDrawHeightMap) {
-      this.drawHeightMap();
-      this.drawCutter();
+    if (this.#needToDrawHeightMap) {
+      this.#drawHeightMap();
+      this.#drawCutter();
     }
 
-    this.pendingRequest = false;
-
-    //this.needToCreatePathTexture = true;
-    //this.needToDrawHeightMap = true;
-    //this.stopAtTime += .2;
-    //this.requestFrame();
+    this.#pendingRequest = false;
   }
 
-  /**
-   * @private
-   */
-  interpolateToolPosition(t) {
+  #interpolateToolPosition(t) {
     // TODO: use a binary search to find the encompassing timestep
-    if (this.timeSteps.length === 0)
+    if (this.#timeSteps.length === 0)
       return { t: 0, x: 0, y: 0, z: 0, f: 0, s: 0 };
-    let prev = this.timeSteps[0];
-    if (this.timeSteps.length === 1)
+    let prev = this.#timeSteps[0];
+    if (this.#timeSteps.length === 1)
       return prev;
     let curr;
-    for (let i = 1; i < this.timeSteps.length; i++) {
-      curr = this.timeSteps[i];
+    for (let i = 1; i < this.#timeSteps.length; i++) {
+      curr = this.#timeSteps[i];
       if (curr.t >= t)
         break;
       prev = curr;
@@ -985,26 +961,25 @@ export class Simulation {
   /**
    * Set the simulation stop time
    * @param {number} t the new stop time
-   * @private
    */
-  setStopAtTime(t) {
-    const pos = this.interpolateToolPosition(t);
-    this.stopAt = pos;
-    if (typeof this.stopWatch === "function")
-      this.stopWatch(pos);
+  #setStopAtTime(t) {
+    const pos = this.#interpolateToolPosition(t);
+    this.#stopAt = pos;
+    if (typeof this.#stopWatch === "function")
+      this.#stopWatch(pos);
 
     // Map the time to a tool position
-    this.needToCreatePathTexture = true;
-    this.requestFrame();
+    this.#needToCreatePathTexture = true;
+    this.#requestFrame();
   }
 
   /**
-   * @private
+   * Set the view rotation.
    */
-  setRotate(rot) {
-    this.rotate = rot;
-    this.needToDrawHeightMap = true;
-    this.requestFrame();
+  #setRotate(rot) {
+    this.#rotate = rot;
+    this.#needToDrawHeightMap = true;
+    this.#requestFrame();
   }
 
   /**
@@ -1012,11 +987,10 @@ export class Simulation {
    * @param {string} name shader to load
    * @param type gl.VERTEX_SHADER or gl.FRAGMENT_SHADER
    * @return {Promise}
-   * @private
    */
-  loadShader(name, type) {
-    const uri = `${this.shaderURI}/${name}.glsl`;
-    const gl = this.gl;
+  #loadShader(name, type) {
+    const uri = `${this.#shaderURI}/${name}.glsl`;
+    const gl = this.#gl;
     return fetch(uri)
     .then(response => response.text())
     .then(source => {
@@ -1035,25 +1009,24 @@ export class Simulation {
   /**
    * We only add event listeners at the end of start(), when all
    * the shaders have been loaded.
-   * @private
    */
-  addEventListeners() {
+  #addEventListeners() {
     let mouseDown = false;
     let lastX = 0;
     let lastY = 0;
     const origRotate = mat4.create();
 
-    this.timeControl.addEventListener("input", e => {
-      const stopAt = e.target.value / 1000 * this.totalTime;
-      this.setStopAtTime(stopAt);
+    this.#timeControl.addEventListener("input", e => {
+      const stopAt = e.target.value / 1000 * this.#totalTime;
+      this.#setStopAtTime(stopAt);
     });
 
-    this.canvas.addEventListener("mousedown", e => {
+    this.#canvas.addEventListener("mousedown", e => {
       e.preventDefault();
       mouseDown = true;
       lastX = e.pageX;
       lastY = e.pageY;
-      mat4.copy(origRotate, this.rotate);
+      mat4.copy(origRotate, this.#rotate);
     });
 
     document.addEventListener("mousemove", e => {
@@ -1065,53 +1038,11 @@ export class Simulation {
         + (e.pageY - lastY) * (e.pageY - lastY)) / 100,
                   [e.pageY - lastY, e.pageX - lastX, 0]);
       mat4.multiply(m, m, origRotate);
-      this.setRotate(m);
+      this.#setRotate(m);
     });
 
     document.addEventListener("mouseup", () => {
       mouseDown = false;
-    });
-  }
-
-  /**
-   * Promise to initialise the GL context and load all required shaders.
-   * GL shaders are defined in external files with a `.shader.txt`
-   * extension that are loaded dynamically.
-   * @return {Promise} promise that resolves to undefined when the
-   * simulation is ready to accept new input.
-   * @throw {Error} if something goes horribly wrong
-   */
-  start() {
-    const gl = this.gl;
-
-    // Map from shader name to gl type
-    const shaders = {
-      pathVertex: gl.VERTEX_SHADER,
-      pathFragment: gl.FRAGMENT_SHADER,
-      heightMapVertex: gl.VERTEX_SHADER,
-      heightMapFragment: gl.FRAGMENT_SHADER,
-      basicVertex: gl.VERTEX_SHADER,
-      basicFragment: gl.FRAGMENT_SHADER
-    };
-
-    this.constructMeshBuffer();
-    this.constructCylBuffer();
-
-    return Promise.all(
-      Object.keys(shaders)
-      .map(name =>
-        this.loadShader(name, shaders[name])
-        .then(shader => this.shaders[name] = shader)))
-    .then(() => {
-      this.programs.path = this.linkRasterizePathProgram(gl);
-      this.programs.heightMap = this.linkRenderHeightMapProgram(gl);
-      this.programs.basic = this.linkBasicProgram(gl);
-
-      this.setPath([], 0, 0, 90, 0);
-
-      this.addEventListeners();
-
-      this.ready = true;
     });
   }
 
@@ -1123,35 +1054,35 @@ export class Simulation {
    * and s is the spindle speed.
    * @param {number} topZ top of the material
    * @param {number} cutterDiameter diameter of cutter head, in "integer".
-   * @param {number} cutterAngle angle of V-cutter head, in degrees measured
-   * from the axis of rotation. Flat heads use 90.
+   * @param {number} cutterAngle angle of V-cutter head, in radians measured
+   * from the axis of rotation. Flat heads use PI/2.
    * @param {number} cutterHeight height of cutter cylinder, in "integer".
    */
   setPath(path, topZ, cutterDiameter, cutterAngle, cutterHeight) {
 
-    this.pathTopZ = topZ;
-    this.cutterDiameter = cutterDiameter;
-    if (cutterAngle <= 0 || cutterAngle > 90)
-      cutterAngle = 90;
-    this.cutterAngleRad = cutterAngle * Math.PI / 180;
-    this.isVBit = cutterAngle < 90;
-    this.cutterH = cutterHeight;
-    this.needToCreatePathTexture = true;
-    this.requestFrame();
-    this.pathNumPoints = path.length;
+    this.#pathTopZ = topZ;
+    this.#cutterDiameter = cutterDiameter;
+    if (cutterAngle <= 0 || cutterAngle > Math.PI / 2)
+      cutterAngle = Math.PI / 2;
+    this.#cutterAngle = cutterAngle;
+    this.#isVBit = cutterAngle < Math.PI / 2;
+    this.#cutterHeight = cutterHeight;
+    this.#needToCreatePathTexture = true;
+    this.#requestFrame();
+    this.#pathNumPoints = path.length;
 
-    if (this.isVBit) {
-      this.pathStride = 12;
-      this.pathVerticesPerLine = 12 + HALF_CIRCLE_SEGMENTS * 6;
+    if (this.#isVBit) {
+      this.#pathStride = 12;
+      this.#pathVerticesPerLine = 12 + HALF_CIRCLE_SEGMENTS * 6;
     } else {
-      this.pathStride = 9;
-      this.pathVerticesPerLine = 18;
+      this.#pathStride = 9;
+      this.#pathVerticesPerLine = 18;
     }
 
-    this.pathNumVertices = this.pathNumPoints * this.pathVerticesPerLine;
-    const bufferContent = new Float32Array(
-      this.pathNumPoints * this.pathStride * this.pathVerticesPerLine);
-    this.pathBufferContent = bufferContent;
+    this.#pathNumVertices = this.#pathNumPoints * this.#pathVerticesPerLine;
+    const buff = new Float32Array(
+      this.#pathNumPoints * this.#pathStride * this.#pathVerticesPerLine);
+    this.#pathBufferContent = buff;
 
     const startPoint = path[0];
     const min = {
@@ -1165,7 +1096,7 @@ export class Simulation {
 
     let time = 0;
     let prev = startPoint, idx = -1;
-    this.timeSteps = [];
+    this.#timeSteps = [];
     for (const curr of path) {
       idx++;
       const dist = Math.sqrt((curr.x - prev.x) * (curr.x - prev.x)
@@ -1174,7 +1105,7 @@ export class Simulation {
       const beginTime = time;
       time = time + 60.0 * dist / curr.f;
 
-      this.timeSteps.push({
+      this.#timeSteps.push({
         t: time, x: curr.x, y: curr.y, z: curr.z, f: curr.f, s: curr.s });
 
       min.x = Math.min(min.x, curr.x);
@@ -1185,24 +1116,24 @@ export class Simulation {
       max.y = Math.max(max.y, curr.y);
       max.z = Math.max(max.z, curr.z);
 
-      if (this.isVBit)
-        this.vBit(idx, prev, curr, bufferContent, beginTime, time);
+      if (this.#isVBit)
+        this.#vBit(idx, prev, curr, buff, beginTime, time);
       else
-        this.flatBit(idx, prev, curr, bufferContent, beginTime, time);
+        this.#flatBit(idx, prev, curr, buff, beginTime, time);
 
       prev = curr;
     }
-    this.totalTime = time;
+    this.#totalTime = time;
 
-    this.pathXOffset = -(min.x + max.x) / 2;
-    this.pathYOffset = -(min.y + max.y) / 2;
-    const size = Math.max(max.x - min.x + 4 * this.cutterDiameter,
-                          max.y - min.y + 4 * this.cutterDiameter);
-    this.pathScale = 2 / size;
-    this.pathMinZ = min.z;
+    this.#pathXOffset = -(min.x + max.x) / 2;
+    this.#pathYOffset = -(min.y + max.y) / 2;
+    const size = Math.max(max.x - min.x + 4 * this.#cutterDiameter,
+                          max.y - min.y + 4 * this.#cutterDiameter);
+    this.#pathScale = 2 / size;
+    this.#pathMinZ = min.z;
 
-    this.setStopAtTime(0);//this.totalTime);
-    this.requestFrame();
+    this.#setStopAtTime(0);
+    this.#requestFrame();
   }
 }
 

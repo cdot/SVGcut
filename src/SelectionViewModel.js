@@ -1,9 +1,6 @@
 /*Copyright Todd Fleming, Crawford Currie 2014-2025. This file is part of SVGcut, see the copyright and LICENSE at the root of the distribution. */
 /* global assert */
-
-// import "knockout";
 /* global ko */
-
 /* global App */
 
 import { CutPaths } from "./CutPaths.js";
@@ -13,37 +10,33 @@ import * as SVG from "./SVG.js";
 
 /**
  * Support for selection in SVG views.
+ * Note that this model doesn't require a unit converter, as it has
+ * no UI components that require conversion.
  * @extends ViewModel
  */
 export class SelectionViewModel extends ViewModel {
 
   /**
-   * Note that this model doesn't require a unit converter, as it has
-   * no UI components that require conversion.
+   * Number of open paths currently selected
+   * @member {observable.<number>}
    */
-  constructor() {
-    super();
+  openSelected = ko.observable(0);
 
-    /**
-     * Number of open paths currently selected
-     * @member {observable.<number>}
-     */
-    this.openSelected = ko.observable(0);
+  /**
+   * Number of closed paths currently selected
+   * @member {observable.<number>}
+   */
+  closedSelected = ko.observable(0);
 
-    /**
-     * Number of closed paths currently selected
-     * @member {observable.<number>}
-     */
-    this.closedSelected = ko.observable(0);
+  /**
+   * The SVG group that is used to display all selected elements
+   */
+  #svgGroup = document.getElementById("SelectionSVGGroup");
 
-    /**
-     * The SVG group that is used to display all selected elements
-     */
-    this.svgGroup = document.getElementById("SelectionSVGGroup");
-  }
-
+  /**
+   * Select everything.
+   */
   selectAll() {
-    // Select everything
 
     if (this.isSomethingSelected())
       // Deselect current selection
@@ -74,9 +67,9 @@ export class SelectionViewModel extends ViewModel {
     if (elem) {
       const clas = elem.getAttribute("class");
       if (clas && clas.indexOf("selected-path") >= 0)
-        return this.removeFromSelection(elem);
+        return this.#removeFromSelection(elem);
       else if (elem.tagName.toLowerCase() !== "svg")
-        return this.addToSelection(elem);
+        return this.#addToSelection(elem);
     }
 
     return true;
@@ -92,9 +85,8 @@ export class SelectionViewModel extends ViewModel {
    * @param {SVGElement} elem the element hit (an element in the content
    * SVG)
    * @return {boolean} true if the element was selected, false otherwise
-   * @private
    */
-  addToSelection(elem) {
+  #addToSelection(elem) {
     // Get the viewbox for the SVG the elem is in, for calculating %ages
     const vb = SVG.getViewBox(elem);
 
@@ -125,7 +117,7 @@ export class SelectionViewModel extends ViewModel {
           newPath.classList.add("open-path");
           this.openSelected(this.openSelected() + 1);
         }
-        this.svgGroup.appendChild(newPath);
+        this.#svgGroup.appendChild(newPath);
         return true;
       }
     } catch (e) {
@@ -139,9 +131,8 @@ export class SelectionViewModel extends ViewModel {
    * Deselect previously selected path
    * @param {SVGElement} elem the element hit
    * @return {boolean} true if the element was removed
-   * @private
    */
-  removeFromSelection(elem) {
+  #removeFromSelection(elem) {
     const clas = elem.getAttribute("class");
     if (clas && clas.indexOf("selected-path") >= 0) {
       elem.remove();
@@ -171,7 +162,7 @@ export class SelectionViewModel extends ViewModel {
    */
   getSelectedPaths() {
     const cps = new CutPaths();
-    this.svgGroup.querySelectorAll("path")
+    this.#svgGroup.querySelectorAll("path")
     .forEach(element => {
       // Elements in the selectionSVG have already been linearised and
       // transformed, when the selection was made (in clickOnSVG)
@@ -195,7 +186,7 @@ export class SelectionViewModel extends ViewModel {
    */
   clearSelection() {
     // replaceChildren with no parameters clears the node
-    this.svgGroup.replaceChildren();
+    this.#svgGroup.replaceChildren();
     this.openSelected(0);
     this.closedSelected(0);
     return true;

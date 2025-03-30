@@ -29,9 +29,8 @@ import * as EllipticalArc from "./EllipticalArc.js";
  * @return {svgSegment} Doesn't include (p1x, p1y); it's part of
  * the previous segment.
  * @memberof SVG
- * @private
  */
-function lineariseBezier(curve, params) {
+export function lineariseBezier(curve, params) {
   // SMELL: not a strict interpretation of "minSigLen" ;-)
   let steps = Math.max(
     params.curveMinSegs, Math.round(curve.length() / params.curveMinSegLen));
@@ -51,9 +50,8 @@ function lineariseBezier(curve, params) {
  * @return {svgSegment[]}
  * @throws {Error} if there's a problem
  * @memberof SVG
- * @private
  */
-function linearise(path, params) {
+export function linearise(path, params) {
   let last = new Vector(0, 0), lastCP, xp, yp, i, j;
   let initialPoint = new Vector(0, 0); // coords of the last M or m
   const segments = [];
@@ -207,7 +205,7 @@ function linearise(path, params) {
           // endpoints.
           segments.push([ "L", p2.x, p2.y ]);
         } else {
-          const curves = EllipticalArc.controlPoints(
+          const curves = EllipticalArc.toBeziers(
             last, r, xAngle, segment[i + 3] > 0, segment[i + 4] > 0, p2);
           for (const bez of curves) {
             const curve = new Bezier(
@@ -552,7 +550,7 @@ export function getDimensions(elem) {
 
   // If there is a viewbox but only one of w or h isn't defined,
   // use the viewBox to apply the aspect ratio.
-  const vb = above.getAttribute("viewBox");  
+  const vb = above.getAttribute("viewBox");
   if (!vb)
     throw new Error("None of width, height, viewBox defined");
 

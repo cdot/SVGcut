@@ -62,7 +62,6 @@ export const DEFAULT = {
   EXTRA_X       : 0,      // gcode units
   EXTRA_Y       : 0,      // gcode units
   RETURN_HOME   : false
-
 };
 
 /**
@@ -77,4 +76,7 @@ export const MIN = {
   PLUNGE_RATE   : 0.01,   // mm/min
   RAPID_RATE    : 0.01,   // mm/min
   TAB_CUT_DEPTH : 0.001   // mm
+};
+
+export const MAX = {
 };

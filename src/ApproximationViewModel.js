@@ -14,41 +14,44 @@ import { DEFAULT } from "./Constants.js";
 export class ApproximationViewModel extends ViewModel {
 
   /**
+   * Minimum number of segments in a curve. Used when selecting.
+   * @member {observable.<number>}
+   */
+  minSegs = ko.observable(DEFAULT.MIN_SEGS);
+
+  /**
+   * Minimum number of segments in a curve. Used when selecting.
+   * @member {observable.<number>}
+   */
+  minSegLen = ko.observable();
+
+  /**
+   * Join type when offsetting polys during toolpath generation.
+   * @member {observable.<number>}
+   */
+  joinType = ko.observable(DEFAULT.JOIN_TYPE);
+
+  /**
+   * Join mitre limit during toolpath generation.
+   * @member {observable.<number>}
+   */
+  mitreLimit = ko.observable(DEFAULT.MITRE_LIMIT);
+
+  /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
     super(unitConverter, );
 
-    /**
-     * Minimum number of segments in a curve. Used when selecting.
-     * @member {observable.<number>}
-     */
-    this.minSegs = ko.observable(DEFAULT.MIN_SEGS);
     this.minSegs.subscribe(() =>
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
 
-    /**
-     * Minimum number of segments in a curve. Used when selecting.
-     * @member {observable.<number>}
-     */
-    this.minSegLen = ko.observable(
-      unitConverter.fromUnits(DEFAULT.MIN_SEG_LEN, "mm"));
+    this.minSegLen(unitConverter.fromUnits(DEFAULT.MIN_SEG_LEN, "mm"));
     this.minSegLen.subscribe(() =>
       document.dispatchEvent(new Event("PROJECT_CHANGED")));
-    unitConverter.add(this.minSegLen);
+    unitConverter.add(this.minSegLen, "minSegLen");
 
-    /**
-     * Join type when offsetting polys during toolpath generation.
-     * @member {observable.<number>}
-     */
-    this.joinType = ko.observable(DEFAULT.JOIN_TYPE);
     this.joinType.subscribe(() => App.models.Operations.recombine());
-
-    /**
-     * Join mitre limit during toolpath generation.
-     * @member {observable.<number>}
-     */
-    this.mitreLimit = ko.observable(DEFAULT.MITRE_LIMIT);
     this.mitreLimit.subscribe(() => App.models.Operations.recombine());
   }
 

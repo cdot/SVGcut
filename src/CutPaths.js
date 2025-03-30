@@ -175,9 +175,8 @@ export class CutPaths extends Array {
    * @param {CutPaths} clipPaths clip paths (always treated as poly)
    * @param {ClipperLib.ClipType} clipType
    * @return {CutPaths} new geometry.
-   * @private
    */
-  clip(clipPaths, clipType) {
+  #clip(clipPaths, clipType) {
     assert(clipPaths instanceof CutPaths);
     const clipper = new ClipperLib.Clipper();
     clipper.ZFillFunction = CutPoint.interpolateZ;
@@ -195,7 +194,7 @@ export class CutPaths extends Array {
    * @return {CutPaths} new geometry.
    */
   union(paths) {
-    return this.clip(paths, ClipperLib.ClipType.ctUnion);
+    return this.#clip(paths, ClipperLib.ClipType.ctUnion);
   }
 
   /**
@@ -204,7 +203,7 @@ export class CutPaths extends Array {
    * @return {CutPaths} new geometry.
    */
   difference(paths) {
-    return this.clip(paths, ClipperLib.ClipType.ctDifference);
+    return this.#clip(paths, ClipperLib.ClipType.ctDifference);
   }
 
   /**
@@ -213,7 +212,7 @@ export class CutPaths extends Array {
    * @return {CutPaths} new geometry.
    */
   intersect(paths2) {
-    return this.clip(paths2, ClipperLib.ClipType.ctIntersection);
+    return this.#clip(paths2, ClipperLib.ClipType.ctIntersection);
   }
 
   /**
@@ -222,7 +221,7 @@ export class CutPaths extends Array {
    * @return {CutPaths} new geometry.
    */
   xor(paths2) {
-    return this.clip(paths2, ClipperLib.ClipType.ctXor);
+    return this.#clip(paths2, ClipperLib.ClipType.ctXor);
   }
 
   /**
@@ -382,7 +381,7 @@ export class CutPaths extends Array {
     assert(!within || within instanceof CutPaths);
     const cp = this.filter(p => p.isClosed);
     if (cp.length === this.length) {
-      this.mergeClosedPaths(within);
+      this.#mergeClosedPaths(within);
       return this; // all paths are closed?
     }
     if (cp.length === 0) {
@@ -391,7 +390,7 @@ export class CutPaths extends Array {
       return this;
     }
     // mix of open and closed paths
-    cp.mergeClosedPaths(within);
+    cp.#mergeClosedPaths(within);
     const op = this.filter(p => !p.isClosed);
     op.sortPaths(2);
     this.splice(0, this.length);
@@ -407,9 +406,8 @@ export class CutPaths extends Array {
    * considered in order, by looking for the shortest edge between the
    * last point on `path` to all points on all polys in `this`.
    * @param {CutPaths?} bounds the boundary paths
-   * @private
    */
-  mergeClosedPaths(bounds) {
+  #mergeClosedPaths(bounds) {
     if (this.length < 2)
       return;
 

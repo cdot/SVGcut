@@ -33,7 +33,6 @@ export class Perforate extends ToolpathGenerator {
    * @param {number} params.cutterDiameter in "integer" units
    * @param {number} params.spacing is the gap to leave between perforations
    * @return {CutPath} a path where each vertex is a drill hole position
-   * @private
    */
   perforatedPath(path, params) {
     assert(path instanceof CutPath);

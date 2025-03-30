@@ -55,6 +55,7 @@ export class VGroove extends ToolpathGenerator {
     .difference(geometry.offset(-w / 2, params));
 
     // This has to be done in layers. Can I use pocket?
+    const off = 0;
     const current = geometry.offset(off, params);
     params.step = -1;
     params.needReverse = params.climb;
@@ -92,6 +93,5 @@ export class VGroove extends ToolpathGenerator {
     return geometry
     .offset(w / 2, params)
     .difference(geometry.offset(-w / 2, params));
-    return geometry;
   }
 }

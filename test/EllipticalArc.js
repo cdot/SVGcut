@@ -7,7 +7,7 @@ import * as EllipticalArc from "../src/EllipticalArc.js";
 import { UNit } from "./TestSupport.js";
 
 function a(cx, cy, rx, ry, xang, laf, sf, x, y) {
-  return EllipticalArc.controlPoints(
+  return EllipticalArc.toBeziers(
     new Vector(cx, cx),
     new Vector(rx, ry),
     Math.PI * xang / 180,
@@ -43,7 +43,7 @@ describe("Elliptical Arc", () => {
     assert.almost(cap.c.x, 35);
     assert.almost(cap.c.y, 36.5);
     assert.almost(cap.theta, Math.PI / 2);
-    assert.almost(cap.delta, -Math.PI);
+    assert.almost(cap.dTheta, -Math.PI);
   });
 
   // See arcs.svg for coloured arcs
@@ -59,7 +59,7 @@ describe("Elliptical Arc", () => {
     assert.deepEqual(cap.c, new Vector(10,0));
     // bowl
     assert.equal(cap.theta, D180);
-    assert.equal(cap.delta, -D90);
+    assert.equal(cap.dTheta, -D90);
   });
 
   it("a 10,10 0 0 S 10,10 green", () => {
@@ -73,7 +73,7 @@ describe("Elliptical Arc", () => {
       p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(0,10));
     assert.equal(cap.theta, D270);
-    assert.equal(cap.delta, D90);
+    assert.equal(cap.dTheta, D90);
   });
 
   it("a 10,10 0 L 0 10,10 blue", () => {
@@ -86,7 +86,7 @@ describe("Elliptical Arc", () => {
     const cap = EllipticalArc.endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(0,10));
     assert.equal(cap.theta, D270);
-    assert.equal(cap.delta, -D270);
+    assert.equal(cap.dTheta, -D270);
   });
 
   it("a 10,10 0 L S 10,10 yellow", () => {
@@ -99,7 +99,7 @@ describe("Elliptical Arc", () => {
     const cap = EllipticalArc.endpointToCentreArcParams(p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(10,0));
     assert.equal(cap.theta, D180);
-    assert.equal(cap.delta, D270);
+    assert.equal(cap.dTheta, D270);
   });
 
   it("a 10,10 0 0 0 -10,-10 red", () => {
@@ -113,7 +113,7 @@ describe("Elliptical Arc", () => {
       p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(0,10));
     assert.equal(cap.theta, 0);
-    assert.equal(cap.delta, -D90);
+    assert.equal(cap.dTheta, -D90);
   });
 
   it("a 10,10 0 0 S -10,-10 green", () => {
@@ -127,7 +127,7 @@ describe("Elliptical Arc", () => {
       p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(10,0));
     assert.equal(cap.theta, D90);
-    assert.equal(cap.delta, D90);
+    assert.equal(cap.dTheta, D90);
   });
 
   it("a 10,10 0 L 0 -10,-10 blue", () => {
@@ -141,7 +141,7 @@ describe("Elliptical Arc", () => {
       p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(10,0));
     assert.equal(cap.theta, D90);
-    assert.equal(cap.delta, -D270);
+    assert.equal(cap.dTheta, -D270);
   });
 
   it("a 10,10 0 L 0 -10,-10 yellow", () => {
@@ -155,7 +155,7 @@ describe("Elliptical Arc", () => {
       p1, p2, r, xAngle, largeArc, sweep);
     assert.deepEqual(cap.c, new Vector(0,10));
     assert.equal(cap.theta, 0);
-    assert.equal(cap.delta, D270);
+    assert.equal(cap.dTheta, D270);
   });
 
   it("a 10,10 45 0 0 10,10", () => {
@@ -170,7 +170,7 @@ describe("Elliptical Arc", () => {
     assert.almost(cap.c.x, 10);
     assert.almost(cap.c.y, 0);
     assert.almost(cap.theta, D135);
-    assert.almost(cap.delta, -D90);
+    assert.almost(cap.dTheta, -D90);
   });
 
   it("a 15,20 180 0 0 30,0", () => {
@@ -185,7 +185,7 @@ describe("Elliptical Arc", () => {
     assert.almost(cap, {
       c: { x: 15.680982812227507, y: 5.957739582727792 },
       theta: 5.5048246820787945,
-      delta: -2.6657104039293777
+      dTheta: -2.6657104039293777
     });
   });
 
@@ -198,7 +198,7 @@ describe("Elliptical Arc", () => {
     const sweep = false;
     const cap = EllipticalArc.endpointToCentreArcParams(
       p1, p2, r, xAngle, largeArc, sweep);
-    const bez = EllipticalArc.toBezier(cap.c, cap.theta, cap.delta, r, xAngle);
+    const bez = EllipticalArc.toBezier(cap.c, cap.theta, cap.dTheta, r, xAngle);
     assert.almost(bez[0].x, 0);
     assert.almost(bez[0].y, 10);
     assert.almost(bez[1].x, 5.4858377035486345);
@@ -219,7 +219,7 @@ describe("Elliptical Arc", () => {
     const cap = EllipticalArc.endpointToCentreArcParams(
       p1, p2, r, xAngle, largeArc, sweep);
     const bez = EllipticalArc.toBezier(
-      cap.c, cap.theta, cap.delta/2, r, xAngle);
+      cap.c, cap.theta, cap.dTheta/2, r, xAngle);
     assert.almost(bez[0].x, 0);
     assert.almost(bez[0].y, 10);
     assert.almost(bez[1].x, 2.651147734913025);
@@ -237,7 +237,7 @@ describe("Elliptical Arc", () => {
     const xAngle = 0;
     const largeArc = false;
     const sweep = false;
-    const bez = EllipticalArc.controlPoints(p1, r, xAngle, largeArc, sweep, p2);
+    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
     assert.almost(bez, [
       [
         { x: 6.123233995736766e-16, y: 10 },
@@ -255,7 +255,7 @@ describe("Elliptical Arc", () => {
     const xAngle = Math.PI;
     const largeArc = false;
     const sweep = false;
-    const bez = EllipticalArc.controlPoints(p1, r, xAngle, largeArc, sweep, p2);
+    const bez = EllipticalArc.toBeziers(p1, r, xAngle, largeArc, sweep, p2);
     // a semicircle should give us 2 curves
     assert.almost(bez, [
       [

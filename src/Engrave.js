@@ -40,7 +40,7 @@ export class Engrave extends ToolpathGenerator {
    * @param {JoinType} params.joinType join type
    * @param {number} params.mitreLimit join mitre limit
    * @return {CutPaths}
-   * @private
+   * @override
    */
   generateToolpaths(geometry, params) {
     assert(geometry instanceof CutPaths);
@@ -53,7 +53,7 @@ export class Engrave extends ToolpathGenerator {
       return geometry;
     if (params.width < params.cutterDiameter)
       params.width = params.cutterDiameter;
-    
+
     let offset, step = (params.offset === "Outside") ? 1 : -1;
     if (params.offset === "On")
       // "On" always follows the geometry with the middle of the path

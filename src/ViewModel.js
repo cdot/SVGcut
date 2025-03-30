@@ -6,6 +6,8 @@
 /* global ko */
 /* global assert */
 
+import * as Constants from "./Constants.js";
+
 /**
  * Base class of all view models. There is a view model for each main panel
  * in the UI.
@@ -14,6 +16,26 @@
  *
  */
 export class ViewModel {
+  /**
+   * Unit converter for this model. May be undefined.
+   * @member {UnitConverter?}
+   */
+  unitConverter = undefined;
+
+  limited(id, nullable) {
+    const params = {};
+    for (const field of [ "MIN", "MAX" ]) {
+      if (typeof Constants[field][id] !== "undefined") {
+        params[`${field}${nullable ? "_NULL" : ""}`] = ko.pureComputed(
+          () => this.unitConverter.fromUnits(Constants[field][id], "mm"));
+      }
+    }
+    const obs = (typeof Constants.DEFAULT[id] !== "undefined")
+          ? ko.observable(
+            this.unitConverter.fromUnits(Constants.DEFAULT[id], "mm"))
+          : ko.observable();
+    return obs.extend(params);
+  }
 
   /**
    * Models that bind to UI components that can be expressed in
@@ -22,10 +44,6 @@ export class ViewModel {
    * @param {UnitConverter?} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
-    /**
-     * Unit converter for this model. May be undefined.
-     * @member {UnitConverter?}
-     */
     this.unitConverter = unitConverter;
   }
 

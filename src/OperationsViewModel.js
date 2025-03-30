@@ -2,7 +2,7 @@
 
 // import "knockout";
 /* global ko */
-
+/* global assert */
 // import "bootstrap";
 /* global bootstrap */
 
@@ -19,31 +19,34 @@ import { Rect } from "./Rect.js";
 export class OperationsViewModel extends ViewModel {
 
   /**
+   * List of operations.
+   * @member {observableArray.OperationViewModel}
+   */
+  operations = ko.observableArray();
+
+  /**
+   * Bounding box for all operation tool paths in internal units
+   * @member {observable.<Rect>}
+   */
+  boundingBox = ko.observable(new Rect());
+
+  /**
+   * Can an operation be added? Parameters have to be valid, and there
+   * has to be a selection
+   * @return {boolean} true if an operation can be added
+   */
+  canAddOperation = ko.pureComputed({
+    read: () =>
+    App.inputsAreValid()
+    && App.models.Selection.isSomethingSelected(),
+    write: () => assert(false)
+  });
+
+  /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
     super(unitConverter);
-
-    /**
-     * List of operations.
-     * @member {observableArray.OperationViewModel}
-     */
-    this.operations = ko.observableArray();
-
-    /**
-     * Bounding box for all operation tool paths in internal units
-     * @member {observable.<Rect>}
-     */
-    this.boundingBox = ko.observable(new Rect());
-
-    /**
-     * Can an operation be added? Parameters have to be valid, and there
-     * has to be a selection
-     * @return {boolean} true if an operation can be added
-     */
-    this.canAddOperation = ko.computed(() => 
-      App.inputsAreValid()
-      && App.models.Selection.isSomethingSelected());
   }
 
   /**
@@ -65,9 +68,8 @@ export class OperationsViewModel extends ViewModel {
 
   /**
    * Refresh the bounding box by inspecting tool paths.
-   * @private
    */
-  updateBB() {
+  #updateBB() {
     let newBB;
     for (const op of this.operations()) {
       const opBB = op.boundingBox();
@@ -92,8 +94,8 @@ export class OperationsViewModel extends ViewModel {
     // Give it a random name
     op.name(`Op${this.operations().length + 1}`);
     this.operations.push(op);
-    op.enabled.subscribe(() => this.updateBB());
-    op.toolPaths.subscribe(() => this.updateBB());
+    op.enabled.subscribe(() => this.#updateBB());
+    op.toolPaths.subscribe(() => this.#updateBB());
 
     // Trigger the toolpath generation pipeline
     op.recombine();
@@ -202,12 +204,12 @@ export class OperationsViewModel extends ViewModel {
           CutPaths.fromJson(opJson.operandPaths));
         op.fromJson(opJson);
         this.operations.push(op);
-        op.enabled.subscribe(() => this.updateBB());
-        op.toolPaths.subscribe(() => this.updateBB());
+        op.enabled.subscribe(() => this.#updateBB());
+        op.toolPaths.subscribe(() => this.#updateBB());
         op.recombine();
       }
     }
-    this.updateBB();
+    this.#updateBB();
   }
 }
 

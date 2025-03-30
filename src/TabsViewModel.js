@@ -16,25 +16,24 @@ import { DEFAULT, MIN } from "./Constants.js";
 export class TabsViewModel extends ViewModel {
 
   /**
+   * List of tabs.
+   * @member {observableArray.<TabViewModel>}
+   */
+  tabs = ko.observableArray();
+
+  /**
+   * Maximum depth operations may cut to when they pass over tabs.
+   * @member {observable.<number>}
+   */
+  maxCutDepth = this.limited("TAB_CUT_DEPTH");
+
+  /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
     super(unitConverter);
 
-    /**
-     * List of tabs.
-     * @member {observableArray.<TabViewModel>}
-     */
-    this.tabs = ko.observableArray();
-
-    /**
-     * Maximum depth operations may cut to when they pass over tabs
-     * @member {observable.<number>}
-     */
-    this.maxCutDepth = ko.observable(DEFAULT.TAB_CUT_DEPTH)
-    .extend({ MIN: ko.computed(() =>
-      unitConverter.fromUnits(MIN.TAB_CUT_DEPTH, "mm")) });
-    unitConverter.add(this.maxCutDepth);
+    unitConverter.add(this.maxCutDepth, "maxCutDepth");
     this.maxCutDepth.subscribe(() => {
       document.dispatchEvent(new Event("UPDATE_GCODE"));
       document.dispatchEvent(new Event("PROJECT_CHANGED"));

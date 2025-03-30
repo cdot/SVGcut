@@ -37,46 +37,61 @@ const DEFAULTS_PROJECT = "defaults";
  */
 export class ProjectViewModel extends ViewModel {
 
+  /**
+   * Units in use e.g. "mm". The Tool model has the units used by
+   * everything other than the Gcode converter.
+   * @member {observable.<Unit>}
+   */
+  units = ko.observable("mm");
+
+  /**
+   * Unit converter in the tool model. Shared by everything else.
+   */
+  unitConverter = undefined;
+
+  /**
+   * Local storage key / file basename to load/save project.
+   * When the App starts up it will try to load this project.
+   * @member {observable.<string>}
+   */
+  projectName = ko.observable(
+    document.getElementById("ProjectName").textContent);
+
+  /**
+   * When loading from the browser, the projectName is selected from
+   * a dropdown. If we link that dropdown to projectName, then
+   * initialisation cabbages the value. So we have to use a different
+   * observable for the dropdown values.
+   */
+  selectedProject = ko.observable();
+
+  /**
+   * True if one of the parameters saved with the project has changed
+   * since the last save.
+   * @member {observable.<boolean>}
+   */
+  projectChanged = ko.observable(false);
+
+  /**
+   * Whether to save just a template, or a whole project
+   * @member {observable.<boolean>}
+   */
+  templateOnly = ko.observable(false);
+
+  /**
+   * Dropdown for local storage keys to load projects from.
+   * @member {observable.<string>}
+   */
+  browserProjects = ko.observableArray([]);
+
   constructor() {
     super();
 
-    /**
-     * Units in use e.g. "mm". The Tool model has the units used by
-     * everything other than the Gcode converter.
-     * @member {observable.<Unit>}
-     */
-    this.units = ko.observable("mm");
     this.units.subscribe(nu => {
       document.getElementById("PickedUnits").innerText = nu;
     });
-
-    /**
-     * Unit converter in the tool model. Shared by everything else.
-     */
     this.unitConverter = new UnitConverter(this.units);
 
-    /**
-     * Local storage key / file basename to load/save project.
-     * When the App starts up it will try to load this project.
-     * @member {observable.<string>}
-     */
-    const pn = document.getElementById("ProjectName").textContent;
-    this.projectName = ko.observable(pn);
-
-    /**
-     * When loading from the browser, the projectName is selected from
-     * a dropdown. If we link that dropdown to projectName, then
-     * initialisation cabbages the value. So we have to use a different
-     * observable for the dropdown values.
-     */
-    this.selectedProject = ko.observable();
-
-    /**
-     * True if one of the parameters saved with the project has changed
-     * since the last save.
-     * @member {observable.<boolean>}
-     */
-    this.projectChanged = ko.observable(false);
     this.projectChanged.subscribe(v => {
       if (v) {
         for (const el of document.querySelectorAll(".change-activated"))
@@ -87,18 +102,6 @@ export class ProjectViewModel extends ViewModel {
       }
     });
 
-    /**
-     * Whether to save just a template, or a whole project
-     * @member {observable.<boolean>}
-     */
-    this.templateOnly = ko.observable(false);
-
-    /**
-     * Dropdown for local storage keys to load projects from.
-     * @member {observable.<string>}
-     */
-    this.browserProjects = ko.observableArray([]);
-
     // Handler for loading a project from disc when a file is chosen
     // in the browser
     document.getElementById("ChooseProjectFile")
@@ -107,7 +110,7 @@ export class ProjectViewModel extends ViewModel {
     document.getElementById("ChosenProjectFile")
     .addEventListener("change", event => {
       const file = event.target.files[0];
-      this.confirmDataLoss(() => {
+      this.#confirmDataLoss(() => {
         const lert = App.showAlert("loadingProject", "alert-info", file.name);
         const reader = new FileReader();
         reader.addEventListener("load", e => {
@@ -228,7 +231,7 @@ export class ProjectViewModel extends ViewModel {
    * simulation is ready.
    */
   loadDefaults() {
-    if (this.importProject(DEFAULTS_PROJECT)) {
+    if (this.#importProject(DEFAULTS_PROJECT)) {
       //console.debug(`Loaded "${DEFAULTS_PROJECT}" from browser`);
     }
     this.projectChanged(false);
@@ -242,7 +245,7 @@ export class ProjectViewModel extends ViewModel {
   loadProjectFromBrowser() {
     App.hideModals();
     const name = this.selectedProject();
-    if (!this.importProject(name))
+    if (!this.#importProject(name))
       App.showAlert("projectNotInBrowser", "alert-danger", name);
   }
 
@@ -250,9 +253,8 @@ export class ProjectViewModel extends ViewModel {
    * Try to import a project from the browser storage.
    * @param {string} name name of the project to import
    * @return {boolean} true if the project was imported
-   * @private
    */
-  importProject(name) {
+  #importProject(name) {
     const projects = JSON.parse(localStorage.getItem(LOCAL_PROJECTS_AREA));
 
     if (!projects || !projects[name])
@@ -302,7 +304,7 @@ export class ProjectViewModel extends ViewModel {
    * Invoked from the UI to create a new project.
    */
   newProject() {
-    this.confirmDataLoss(() => {
+    this.#confirmDataLoss(() => {
       App.emptySVG();
       for (const model of Object.keys(App.models))
         App.models[model].reset();
@@ -315,9 +317,8 @@ export class ProjectViewModel extends ViewModel {
   /**
    * Confirm that data loss is acceptable
    * @param {function} callback function to call if data loss is OK
-   * @private
    */
-  confirmDataLoss(callback) {
+  #confirmDataLoss(callback) {
     if (this.projectChanged()) {
       this.dataLossCallback = callback;
       App.showModal('ConfirmDataLossModal');
@@ -327,7 +328,6 @@ export class ProjectViewModel extends ViewModel {
 
   /**
    * Called from the UI modal to confirm data loss.
-   * @private
    */
   dataLossConfirmed() {
     App.hideModals();
@@ -336,7 +336,6 @@ export class ProjectViewModel extends ViewModel {
 
   /**
    * Called from the UI modal to reject data loss.
-   * @private
    */
   dataLossRejected() {
     App.hideModals();

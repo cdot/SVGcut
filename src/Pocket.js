@@ -39,9 +39,8 @@ export class Pocket extends ToolpathGenerator {
    * Compute pocket tool paths. The pockets are cleared using annular passes,
    * starting from the outside and working towards the centre. Only works
    * on closed paths.
-   * @private
    */
-  annularToolpaths(geometry, params) {
+  #annularToolpaths(geometry, params) {
     assert(geometry instanceof CutPaths);
     geometry = geometry.filter(p => p.isClosed);
     if (geometry.length === 0)
@@ -100,7 +99,7 @@ export class Pocket extends ToolpathGenerator {
       }
       if (vBit)
         z -= zStep;
-    } while (vBit && z >= -params.cutDepth); 
+    } while (vBit && z >= -params.cutDepth);
     if (!vBit)
       toolPaths.mergePaths(clip);
     return toolPaths;
@@ -113,9 +112,8 @@ export class Pocket extends ToolpathGenerator {
    * @param {number} step the gap between rasters
    * @param {boolean} climb true for climb milling
    * @return {CutPath} rasters
-   * @private
    */
-  rasteriseConvexPocket(pocket, h, step, climb) {
+  #rasteriseConvexPocket(pocket, h, step, climb) {
 
     const bb = pocket.box;
     const rasters = (h ? bb.height: bb.width) / step;
@@ -152,9 +150,8 @@ export class Pocket extends ToolpathGenerator {
 
   /**
    * Compute pocket-clearing rasters.
-   * @private
    */
-  rasterToolpaths(geometry, horz, params) {
+  #rasterToolpaths(geometry, horz, params) {
     assert(geometry instanceof CutPaths);
     geometry = geometry.filter(p => p.isClosed);
     const toolPaths = new CutPaths();
@@ -180,7 +177,7 @@ export class Pocket extends ToolpathGenerator {
       const convexPockets = Partition.convex(pocket);
       let firstPoint;
       for (const convexPocket of convexPockets) {
-        const rasters = this.rasteriseConvexPocket(
+        const rasters = this.#rasteriseConvexPocket(
           convexPocket, horz, step, params.climb);
         if (rasters.length > 0) {
           if (!firstPoint)
@@ -232,11 +229,11 @@ export class Pocket extends ToolpathGenerator {
     assert(typeof params.mitreLimit === "number");
     switch (params.strategy) {
     case "XRaster":
-      return this.rasterToolpaths(geometry, true, params);
+      return this.#rasterToolpaths(geometry, true, params);
     case "YRaster":
-      return this.rasterToolpaths(geometry, false, params);
+      return this.#rasterToolpaths(geometry, false, params);
     case "Annular":
-      return this.annularToolpaths(geometry, params);
+      return this.#annularToolpaths(geometry, params);
     default:
       assert(false, params.strategy);
       return geometry;

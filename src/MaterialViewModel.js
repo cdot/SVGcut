@@ -2,7 +2,7 @@
 
 // import "knockout";
 /* global ko */
-
+/* global assert */
 /* global App */
 
 import { ViewModel } from "./ViewModel.js";
@@ -20,58 +20,88 @@ function formatZ(z) {
 export class MaterialViewModel extends ViewModel {
 
   /**
+   * Material thickness
+   * @member {observable.<number>}
+   */
+  thickness = ko.observable(
+    this.unitConverter.fromUnits(DEFAULT.THICKNESS, "mm"));
+
+  /**
+   * Tool clearance level
+   * @member {observable.<number>}
+   */
+  clearance = ko.observable(
+    this.unitConverter.fromUnits(DEFAULT.CLEARANCE, "mm"));
+
+  /**
+   * Z origin, Top or Bottom of the material
+   * @member {observable.<string>}
+   */
+  zOrigin = ko.observable(DEFAULT.Z_ORIGIN);
+
+  /**
+   * Z level for Z origin, computed
+   * @member {observable.<number>}
+   */
+  topZ = ko.pureComputed(() => {
+      if (this.zOrigin() === "Top")
+        return 0;
+      return this.thickness();
+    });
+
+  /**
+   * Z level for bottom of material, computed
+   * @member {observable.<number>}
+   */
+  botZ = ko.pureComputed(() => {
+    if (this.zOrigin() === "Bottom")
+      return 0;
+    else
+      return -this.thickness();
+  });
+
+  /**
+   * Safe level, computed
+   * @member {observable.<number>}
+   */
+  zSafeMove = ko.pureComputed(() => {
+    if (this.zOrigin() === "Top")
+      return parseFloat(this.clearance());
+    else
+      return parseFloat(this.thickness()) + parseFloat(this.clearance());
+  });
+  
+  /**
+   * The little picture at the top of the card
+   * @member {observable.<SVGElement>}
+   */
+  #materialSVG = ko.observable();
+
+  /**
    * @param {UnitConverter} unitConverter the UnitConverter to use
    */
   constructor(unitConverter) {
     super(unitConverter);
 
-    /**
-     * Path thickness
-     * @member {observable.<number>}
-     */
-    this.thickness = ko.observable(
-      unitConverter.fromUnits(DEFAULT.THICKNESS, "mm"));
-    unitConverter.add(this.thickness);
+    unitConverter.add(this.thickness, "thickness");
     this.thickness.subscribe(
       () => {
         document.dispatchEvent(new Event("UPDATE_GCODE"));
         document.dispatchEvent(new Event("PROJECT_CHANGED"));
       });
 
-    /**
-     * Tool clearance level
-     * @member {observable.<number>}
-     */
-    this.clearance = ko.observable(
-      unitConverter.fromUnits(DEFAULT.CLEARANCE, "mm"));
-    unitConverter.add(this.clearance);
+    unitConverter.add(this.clearance, "clearance");
     this.clearance.subscribe(
       () => {
         document.dispatchEvent(new Event("UPDATE_GCODE"));
         document.dispatchEvent(new Event("PROJECT_CHANGED"));
       });
 
-    /**
-     * Z origin, Top or Bottom of the material
-     * @member {observable.<string>}
-     */
-    this.zOrigin = ko.observable(DEFAULT.Z_ORIGIN);
     this.zOrigin.subscribe(
       () => {
         document.dispatchEvent(new Event("UPDATE_GCODE"));
         document.dispatchEvent(new Event("PROJECT_CHANGED"));
       });
-
-    /**
-     * Z level for Z origin, computed
-     * @member {observable.<number>}
-     */
-    this.topZ = ko.computed(() => {
-      if (this.zOrigin() === "Top")
-        return 0;
-      else
-        return this.thickness();
-    });
 
     // Set some text in the SVG
     function setText(id, text) {
@@ -80,43 +110,12 @@ export class MaterialViewModel extends ViewModel {
         el.firstChild.textContent = text;
     }
 
-    unitConverter.addComputed(this.topZ);
-    // Subscribe to range values to update the SVG picture
     this.topZ.subscribe(newValue => setText("matTopZ", newValue));
-
-    /**
-     * Z level for bottom of material, computed
-     * @member {observable.<number>}
-     */
-    this.botZ = ko.computed(() => {
-      if (this.zOrigin() === "Bottom")
-        return 0;
-      else
-        return -this.thickness();
-    });
-    unitConverter.addComputed(this.botZ);
     this.botZ.subscribe(newValue => setText("matBotZ", formatZ(newValue)));
-
-    /**
-     * Safe level, computed
-     * @member {observable.<number>}
-     */
-    this.zSafeMove = ko.computed(() => {
-      if (this.zOrigin() === "Top")
-        return parseFloat(this.clearance());
-      else
-        return parseFloat(this.thickness()) + parseFloat(this.clearance());
-    });
-    unitConverter.addComputed(this.zSafeMove);
     this.zSafeMove.subscribe(newValue =>
       setText("matZSafeMove", formatZ(newValue)));
 
-    /**
-     * The little picture at the top of the card
-     * @member {observable.<SVGElement>}
-     */
-    this.materialSVG = ko.observable();
-    this.materialSVG.subscribe(newValue => {
+    this.#materialSVG.subscribe(newValue => {
       setText("matTopZ", formatZ(this.topZ()));
       setText("matBotZ", formatZ(this.botZ()));
       setText("matZSafeMove", formatZ(this.zSafeMove()));
@@ -126,7 +125,7 @@ export class MaterialViewModel extends ViewModel {
     fetch("images/Material.svg")
     .then(response => response.text())
     .then(content => Promise.resolve(SVG.importFromText(content)))
-    .then(dom => { svg.replaceWith(dom); this.materialSVG(dom); });
+    .then(dom => { svg.replaceWith(dom); this.#materialSVG(dom); });
 
     const el = document.getElementById("MaterialView");
     ko.applyBindings(this, el);

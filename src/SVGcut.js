@@ -93,77 +93,67 @@ export class SVGcut {
    */
 
   /**
+   * The Element for the alert being used for the next tutorial step
+   * @member {Element}
+   */
+  #tutorialAlert = undefined;
+
+  /**
+   * The index of the current tutorial step. -1 indicates
+   * the step isn't currently shown.
+   * @member {number}
+   */
+  #currentTutorialStep = -1;
+
+  /**
+   * The simulation.
+   */
+  #simulation = new Simulation(
+    "glShaders", // relative URI
+    document.getElementById("SimulationCanvas"),
+    document.getElementById('TimeControl'),
+    spot => { // stopWatch callback
+      document.getElementById('StopWatchT').textContent = formatTime(spot.t);
+      document.getElementById('StopWatchX').textContent = spot.x.toFixed(2);
+      document.getElementById('StopWatchY').textContent = spot.y.toFixed(2);
+      document.getElementById('StopWatchZ').textContent = spot.z.toFixed(2);
+      document.getElementById('StopWatchF').textContent = Math.floor(spot.f);
+      document.getElementById('StopWatchS').textContent = Math.floor(spot.s);
+    });
+
+  /**
+   * Map from model name (e.g. "Operations") to the view model
+   * for the relevant card. Note that all tool models share the Tool
+   * UnitConverter except GcodeGenerationViewModel which has it's own,
+   * specific to Gcode units.
+   * @member {ViewModel[]}
+   */
+  models = {};
+
+  /**
+   * The loaded SVG(s) drawing surface. This is given a default viewBox
+   * of 0,0,500,500 before an SVG is loaded.
+   * @member {Element}
+   */
+  mainSVG = document.getElementById("MainSVG");
+
+  /**
+   * The content group; the only valid contributor to selections
+   */
+  contentSVGGroup = document.getElementById("ContentSVGGroup");
+
+  /**
    * Construct the SVGcut singleton. This is available throughout the code
    * via the global variable `App`.
    * @param {object} config currently unused, but might be needed again.
    */
   constructor(config) {
 
-    /**
-     * Map from model name (e.g. "Operations") to the view model
-     * for the relevant card. Note that all tool models share the Tool
-     * UnitConverter except GcodeGenerationViewModel which has it's own,
-     * specific to Gcode units.
-     * @member {ViewModel[]}
-     */
-    this.models = {};
-
-    /**
-     * Simulation render path - there can be only one
-     */
-    this.renderPath = undefined;
-
-    /**
-     * The Element for the alert being used for the next tutorial step
-     * @member {Element}
-     * @private
-     */
-    this.tutorialAlert = undefined;
-
-    /**
-     * The index of the current tutorial step. -1 indicates
-     * the step isn't currently shown.
-     * @member {number}
-     * @private
-     */
-    this.currentTutorialStep = -1;
-
-    /**
-     * Configuration options
-     */
-    this.options = config;
-
     // global reference to this singleton
     window.App = this;
 
-    /**
-     * The loaded SVG(s) drawing surface. This is given a default viewBox
-     * of 0,0,500,500 before an SVG is loaded.
-     * @member {Element}
-     */
-    this.mainSVG = document.getElementById("MainSVG");
-
-    /**
-     * The content group; the only valid contributor to selections
-     */
-    this.contentSVGGroup = document.getElementById("ContentSVGGroup");
-
-    // Create the simulation canvas.
-    this.simulation = new Simulation(
-      "glShaders", // relative URI
-      document.getElementById("SimulationCanvas"),
-      document.getElementById('TimeControl'),
-      spot => { // stopWatch callback
-        document.getElementById('StopWatchT').textContent = formatTime(spot.t);
-        document.getElementById('StopWatchX').textContent = spot.x.toFixed(2);
-        document.getElementById('StopWatchY').textContent = spot.y.toFixed(2);
-        document.getElementById('StopWatchZ').textContent = spot.z.toFixed(2);
-        document.getElementById('StopWatchF').textContent = Math.floor(spot.f);
-        document.getElementById('StopWatchS').textContent = Math.floor(spot.s);
-      });
-
-    // Create view models.
-
+    // Create view models. Must be done in order as there are
+    // interdependencies.
     this.models.Project = new ProjectViewModel();
     const unitConverter = this.models.Project.unitConverter;
 
@@ -210,11 +200,11 @@ export class SVGcut {
       const uc = this.models.GcodeGeneration.unitConverter;
       const topZ = this.models.Material.topZ.toUnits(uc.units());
       const diam = this.models.Tool.cutterDiameter.toUnits(uc.units());
-      const ang = Number(this.models.Tool.cutterAngle());
+      const ang = Math.PI * Number(this.models.Tool.cutterAngle()) / 180;
       const cutterH = uc.fromUnits(10, "mm");
       const toolPath = Gcode.parse(this.models.GcodeGeneration.gcode());
       //console.debug(`Updating simulation of ${toolPath.length} gcode steps`);
-      this.simulation.setPath(toolPath, topZ, diam, ang, cutterH);
+      this.#simulation.setPath(toolPath, topZ, diam, ang, cutterH);
     });
 
     document.addEventListener("UNSUPPORTED_SVG", e =>
@@ -234,7 +224,7 @@ export class SVGcut {
   start() {
     this.fitSVG();
 
-    return this.simulation.start()
+    return this.#simulation.start()
     .then(() => this.models.Project.loadDefaults());
   }
 
@@ -424,11 +414,19 @@ export class SVGcut {
   /**
    * Set the viewBox of the main SVG so that everything fits in the
    * viewing area.
-   * @private
    */
   fitSVG() {
     const vb = this.getPageDimensions();
     this.mainSVG.setAttribute("viewBox", vb.toString());
+  }
+
+  /**
+   * Resize the simulation canvas.
+   * @param {number} w width
+   * @param {number} h height
+   */
+  resizeSimulationCanvas(w, h) {
+    this.#simulation.resizeCanvas(w, h);
   }
 
   /**
@@ -439,16 +437,16 @@ export class SVGcut {
    */
   tutorial(step) {
     // Don't go backwards
-    if (step > this.currentTutorialStep) {
-      if (this.tutorialAlert)
-        this.tutorialAlert.remove();
+    if (step > this.#currentTutorialStep) {
+      if (this.#tutorialAlert)
+        this.#tutorialAlert.remove();
       const messEl = document.querySelector(
         `#TutorialSteps>[name="Step${step}"]`);
       if (messEl) {
         const message = messEl.innerHTML;
-        this.tutorialAlert = this.showAlert(
+        this.#tutorialAlert = this.showAlert(
           "tutorialStep", "alert-info", step, message);
-        this.currentTutorialStep = step;
+        this.#currentTutorialStep = step;
       }
     }
   }
