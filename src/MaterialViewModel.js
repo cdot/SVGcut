@@ -111,9 +111,12 @@ export class MaterialViewModel extends ViewModel {
     }
 
     this.topZ.subscribe(newValue => setText("matTopZ", newValue));
+    this.unitConverter.add(this.topZ);
     this.botZ.subscribe(newValue => setText("matBotZ", formatZ(newValue)));
+    this.unitConverter.add(this.botZ);
     this.zSafeMove.subscribe(newValue =>
       setText("matZSafeMove", formatZ(newValue)));
+    this.unitConverter.add(this.zSafeMove);
 
     this.#materialSVG.subscribe(newValue => {
       setText("matTopZ", formatZ(this.topZ()));
